@@ -242,7 +242,8 @@ class Env(ParallelEnv):
       self.worldIdx = idx
       self.realm.reset(idx)
 
-      obs, self.action_lookup = self.realm.dataframe.get(self.realm.players)
+      obs = self.realm.datastore.dataframe(
+         self.realm.players.values())
 
       self.obs = self._preprocess_obs(obs, {}, {}, {})
       self.agents = list(self.realm.players.keys())
@@ -402,7 +403,9 @@ class Env(ParallelEnv):
                if arg.argType == nmmo.action.Fixed:
                   self.actions[entID][atn][arg] = arg.edges[val]
                elif arg == nmmo.action.Target:
-                  targ = self.action_lookup[entID]['Entity'][val]
+                  # xcxc
+                  # targ = self.action_lookup[entID]['Entity'][val]
+                  targ = 1
 
                   #TODO: find a better way to err check for dead/missing agents
                   try:
@@ -412,7 +415,7 @@ class Env(ParallelEnv):
                     #print(val, targ, np.where(np.array(self.action_lookup[entID]['Entity']) != 0), self.action_lookup[entID]['Entity'])
                     del self.actions[entID][atn]
                elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) and arg == nmmo.action.Item:
-                  if val >= len(ent.inventory.dataframeKeys):
+                  if val >= len(ent.inventory._item_references):
                       drop = True
                       continue
                   itm = [e for e in ent.inventory._item_references][val]
@@ -421,10 +424,10 @@ class Env(ParallelEnv):
                       continue
                   self.actions[entID][atn][arg] = itm
                elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
-                  if val >= len(self.realm.exchange.dataframeKeys):
+                  if val >= len(self.realm.exchange.item_listings):
                       drop = True
                       continue
-                  itm = self.realm.exchange.dataframeVals[val]
+                  itm = self.realm.exchange.item_listings[val]
                   self.actions[entID][atn][arg] = itm
                elif __debug__: #Fix -inf in classifier and assert err on bad atns
                   assert False, f'Argument {arg} invalid for action {atn}'
@@ -442,7 +445,7 @@ class Env(ParallelEnv):
       infos        = {}
 
       rewards, dones, self.raw = {}, {}, {}
-      obs, self.action_lookup = self.realm.dataframe.get(self.realm.players)
+      obs = self.realm.datastore.dataframe(self.realm.players.values())
       for entID, ent in self.realm.players.items():
          ob = obs[entID] 
          self.obs[entID] = ob
@@ -761,9 +764,9 @@ class Env(ParallelEnv):
             else:
                ent = list(current.values())[0]
 
-            obs = self.realm.dataframe.get(ent)
+            obs = self.realm.datastore.dataframe([ent])
             if n == 0:
-               self.realm.dataframe.remove(nmmo.Serialized.Entity, entID, ent.pos)
+               ent.datastore_object.delete()
 
             observations[entID] = obs
             ents[entID] = ent

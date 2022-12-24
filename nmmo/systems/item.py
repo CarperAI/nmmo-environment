@@ -36,29 +36,30 @@ class Item:
          health_restore=0, resource_restore=0, price=0):
 
       self.config     = realm.config
-      self.realm      = realm  
+      self.realm      = realm
+      self.datastore_object = realm.datastore.create_object(Serialized.Item)
 
       self.instanceID = Item.INSTANCE_ID
       realm.items[self.instanceID] = self
 
-      self.instance         = Serialized.Item.ID(realm.dataframe, self.instanceID, Item.INSTANCE_ID)
-      self.index            = Serialized.Item.Index(realm.dataframe, self.instanceID, self.ITEM_ID)
-      self.level            = Serialized.Item.Level(realm.dataframe, self.instanceID, level)
-      self.capacity         = Serialized.Item.Capacity(realm.dataframe, self.instanceID, capacity)
-      self.quantity         = Serialized.Item.Quantity(realm.dataframe, self.instanceID, quantity)
-      self.tradable         = Serialized.Item.Tradable(realm.dataframe, self.instanceID, tradable)
-      self.melee_attack     = Serialized.Item.MeleeAttack(realm.dataframe, self.instanceID, melee_attack)
-      self.range_attack     = Serialized.Item.RangeAttack(realm.dataframe, self.instanceID, range_attack)
-      self.mage_attack      = Serialized.Item.MageAttack(realm.dataframe, self.instanceID, mage_attack)
-      self.melee_defense    = Serialized.Item.MeleeDefense(realm.dataframe, self.instanceID, melee_defense)
-      self.range_defense    = Serialized.Item.RangeDefense(realm.dataframe, self.instanceID, range_defense)
-      self.mage_defense     = Serialized.Item.MageDefense(realm.dataframe, self.instanceID, mage_defense)
-      self.health_restore   = Serialized.Item.HealthRestore(realm.dataframe, self.instanceID, health_restore)
-      self.resource_restore = Serialized.Item.ResourceRestore(realm.dataframe, self.instanceID, resource_restore)
-      self.price            = Serialized.Item.Price(realm.dataframe, self.instanceID, price)
-      self.equipped         = Serialized.Item.Equipped(realm.dataframe, self.instanceID, 0)
-
-      realm.dataframe.init(Serialized.Item, self.instanceID, None)
+      self.instance         = Serialized.Item.ID(self.datastore_object, Item.INSTANCE_ID)
+      self.index            = Serialized.Item.Index(self.datastore_object, self.ITEM_ID)
+      self.level            = Serialized.Item.Level(self.datastore_object, level)
+      self.capacity         = Serialized.Item.Capacity(self.datastore_object, capacity)
+      self.quantity         = Serialized.Item.Quantity(self.datastore_object, quantity)
+      self.tradable         = Serialized.Item.Tradable(self.datastore_object, tradable)
+      self.melee_attack     = Serialized.Item.MeleeAttack(self.datastore_object, melee_attack)
+      self.range_attack     = Serialized.Item.RangeAttack(self.datastore_object, range_attack)
+      self.mage_attack      = Serialized.Item.MageAttack(self.datastore_object, mage_attack)
+      self.melee_defense    = Serialized.Item.MeleeDefense(self.datastore_object, melee_defense)
+      self.range_defense    = Serialized.Item.RangeDefense(self.datastore_object, range_defense)
+      self.mage_defense     = Serialized.Item.MageDefense(self.datastore_object, mage_defense)
+      self.health_restore   = Serialized.Item.HealthRestore(self.datastore_object, health_restore)
+      self.resource_restore = Serialized.Item.ResourceRestore(self.datastore_object, resource_restore)
+      self.price            = Serialized.Item.Price(self.datastore_object, price)
+      self.equipped         = Serialized.Item.Equipped(self.datastore_object, 0)
+      self.owner            = Serialized.Item.Owner(self.datastore_object, 0)
+      self.for_sale         = Serialized.Item.ForSale(self.datastore_object, 0)
 
       Item.INSTANCE_ID += 1
       if self.ITEM_ID is not None:

@@ -51,13 +51,13 @@ def serialize_actions(realm, actions, debug=True):
                         continue
                     atn_copy[entID][atn][arg] = [e for e in ent.inventory._item_references].index(val)
                 elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
-                    if val not in realm.exchange.dataframeVals:
+                    if val not in realm.exchange.listings:
                         if debug:
-                            itm_list = [type(itm) for itm in realm.exchange.dataframeVals]
+                            itm_list = [type(itm) for itm in realm.exchange.listings]
                             print("invalid item to buy (not listed in the exchange)", itm_list, type(val))
                         drop = True
                         continue
-                    atn_copy[entID][atn][arg] = realm.exchange.dataframeVals.index(val)
+                    atn_copy[entID][atn][arg] = realm.exchange.listings.index(val)
                 else:
                     # scripted ais have not bought any stuff
                     assert False, f'Argument {arg} invalid for action {atn}'
@@ -181,7 +181,7 @@ class TestEnv(nmmo.Env):
                             targ = ent.targets[val]
                             self.actions[entID][atn][arg] = self.realm.entity(targ)
                         elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) and arg == nmmo.action.Item:
-                            if val >= len(ent.inventory.dataframeKeys):
+                            if val >= len(ent.inventory._item_references):
                                 drop = True
                                 continue
                             itm = [e for e in ent.inventory._item_references][val]
@@ -190,7 +190,7 @@ class TestEnv(nmmo.Env):
                                 continue
                             self.actions[entID][atn][arg] = itm
                         elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
-                            if val >= len(self.realm.exchange.dataframeKeys):
+                            if val >= len(self.realm.exchange.item_listings):
                                 drop = True
                                 continue
                             itm = self.realm.exchange.dataframeVals[val]
@@ -210,7 +210,7 @@ class TestEnv(nmmo.Env):
 
         obs, rewards, dones, self.raw = {}, {}, {}, {}
         for entID, ent in self.realm.players.items():
-            ob = self.realm.dataframe.get(ent)
+            ob = self.realm.datastore.dataframe([ent])
             self.obs[entID] = ob
 
             # Generate decisions of scripted agents and save these to self.actions

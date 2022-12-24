@@ -96,6 +96,7 @@ class Inventory:
 
       self.capacity         = config.ITEM_INVENTORY_CAPACITY
       self.gold             = Item.Gold(realm)
+      self.gold.owner.update(entity.datastore_object.id)
 
       self._item_stacks     = {self.gold.signature: self.gold}
       self._item_references = OrderedSet([self.gold])
@@ -103,10 +104,6 @@ class Inventory:
    @property
    def space(self):
       return self.capacity - len(self._item_references)
-
-   @property
-   def dataframeKeys(self):
-      return [e.instanceID for e in self._item_references]
 
    def packet(self):
       item_packet = []
@@ -152,7 +149,7 @@ class Inventory:
       if config.LOG_MILESTONES and self.realm.quill.milestone.log_max(f'Receive_{item.__class__.__name__}', item.level.val) and config.LOG_VERBOSE:
           logging.info(f'INVENTORY: Received level {item.level.val} {item.__class__.__name__}')
 
-
+      item.owner.update(self.entity.datastore_object.id)
       self._item_references.add(item)
 
    def remove(self, item, quantity=None):
@@ -180,4 +177,5 @@ class Inventory:
 
          return
 
+      item.owner.update(0)
       self._item_references.remove(item)

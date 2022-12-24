@@ -40,8 +40,6 @@ class Player(entity.Entity):
       if tasks:
           self.diary = Diary(tasks)
 
-      self.dataframe.init(nmmo.Serialized.Entity, self.entID, self.pos)
-
    @property
    def serial(self):
       return self.population, self.entID

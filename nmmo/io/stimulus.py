@@ -2,30 +2,25 @@ from pdb import set_trace as T
 import numpy as np
 
 from nmmo.lib import utils
+from nmmo.lib.datastore.datastore import DatastoreObject
 
 class SerializedVariable:
    CONTINUOUS = False
    DISCRETE   = False
-   def __init__(self, dataframe, key, val=None, config=None):
-      if config is None:
-         config    = dataframe.config
+   def __init__(self, datastore_object: DatastoreObject, val=None, config=None):
  
-      self.obj  = str(self.__class__).split('.')[-2]
       self.attr = self.__class__.__name__
-      self.key  = key
-
       self.min = 0
       self.max = np.inf
       self.val = val
+      self.datastore_object = datastore_object
+      if config is None:
+         config = datastore_object.config
 
-      self.dataframe = dataframe
       self.init(config)
-      err = 'Must set a default val upon instantiation or init()'
-      assert self.val is not None, err
+      assert self.val is not None, 'Must set a default val upon instantiation or init()'
 
-      #Update dataframe
-      if dataframe is not None:
-         self.update(self.val)
+      self.update(self.val)
 
    #Defined for cleaner stim files
    def init(self):
@@ -38,7 +33,7 @@ class SerializedVariable:
 
    def update(self, val):
       self.val = min(max(val, self.min), self.max)
-      self.dataframe.update(self, self.val)
+      self.datastore_object.update(self.attr, self.val)
       return self
 
    def increment(self, val=1):
@@ -375,6 +370,14 @@ class Serialized(metaclass=utils.IterableNameComparable):
          def init(self, config):
             self.scale = 1.0
 
+      class Owner(Discrete):
+         def init(self, config):
+            self.scale = 1.0
+
+      class ForSale(Discrete):
+         def init(self, config):
+            self.scale = 1.0
+
    # TODO: Figure out how to autogen this from Items
    class Market(metaclass=utils.IterableNameComparable):
       @staticmethod
@@ -462,7 +465,3 @@ class Serialized(metaclass=utils.IterableNameComparable):
          def init(self, config):
             self.scale = 1.0
 
-
-for objName, obj in Serialized:
-   for idx, (attrName, attr) in enumerate(obj):
-      attr.index = idx 

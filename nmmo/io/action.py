@@ -123,7 +123,6 @@ class Move(Node):
       if entity.status.freeze > 0:
          return
 
-      env.dataframe.move(nmmo.Serialized.Entity, entID, (r, c), (rNew, cNew))
       entity.base.r.update(rNew)
       entity.base.c.update(cNew)
 

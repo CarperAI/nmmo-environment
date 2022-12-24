@@ -9,18 +9,12 @@ class Tile:
       self.config = config
       self.realm  = realm
 
-      self.serialized = 'R{}-C{}'.format(r, c)
+      self.datastore_object = realm.datastore.create_object(nmmo.Serialized.Tile)
 
-      self.r     = nmmo.Serialized.Tile.R(realm.dataframe, self.serial, r)
-      self.c     = nmmo.Serialized.Tile.C(realm.dataframe, self.serial, c)
-      self.nEnts = nmmo.Serialized.Tile.NEnts(realm.dataframe, self.serial)
-      self.index = nmmo.Serialized.Tile.Index(realm.dataframe, self.serial, 0)
-
-      realm.dataframe.init(nmmo.Serialized.Tile, self.serial, (r, c))
-
-   @property
-   def serial(self):
-      return self.serialized
+      self.r     = nmmo.Serialized.Tile.R(self.datastore_object, r)
+      self.c     = nmmo.Serialized.Tile.C(self.datastore_object, c)
+      self.nEnts = nmmo.Serialized.Tile.NEnts(self.datastore_object)
+      self.index = nmmo.Serialized.Tile.Index(self.datastore_object, 0)
 
    @property
    def repr(self):

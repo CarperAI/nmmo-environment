@@ -197,17 +197,17 @@ class Skills(Basic, Harvest, Combat):
 ### Skills ###
 class Melee(CombatSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Melee(ent.dataframe, ent.entID)
+        self.level = Serialized.Entity.Melee(ent.datastore_object)
         super().__init__(realm, ent, skillGroup)
 
 class Range(CombatSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Range(ent.dataframe, ent.entID)
+        self.level = Serialized.Entity.Range(ent.datastore_object)
         super().__init__(realm, ent, skillGroup)
 
 class Mage(CombatSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Mage(ent.dataframe, ent.entID)
+        self.level = Serialized.Entity.Mage(ent.datastore_object)
         super().__init__(realm, ent, skillGroup)
 
 Melee.weakness = Mage
@@ -273,7 +273,7 @@ class Food(HarvestSkill):
 
 class Fishing(ConsumableSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Fishing(ent.dataframe, ent.entID)
+        self.level = Serialized.Entity.Fishing(ent.datastore_object)
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):
@@ -281,7 +281,7 @@ class Fishing(ConsumableSkill):
 
 class Herbalism(ConsumableSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Herbalism(ent.dataframe, ent.entID)
+        self.level = Serialized.Entity.Herbalism(ent.datastore_object)
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):
@@ -289,7 +289,7 @@ class Herbalism(ConsumableSkill):
 
 class Prospecting(AmmunitionSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Prospecting(ent.dataframe, ent.entID)
+        self.level = Serialized.Entity.Prospecting(ent.datastore_object)
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):
@@ -297,7 +297,7 @@ class Prospecting(AmmunitionSkill):
 
 class Carving(AmmunitionSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Carving(ent.dataframe, ent.entID)
+        self.level = Serialized.Entity.Carving(ent.datastore_object)
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):
@@ -305,7 +305,7 @@ class Carving(AmmunitionSkill):
 
 class Alchemy(AmmunitionSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Alchemy(ent.dataframe, ent.entID)
+        self.level = Serialized.Entity.Alchemy(ent.datastore_object)
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):

@@ -147,7 +147,6 @@ class NPC(entity.Entity):
 class Passive(NPC):
    def __init__(self, realm, pos, iden):
       super().__init__(realm, pos, iden, 'Passive', Neon.GREEN, -1)
-      self.dataframe.init(nmmo.Serialized.Entity, iden, pos)
 
    def decide(self, realm):
       return ai.policy.passive(realm, self)
@@ -155,7 +154,6 @@ class Passive(NPC):
 class PassiveAggressive(NPC):
    def __init__(self, realm, pos, iden):
       super().__init__(realm, pos, iden, 'Neutral', Neon.ORANGE, -2)
-      self.dataframe.init(nmmo.Serialized.Entity, iden, pos)
 
    def decide(self, realm):
       return ai.policy.neutral(realm, self)
@@ -163,7 +161,6 @@ class PassiveAggressive(NPC):
 class Aggressive(NPC):
    def __init__(self, realm, pos, iden):
       super().__init__(realm, pos, iden, 'Hostile', Neon.RED, -3)
-      self.dataframe.init(nmmo.Serialized.Entity, iden, pos)
 
    def decide(self, realm):
       return ai.policy.hostile(realm, self)

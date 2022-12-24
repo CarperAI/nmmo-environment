@@ -7,9 +7,9 @@ from nmmo.lib import material, utils
 
 class Resources:
    def __init__(self, ent):
-      self.health = nmmo.Serialized.Entity.Health(ent.dataframe, ent.entID)
-      self.water  = nmmo.Serialized.Entity.Water( ent.dataframe, ent.entID)
-      self.food   = nmmo.Serialized.Entity.Food(  ent.dataframe, ent.entID)
+      self.health = nmmo.Serialized.Entity.Health(ent.datastore_object)
+      self.water  = nmmo.Serialized.Entity.Water(ent.datastore_object)
+      self.food   = nmmo.Serialized.Entity.Food(ent.datastore_object)
 
    def update(self, realm, entity, actions):
       config = realm.config
@@ -46,7 +46,7 @@ class Resources:
 class Status:
    def __init__(self, ent):
       self.config = ent.config
-      self.freeze = nmmo.Serialized.Entity.Freeze(ent.dataframe, ent.entID)
+      self.freeze = nmmo.Serialized.Entity.Freeze(ent.datastore_object)
 
    def update(self, realm, entity, actions):
       self.freeze.decrement()
@@ -68,8 +68,8 @@ class History:
       self.damage_received = 0
       self.damage_inflicted = 0
 
-      self.damage    = nmmo.Serialized.Entity.Damage(   ent.dataframe, ent.entID)
-      self.timeAlive = nmmo.Serialized.Entity.TimeAlive(ent.dataframe, ent.entID)
+      self.damage    = nmmo.Serialized.Entity.Damage(ent.datastore_object)
+      self.timeAlive = nmmo.Serialized.Entity.TimeAlive(ent.datastore_object)
 
       self.lastPos = None
 
@@ -120,18 +120,16 @@ class Base:
       self.color = color
       r, c       = pos
 
-      self.r          = nmmo.Serialized.Entity.R(ent.dataframe, ent.entID, r)
-      self.c          = nmmo.Serialized.Entity.C(ent.dataframe, ent.entID, c)
+      self.r          = nmmo.Serialized.Entity.R(ent.datastore_object, r)
+      self.c          = nmmo.Serialized.Entity.C(ent.datastore_object, c)
 
-      self.population = nmmo.Serialized.Entity.Population(ent.dataframe, ent.entID, pop)
-      self.self       = nmmo.Serialized.Entity.Self(      ent.dataframe, ent.entID, 1)
-      self.identity   = nmmo.Serialized.Entity.ID(        ent.dataframe, ent.entID, ent.entID)
-      self.level      = nmmo.Serialized.Entity.Level(     ent.dataframe, ent.entID, 3)
-      self.item_level = nmmo.Serialized.Entity.ItemLevel( ent.dataframe, ent.entID, 0)
-      self.gold       = nmmo.Serialized.Entity.Gold(      ent.dataframe, ent.entID, 0)
-      self.comm       = nmmo.Serialized.Entity.Comm(      ent.dataframe, ent.entID, 0)
-
-      ent.dataframe.init(nmmo.Serialized.Entity, ent.entID, (r, c))
+      self.population = nmmo.Serialized.Entity.Population(ent.datastore_object, pop)
+      self.self       = nmmo.Serialized.Entity.Self(ent.datastore_object, 1)
+      self.identity   = nmmo.Serialized.Entity.ID(ent.datastore_object, ent.entID)
+      self.level      = nmmo.Serialized.Entity.Level(ent.datastore_object, 3)
+      self.item_level = nmmo.Serialized.Entity.ItemLevel(ent.datastore_object, 0)
+      self.gold       = nmmo.Serialized.Entity.Gold(ent.datastore_object, 0)
+      self.comm       = nmmo.Serialized.Entity.Comm(ent.datastore_object, 0)
 
    def update(self, realm, entity, actions):
       self.level.update(combat.level(entity.skills))
@@ -163,7 +161,8 @@ class Base:
 class Entity:
    def __init__(self, realm, pos, iden, name, color, pop):
       self.realm        = realm
-      self.dataframe    = realm.dataframe
+      self.datastore_object = realm.datastore.create_object(nmmo.Serialized.Entity)
+
       self.config       = realm.config
 
       self.policy       = name
@@ -176,7 +175,7 @@ class Entity:
       self.closest      = None
       self.spawnPos     = pos
 
-      self.attackerID = nmmo.Serialized.Entity.AttackerID(self.dataframe, self.entID, 0)
+      self.attackerID = nmmo.Serialized.Entity.AttackerID(self.datastore_object, 0)
 
       #Submodules
       self.base      = Base(self, pos, iden, name, color, pop)
