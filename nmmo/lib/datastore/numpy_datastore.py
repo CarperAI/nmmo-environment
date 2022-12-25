@@ -28,9 +28,6 @@ class NumpyTable(DataTable):
     self._id_allocator.remove(id)
     self._data[id] = 0
 
-  def get_padded(self, ids: List[int], padding: int):
-    data = np.pad(self.get(ids), ((0, padding - len(data)), (0, 0)))
-
   def _expand(self, max_rows: int):
     assert max_rows > self._max_rows
     data = np.zeros((max_rows, self._num_columns), dtype=self._dtype)
