@@ -14,7 +14,6 @@ class NMMODatastore(NumpyDatastore):
         self.register_object_type(object_type, [
           c for (c,), _ in entity])
 
-    # cache the columns for entity locations
     self._entity_location_cols = [
       self._tables["Entity"]._cols["R"],
       self._tables["Entity"]._cols["C"]]
@@ -24,14 +23,6 @@ class NMMODatastore(NumpyDatastore):
     self._entity_id_col = self._tables["Entity"]._cols["ID"]
     self._item_owner_col = self._tables["Item"]._cols["Owner"]
     self._item_for_sale_col = self._tables["Item"]._cols["ForSale"]
-
-    # cache observation offsets
-    radius = config.PLAYER_VISION_RADIUS
-    rr, cc = np.meshgrid(np.arange(-radius, radius+1), np.arange(-radius, radius+1))
-    rr, cc = rr.ravel(), cc.ravel()
-    rr = np.repeat(rr[None, :], config.PLAYER_N, axis=0)
-    cc = np.repeat(cc[None, :], config.PLAYER_N, axis=0)
-    self._grid_vision_offsets = (rr, cc)
 
   def create_object(self, serialized_type):
     o = super().create_object(serialized_type.__name__)

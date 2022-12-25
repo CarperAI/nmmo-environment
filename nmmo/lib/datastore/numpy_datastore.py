@@ -1,8 +1,7 @@
-
 import numpy as np
-from typing import Dict, List, Tuple
+from typing import List
 
-from nmmo.lib.datastore.datastore import Datastore, DataTable, Grid
+from nmmo.lib.datastore.datastore import Datastore, DataTable
 
 class NumpyTable(DataTable):
   def __init__(self, columns: List[str], initial_size: int, dtype=np.float32):
@@ -50,22 +49,6 @@ class NumpyTable(DataTable):
       (np.abs(self._data[:,col_idx] - col) <= radius)
     ).ravel()]
 
-
-class NumpyGrid(Grid):
-    def __init__(self, max_rows: int, max_columns: int):
-      self.data = np.zeros((max_rows, max_columns), dtype=np.int32)
-
-    def set(self, location: Tuple[int, int], value: int):
-      self.data[location] = value
- 
-    def move(self, origin: Tuple[int, int], destination: Tuple[int, int]):
-      self.set(destination, self.data[origin])
-      self.data[origin] = 0
-
-    def window(self, row_min: int, row_max: int, col_min: int, col_max: int):
-      crop = self.data[row_min:row_max, col_min:col_max].ravel()
-      return crop[np.nonzero(crop)]
-      
 
 class NumpyDatastore(Datastore):
   def _create_table(self, columns: List[str]) -> DataTable:

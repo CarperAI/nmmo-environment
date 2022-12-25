@@ -22,16 +22,6 @@ class DataTable:
   def add_row(self) -> int:
     raise NotImplemented
 
-class Grid:
-  def set(self, location: Tuple[int, int], value):
-      raise NotImplemented
-  
-  def move(self, origin: Tuple[int, int], destination: Tuple[int, int]):
-      raise NotImplemented
-
-  def window(self, row_min: int, row_max: int, col_min: int, col_max: int):
-    raise NotImplemented
-
 class DatastoreObject:
   def __init__(self, datastore, table: DataTable, id: int) -> None:
     self.datastore = datastore

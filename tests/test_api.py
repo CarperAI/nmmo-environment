@@ -2,8 +2,8 @@ from pdb import set_trace as T
 
 from typing import List
 import unittest
-# import lovely_numpy
-# lovely_numpy.set_config(repr=lovely_numpy.lovely)
+import lovely_numpy
+lovely_numpy.set_config(repr=lovely_numpy.lovely)
 
 import nmmo
 from nmmo.entity.entity import Entity
