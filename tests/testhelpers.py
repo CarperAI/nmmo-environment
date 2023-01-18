@@ -1,28 +1,20 @@
 from pdb import set_trace as T
-import unittest
-from tqdm import tqdm
+
 import numpy as np
-import random
 
 import nmmo
 
 from scripted import baselines
 
-from testhelpers import TestEnv, TestConfig, serialize_actions, are_observations_equal
-
-# 30 seems to be enough to test variety of agent actions
-TEST_HORIZON = 30
-RANDOM_SEED = random.randint(0, 10000)
-
-def serialize_actions(realm, actions, debug=True):
+def serialize_actions(env: nmmo.Env, actions, debug=True):
     atn_copy = {}
     for entID in list(actions.keys()):
-        if entID not in realm.players:
+        if entID not in env.realm.players:
             if debug:
                 print("invalid player id", entID)
             continue
 
-        ent = realm.players[entID]
+        ent = env.realm.players[entID]
 
         atn_copy[entID] = {}
         for atn, args in actions[entID].items():
@@ -32,12 +24,13 @@ def serialize_actions(realm, actions, debug=True):
                 if arg.argType == nmmo.action.Fixed:
                     atn_copy[entID][atn][arg] = arg.edges.index(val)
                 elif arg == nmmo.action.Target:
-                    if val.entID not in ent.targets:
+                    lookup = env.action_lookup[entID]['Entity']
+                    if val.entID not in lookup:
                         if debug:
-                            print("invalid target", entID, ent.targets, val.entID)
+                            print("invalid target", entID, lookup, val.entID)
                         drop = True
                         continue
-                    atn_copy[entID][atn][arg] = ent.targets.index(val.entID)
+                    atn_copy[entID][atn][arg] = lookup.index(val.entID)
                 elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) and arg == nmmo.action.Item:
                     if val not in ent.inventory._item_references:
                         if debug:
@@ -52,16 +45,13 @@ def serialize_actions(realm, actions, debug=True):
                         continue
                     atn_copy[entID][atn][arg] = [e for e in ent.inventory._item_references].index(val)
                 elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
-                    if val not in realm.exchange.listings:
-                    if val not in realm.exchange.listings:
+                    if val not in env.realm.exchange.dataframeVals:
                         if debug:
-                            itm_list = [type(itm) for itm in realm.exchange.listings]
-                            itm_list = [type(itm) for itm in realm.exchange.listings]
+                            itm_list = [type(itm) for itm in env.realm.exchange.dataframeVals]
                             print("invalid item to buy (not listed in the exchange)", itm_list, type(val))
                         drop = True
                         continue
-                    atn_copy[entID][atn][arg] = realm.exchange.listings.index(val)
-                    atn_copy[entID][atn][arg] = realm.exchange.listings.index(val)
+                    atn_copy[entID][atn][arg] = env.realm.exchange.dataframeVals.index(val)
                 else:
                     # scripted ais have not bought any stuff
                     assert False, f'Argument {arg} invalid for action {atn}'
@@ -71,6 +61,7 @@ def serialize_actions(realm, actions, debug=True):
                 del atn_copy[entID][atn]
 
     return atn_copy
+
 
 # this function can be replaced by assertDictEqual
 # but might be still useful for debugging
@@ -101,6 +92,7 @@ def are_actions_equal(source_atn, target_atn, debug=True):
                 return False
 
     return True
+
 
 # this function CANNOT be replaced by assertDictEqual
 def are_observations_equal(source_obs, target_obs, debug=True):
@@ -155,7 +147,7 @@ class TestEnv(nmmo.Env):
         super().__init__(config, seed)
 
     def step(self, actions):
-        assert self.initialized, 'step before reset'
+        assert self.has_reset, 'step before reset'
 
         # if actions are empty, then skip below to proceed with self.actions
         # if actions are provided, 
@@ -179,23 +171,23 @@ class TestEnv(nmmo.Env):
                         if arg.argType == nmmo.action.Fixed:
                             self.actions[entID][atn][arg] = arg.edges[val]
                         elif arg == nmmo.action.Target:
-                            if val >= len(ent.targets):
-                                drop = True
-                                continue
-                            targ = ent.targets[val]
-                            self.actions[entID][atn][arg] = self.realm.entity(targ)
+                            targ = self.action_lookup[entID]['Entity'][val]
+                            #TODO: find a better way to err check for dead/missing agents
+                            try:
+                                self.actions[entID][atn][arg] = self.realm.entity(targ)
+                            except:
+                                del self.actions[entID][atn]
                         elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) and arg == nmmo.action.Item:
-                            if val >= len(ent.inventory._items):
+                            if val >= len(ent.inventory.dataframeKeys):
                                 drop = True
                                 continue
-                            itm = [e for e in ent.inventory._items][val]
+                            itm = [e for e in ent.inventory._item_references][val]
                             if type(itm) == nmmo.systems.item.Gold:
                                 drop = True
                                 continue
                             self.actions[entID][atn][arg] = itm
                         elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
-                            if val >= len(self.realm.exchange.item_listings):
-                            if val >= len(self.realm.exchange.item_listings):
+                            if val >= len(self.realm.exchange.dataframeKeys):
                                 drop = True
                                 continue
                             itm = self.realm.exchange.dataframeVals[val]
@@ -213,14 +205,15 @@ class TestEnv(nmmo.Env):
         self.obs     = {}
         infos        = {}
 
-        obs, rewards, dones, self.raw = {}, {}, {}, {}
+        rewards, dones, self.raw = {}, {}, {}
+        obs, self.action_lookup = self.realm.dataframe.get(self.realm.players)
         for entID, ent in self.realm.players.items():
-            ob = self.realm.datastore.observations([ent])
+            ob = obs[entID] 
             self.obs[entID] = ob
 
             # Generate decisions of scripted agents and save these to self.actions
             if ent.agent.scripted:
-                atns = ent.agent(ob[entID])
+                atns = ent.agent(ob)
                 for atn, args in atns.items():
                     for arg, val in args.items():
                         atns[atn][arg] = arg.deserialize(self.realm, ent, val)
@@ -262,72 +255,3 @@ class TestConfig(nmmo.config.Small, nmmo.config.AllGameSystems):
     PLAYERS = [
             baselines.Fisher, baselines.Herbalist, baselines.Prospector, baselines.Carver, baselines.Alchemist,
             baselines.Melee, baselines.Range, baselines.Mage]
-
-
-class TestDeterminism(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.horizon = TEST_HORIZON
-        cls.rand_seed = RANDOM_SEED
-        cls.config = TestConfig()
-
-        print('[TestDeterminism] Setting up the reference env with seed', cls.rand_seed)
-        env_src = TestEnv(cls.config, seed=cls.rand_seed)
-        actions_src = []
-        cls.init_obs_src = env_src.reset()
-        print('Running', cls.horizon, 'tikcs')
-        for t in tqdm(range(cls.horizon)):
-            actions_src.append(serialize_actions(env_src, env_src.actions))
-            nxt_obs_src, _, _, _ = env_src.step({})
-        cls.final_obs_src = nxt_obs_src
-        cls.actions_src = actions_src
-        npcs_src = {}
-        for nid, npc in list(env_src.realm.npcs.items()):
-            npcs_src[nid] = npc.packet()
-            del npcs_src[nid]['alive'] # to use the same 'are_observations_equal' function
-        cls.final_npcs_src = npcs_src
-
-        print('[TestDeterminism] Setting up the replication env with seed', cls.rand_seed)
-        env_rep = TestEnv(cls.config, seed=cls.rand_seed)
-        actions_rep = []
-        cls.init_obs_rep = env_rep.reset()
-        print('Running', cls.horizon, 'tikcs')
-        for t in tqdm(range(cls.horizon)):
-            actions_rep.append(serialize_actions(env_rep, env_rep.actions))
-            nxt_obs_rep, _, _, _ = env_rep.step({})
-        cls.final_obs_rep = nxt_obs_rep
-        cls.actions_rep = actions_rep
-        npcs_rep = {}
-        for nid, npc in list(env_rep.realm.npcs.items()):
-            npcs_rep[nid] = npc.packet()
-            del npcs_rep[nid]['alive'] # to use the same 'are_observations_equal' function
-        cls.final_npcs_rep = npcs_rep
-        
-    def test_func_are_observations_equal(self):
-        # are_observations_equal CANNOT be replaced with assertDictEqual
-        self.assertTrue(are_observations_equal(self.init_obs_src, self.init_obs_src))
-        self.assertTrue(are_observations_equal(self.final_obs_src, self.final_obs_src))
-        #self.assertDictEqual(self.final_obs_src, self.final_obs_src)
-
-    def test_func_are_actions_equal(self):
-        # are_actions_equal can be replaced with assertDictEqual
-        for t in range(len(self.actions_src)):
-            #self.assertTrue(are_actions_equal(self.actions_src[t], self.actions_src[t]))
-            self.assertDictEqual(self.actions_src[t], self.actions_src[t])
-
-    def test_compare_initial_observations(self):
-        self.assertTrue(are_observations_equal(self.init_obs_src, self.init_obs_rep))
-
-    def test_compare_actions(self):
-        for t in range(len(self.actions_src)):
-            self.assertDictEqual(self.actions_src[t], self.actions_rep[t])
-
-    def test_compare_final_observations(self):
-        self.assertTrue(are_observations_equal(self.final_obs_src, self.final_obs_rep))
-
-    def test_compare_final_npcs(self)        :
-        self.assertTrue(are_observations_equal(self.final_npcs_src, self.final_npcs_rep))
-
-
-if __name__ == '__main__':
-    unittest.main()

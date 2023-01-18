@@ -322,7 +322,6 @@ class Env(ParallelEnv):
                   self.actions[entID][atn][arg] = itm
                elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
                   if val >= len(self.realm.exchange.item_listings):
-                  if val >= len(self.realm.exchange.item_listings):
                       drop = True
                       continue
                   itm = self.realm.exchange.item_listings[val]
