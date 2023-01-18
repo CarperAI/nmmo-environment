@@ -17,10 +17,15 @@ class SerializedVariable:
       self.datastore_object = datastore_object
       if config is None:
          config = datastore_object.config
+      self.datastore_object = datastore_object
+      if config is None:
+         config = datastore_object.config
 
       self.init(config)
       assert self.val is not None, 'Must set a default val upon instantiation or init()'
+      assert self.val is not None, 'Must set a default val upon instantiation or init()'
 
+      self.update(self.val)
       self.update(self.val)
 
    #Defined for cleaner stim files
@@ -34,6 +39,7 @@ class SerializedVariable:
 
    def update(self, val):
       self.val = min(max(val, self.min), self.max)
+      self.datastore_object.update(self.attr, self.val)
       self.datastore_object.update(self.attr, self.val)
       return self
 
@@ -134,6 +140,14 @@ class Serialized(metaclass=utils.IterableNameComparable):
             self.scale = 0.01
 
       class Equipped(Discrete):
+         def init(self, config):
+            self.scale = 1.0
+
+      class Owner(Discrete):
+         def init(self, config):
+            self.scale = 1.0
+
+      class ForSale(Discrete):
          def init(self, config):
             self.scale = 1.0
 

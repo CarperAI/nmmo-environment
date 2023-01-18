@@ -300,6 +300,9 @@ class Env(ParallelEnv):
                   # xcxc
                   # targ = self.action_lookup[entID]['Entity'][val]
                   targ = 1
+                  # xcxc
+                  # targ = self.action_lookup[entID]['Entity'][val]
+                  targ = 1
 
                   #TODO: find a better way to err check for dead/missing agents
                   try:
@@ -319,8 +322,10 @@ class Env(ParallelEnv):
                   self.actions[entID][atn][arg] = itm
                elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
                   if val >= len(self.realm.exchange.item_listings):
+                  if val >= len(self.realm.exchange.item_listings):
                       drop = True
                       continue
+                  itm = self.realm.exchange.item_listings[val]
                   itm = self.realm.exchange.item_listings[val]
                   self.actions[entID][atn][arg] = itm
                elif __debug__: #Fix -inf in classifier and assert err on bad atns

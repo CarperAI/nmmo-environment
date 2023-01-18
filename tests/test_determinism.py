@@ -52,11 +52,14 @@ def serialize_actions(realm, actions, debug=True):
                     atn_copy[entID][atn][arg] = [e for e in ent.inventory._item_references].index(val)
                 elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
                     if val not in realm.exchange.listings:
+                    if val not in realm.exchange.listings:
                         if debug:
+                            itm_list = [type(itm) for itm in realm.exchange.listings]
                             itm_list = [type(itm) for itm in realm.exchange.listings]
                             print("invalid item to buy (not listed in the exchange)", itm_list, type(val))
                         drop = True
                         continue
+                    atn_copy[entID][atn][arg] = realm.exchange.listings.index(val)
                     atn_copy[entID][atn][arg] = realm.exchange.listings.index(val)
                 else:
                     # scripted ais have not bought any stuff
@@ -190,6 +193,7 @@ class TestEnv(nmmo.Env):
                                 continue
                             self.actions[entID][atn][arg] = itm
                         elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
+                            if val >= len(self.realm.exchange.item_listings):
                             if val >= len(self.realm.exchange.item_listings):
                                 drop = True
                                 continue
