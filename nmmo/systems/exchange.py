@@ -111,24 +111,6 @@ class Exchange:
       self.item_listings = defaultdict(ItemListings)
 
    @property
-   def dataframeKeys(self):
-      keys = []
-      for listings in self.item_listings.values():
-         if listings.placeholder:
-            keys.append(listings.placeholder.instanceID)
-
-      return keys
-
-   @property
-   def dataframeVals(self):
-      vals = []
-      for listings in self.item_listings.values():
-         if listings.placeholder:
-            vals.append(listings.placeholder)
-
-      return vals
-
-   @property
    def packet(self):
       packet = {}
       for (item_cls, level), listings in self.item_listings.items():
@@ -174,6 +156,7 @@ class Exchange:
       price = listings.buy(buyer, max_price)
       if price is not None:
          buyer.inventory.receive(listings.placeholder)
+         item.for_sale.update(0)
 
          if ((config.LOG_MILESTONES and realm.quill.milestone.log_max(f'Buy_{item.__name__}', level)) or 
                (config.LOG_EVENTS and realm.quill.event.log(f'Buy_{item.__name__}', level))) and config.LOG_VERBOSE:
@@ -198,11 +181,12 @@ class Exchange:
       config   = realm.config
       level    = item.level.val
 
-      #Remove from seller
+      # Remove from seller and add to market
       seller.inventory.remove(item, quantity=1)
+      item.for_sale.update(1)
+
       item = type(item)
 
-     
       if ((config.LOG_MILESTONES and realm.quill.milestone.log_max(f'Sell_{item.__name__}', level)) or (config.LOG_EVENTS and realm.quill.event.log(f'Sell_{item.__name__}', level))) and config.LOG_VERBOSE:
          logging.info(f'EXCHANGE: Offered level {level} {item.__name__} for {price} gold')
 

@@ -38,7 +38,9 @@ def attack(realm, player, target, skillFn):
 
     # Ammunition usage
     if config.EQUIPMENT_SYSTEM_ENABLED:
-        ammunition = player.equipment.ammunition
+        if player.equipment.ammunition is None:
+            raise Exception('No ammunition equipped')
+        ammunition = player.equipment.ammunition.item
         if ammunition is not None:
             ammunition.fire(player)
 

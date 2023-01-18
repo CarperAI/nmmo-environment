@@ -28,34 +28,33 @@ class TestScriptingObservation(unittest.TestCase):
       for t in tqdm(range(TEST_HORIZON)):
          cls.env.step({})
 
-      cls.obs, _ = cls.env.realm.dataframe.get(cls.env.realm.players)
+      cls.obs = cls.env.realm.datastore.observations(cls.env.realm.players.values())
 
    def test_observation_agent(self):
-      for playerID in self.obs.keys():
-         ob = nmmo.scripting.Observation(self.config, self.obs[playerID])
-         agent = ob.agent
-
+      for playerID, ob in self.obs.items():
          # player's entID must match
-         self.assertEqual(playerID, nmmo.scripting.Observation.attribute(agent, nmmo.Serialized.Entity.ID))
+         self.assertEqual(
+            playerID, 
+            ob.agent().attribute(nmmo.Serialized.Entity.ID))
 
    def test_observation_tile(self):
       vision = self.config.PLAYER_VISION_RADIUS
 
       for playerID in self.obs.keys():
-         ob = nmmo.scripting.Observation(self.config, self.obs[playerID])
-         agent = ob.agent
+         ob = self.obs[playerID]
+         agent = ob.agent()
 
          # the current player's location
-         r_cent = nmmo.scripting.Observation.attribute(agent, nmmo.Serialized.Entity.R)
-         c_cent = nmmo.scripting.Observation.attribute(agent, nmmo.Serialized.Entity.C)
+         r_cent = agent.attribute(nmmo.Serialized.Entity.R)
+         c_cent = agent.attribute(nmmo.Serialized.Entity.C)
 
          for r_delta in range(-vision, vision+1):
             for c_delta in range(-vision, vision+1):
                tile = ob.tile(r_delta, c_delta)
 
                # tile's coordinate must match
-               self.assertEqual(r_cent + r_delta, nmmo.scripting.Observation.attribute(tile, nmmo.Serialized.Tile.R))
-               self.assertEqual(c_cent + c_delta, nmmo.scripting.Observation.attribute(tile, nmmo.Serialized.Tile.C))
+               self.assertEqual(r_cent + r_delta, tile.attribute(nmmo.Serialized.Tile.R))
+               self.assertEqual(c_cent + c_delta, tile.attribute(nmmo.Serialized.Tile.C))
 
 if __name__ == '__main__':
    unittest.main()

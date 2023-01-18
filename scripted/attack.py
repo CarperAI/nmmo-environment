@@ -2,27 +2,28 @@ from pdb import set_trace as T
 import numpy as np
 
 import nmmo
+from nmmo.core.observation import Observation
 
 from scripted import utils
 
-def closestTarget(config, ob):
+def closestTarget(config, ob: Observation):
    shortestDist = np.inf
    closestAgent = None
 
    Entity = nmmo.Serialized.Entity
-   agent  = ob.agent
+   agent  = ob.agent()
 
-   sr = nmmo.scripting.Observation.attribute(agent, Entity.R)
-   sc = nmmo.scripting.Observation.attribute(agent, Entity.C)
+   sr = agent.attribute(Entity.R)
+   sc = agent.attribute(Entity.C)
    start = (sr, sc)
 
-   for target in ob.agents:
-      exists = nmmo.scripting.Observation.attribute(target, Entity.Self)
+   for target in ob.entities:
+      exists = target.attribute(Entity.Self)
       if not exists:
          continue
 
-      tr = nmmo.scripting.Observation.attribute(target, Entity.R)
-      tc = nmmo.scripting.Observation.attribute(target, Entity.C)
+      tr = target.attribute(Entity.R)
+      tc = target.attribute(Entity.C)
 
       goal = (tr, tc)
       dist = utils.l1(start, goal)
@@ -36,22 +37,22 @@ def closestTarget(config, ob):
 
    return closestAgent, shortestDist
 
-def attacker(config, ob):
+def attacker(config, ob: Observation):
    Entity = nmmo.Serialized.Entity
 
-   sr = nmmo.scripting.Observation.attribute(ob.agent, Entity.R)
-   sc = nmmo.scripting.Observation.attribute(ob.agent, Entity.C)
+   sr = ob.agent().attribute(Entity.R)
+   sc = ob.agent().attribute(Entity.C)
  
-   attackerID = nmmo.scripting.Observation.attribute(ob.agent, Entity.AttackerID)
+   attackerID = ob.agent().attribute(Entity.AttackerID)
 
    if attackerID == 0:
        return None, None
 
-   for target in ob.agents:
-      identity = nmmo.scripting.Observation.attribute(target, Entity.ID)
+   for target in ob.entities:
+      identity = target.attribute(Entity.ID)
       if identity == attackerID:
-         tr = nmmo.scripting.Observation.attribute(target, Entity.R)
-         tc = nmmo.scripting.Observation.attribute(target, Entity.C)
+         tr = target.attribute(Entity.R)
+         tc = target.attribute(Entity.C)
          dist = utils.l1((sr, sc), (tr, tc))
          return target, dist
    return None, None

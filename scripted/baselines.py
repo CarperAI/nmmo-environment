@@ -1,4 +1,5 @@
 from pdb import set_trace as T
+from typing import Dict
 
 from ordered_set import OrderedSet
 from collections import defaultdict
@@ -6,24 +7,24 @@ import numpy as np
 import random
 
 import nmmo
-from nmmo import scripting, material, Serialized
+from nmmo import material, Serialized
 from nmmo.systems import skill, item
 from nmmo.lib import colors
-from nmmo import action as Action
+from nmmo.io import action
+from nmmo.core.observation import Observation
 
 from scripted import behavior, move, attack, utils
 
 
 class Item:
-    def __init__(self, item_ary): 
-        index    = scripting.Observation.attribute(item_ary, Serialized.Item.Index)
-        self.cls = item.ItemID.get(int(index))
-
-        self.level    = scripting.Observation.attribute(item_ary, Serialized.Item.Level)
-        self.quantity = scripting.Observation.attribute(item_ary, Serialized.Item.Quantity)
-        self.price    = scripting.Observation.attribute(item_ary, Serialized.Item.Price)
-        self.instance = scripting.Observation.attribute(item_ary, Serialized.Item.ID)
-        self.equipped = scripting.Observation.attribute(item_ary, Serialized.Item.Equipped)
+    def __init__(self, item_obs):
+        self.item_type = Serialized.Item.ItemType.attr(item_obs)
+        self.item_class = item.Item.item_class(self.item_type)
+        self.level    = Serialized.Item.Level.attr(item_obs)
+        self.quantity = Serialized.Item.Quantity.attr(item_obs)
+        self.price    = Serialized.Item.Price.attr(item_obs)
+        self.instance = Serialized.Item.ID.attr(item_obs)
+        self.equipped = Serialized.Item.Equipped.attr(item_obs)
 
 
 class Scripted(nmmo.Agent):
@@ -93,9 +94,9 @@ class Scripted(nmmo.Agent):
         if self.closest is None:
             return False
 
-        selfLevel  = scripting.Observation.attribute(self.ob.agent, Serialized.Entity.Level)
-        targLevel  = scripting.Observation.attribute(self.closest, Serialized.Entity.Level)
-        population = scripting.Observation.attribute(self.closest, Serialized.Entity.Population)
+        selfLevel  = self.me.attribute(Serialized.Entity.Level)
+        targLevel  = self.closest.attribute(Serialized.Entity.Level)
+        population = self.closest.attribute(Serialized.Entity.Population)
         
         if population == -1 or targLevel <= selfLevel <= 5 or selfLevel >= targLevel + 3:
            self.target     = self.closest
@@ -109,11 +110,11 @@ class Scripted(nmmo.Agent):
 
         self.closestID = None
         if self.closest is not None:
-           self.closestID = scripting.Observation.attribute(self.closest, Serialized.Entity.ID)
+           self.closestID = self.closest.attribute(Serialized.Entity.ID)
 
         self.attackerID = None
         if self.attacker is not None:
-           self.attackerID = scripting.Observation.attribute(self.attacker, Serialized.Entity.ID)
+           self.attackerID = self.attacker.attribute(Serialized.Entity.ID)
 
         self.target     = None
         self.targetID   = None
@@ -141,7 +142,7 @@ class Scripted(nmmo.Agent):
             return
 
         self.inventory   = OrderedSet()
-        self.best_items  = {}
+        self.best_items: Dict[int, Item]   = {}
         self.item_counts = defaultdict(int)
 
         self.item_levels = {
@@ -151,7 +152,7 @@ class Scripted(nmmo.Agent):
                 item.Sword: self.melee,
                 item.Bow: self.range,
                 item.Wand: self.mage,
-                item.Rod: self.fishing,
+                item.Rod: self.fishing,  
                 item.Gloves: self.herbalism,
                 item.Pickaxe: self.prospecting,
                 item.Chisel: self.carving,
@@ -161,35 +162,27 @@ class Scripted(nmmo.Agent):
                 item.Shard: self.mage}
 
 
-        self.gold = scripting.Observation.attribute(self.ob.agent, Serialized.Entity.Gold)
+        self.gold = Serialized.Entity.Gold.attr(self.me)
 
-        for item_ary in self.ob.items:
+        for item_ary in self.ob.inventory:
            itm = Item(item_ary)
-           cls = itm.cls
+           assert itm.item_class.__name__ == 'Gold' or itm.quantity != 0
 
-           assert itm.cls.__name__ == 'Gold' or itm.quantity != 0
-           #if itm.quantity == 0:
-           #   continue
-
-           self.item_counts[cls] += itm.quantity
+           self.item_counts[itm.item_type] += itm.quantity
            self.inventory.add(itm)
 
-           #Too high level to equip
-           if cls in self.item_levels and itm.level > self.item_levels[cls] :
+           # Too high level to equip
+           if itm.item_type in self.item_levels and itm.level > self.item_levels[itm.item_type]:
               continue
 
-           #Best by default
-           if cls not in self.best_items:
-              self.best_items[cls] = itm
+           # Best by default
+           if itm.item_class not in self.best_items:
+              self.best_items[itm.item_type] = itm
 
-           best_itm = self.best_items[cls]
+           best_itm = self.best_items[itm.item_type]
 
            if itm.level > best_itm.level:
-              self.best_items[cls] = itm
-
-           if __debug__:
-              err = 'Key {} must be an Item object'.format(cls)
-              assert isinstance(self.best_items[cls], Item), err
+              self.best_items[itm.item_type] = itm
 
     def upgrade_heuristic(self, current_level, upgrade_level, price):
         return (upgrade_level - current_level) / max(price, 1)
@@ -203,81 +196,81 @@ class Scripted(nmmo.Agent):
 
         for item_ary in self.ob.market:
            itm = Item(item_ary)
-           cls = itm.cls
 
            self.market.add(itm)
 
-           #Prune Unaffordable
+           # Prune Unaffordable
            if itm.price > self.gold:
               continue
 
-           #Too high level to equip
-           if cls in self.item_levels and itm.level > self.item_levels[cls] :
+           # Too high level to equip
+           if itm.item_type in self.item_levels and itm.level > self.item_levels[itm.item_type] :
               continue
 
            #Current best item level
            current_level = 0
-           if cls in self.best_items:
-               current_level = self.best_items[cls].level
+           if itm.item_type in self.best_items:
+               current_level = self.best_items[itm.item_type].level
 
            itm.heuristic = self.upgrade_heuristic(current_level, itm.level, itm.price)
 
            #Always count first item
-           if cls not in self.best_heuristic:
-               self.best_heuristic[cls] = itm
+           if itm.item_type not in self.best_heuristic:
+               self.best_heuristic[itm.item_type] = itm
                continue
 
            #Better heuristic value
-           if itm.heuristic > self.best_heuristic[cls].heuristic:
-               self.best_heuristic[cls] = itm
+           if itm.heuristic > self.best_heuristic[itm.item_type].heuristic:
+               self.best_heuristic[itm.item_type] = itm
 
     def equip(self, items: set):
-        for cls, itm in self.best_items.items():
-            if cls not in items:
+        for item_type, itm in self.best_items.items():
+            if item_type not in items:
                continue
 
             if itm.equipped:
                continue
 
-            self.actions[Action.Use] = {
-               Action.Item: itm.instance}
+            self.actions[action.Use] = {
+               action.Item: itm.instance}
            
             return True
  
     def consume(self):
         if self.health <= self.health_max // 2 and item.Poultice in self.best_items:
-            itm = self.best_items[item.Poultice]
+            itm = self.best_items[item.Poultice.ITEM_TYPE_ID]
         elif (self.food == 0 or self.water == 0) and item.Ration in self.best_items:
-            itm = self.best_items[item.Ration]
+            itm = self.best_items[item.Ration.ITEM_TYPE_ID]
         else:
             return
 
-        self.actions[Action.Use] = {
-           Action.Item: itm.instance}
+        self.actions[action.Use] = {
+           action.Item: itm.instance}
  
     def sell(self, keep_k: dict, keep_best: set):
         for itm in self.inventory:
             price = itm.level
-            cls = itm.cls
 
-            if cls == item.Gold:
+            if itm.item_class == item.Gold:
                 continue
 
             assert itm.quantity > 0
 
-            if cls in keep_k:
-                owned = self.item_counts[cls]
-                k     = keep_k[cls]
+            if itm.item_type in keep_k:
+                owned = self.item_counts[itm.item_type]
+                k     = keep_k[itm.item_type]
                 if owned <= k:
                     continue
  
             #Exists an equippable of the current class, best needs to be kept, and this is the best item
-            if cls in self.best_items and cls in keep_best and itm.instance == self.best_items[cls].instance:
+            if itm.item_type in self.best_items and \
+                itm.item_type in keep_best and \
+                itm.instance == self.best_items[itm.item_type].instance:
                 continue
 
-            self.actions[Action.Sell] = {
-                Action.Item: itm.instance,
-                Action.Price: Action.Price.edges[int(price)]}
+            self.actions[action.Sell] = {
+                action.Item: itm.instance,
+                action.Price: action.Price.edges[int(price)]}
 
             return itm
 
@@ -285,19 +278,20 @@ class Scripted(nmmo.Agent):
         if len(self.inventory) >= self.config.ITEM_INVENTORY_CAPACITY:
             return
 
+        # xcxc not used, is this a bug?
         purchase = None
         best = list(self.best_heuristic.items())
         random.shuffle(best)
-        for cls, itm in best:
-            #Buy top k
-            if cls in buy_k:
-                owned = self.item_counts[cls]
-                k     = buy_k[cls]
+        for item_type, itm in best:
+            # Buy top k
+            if item_type in buy_k:
+                owned = self.item_counts[item_type]
+                k = buy_k[item_type]
                 if owned < k:
                    purchase = itm
 
             #Check if item desired
-            if cls not in buy_upgrade:
+            if item_type not in buy_upgrade:
                 continue
 
             #Check is is an upgrade
@@ -305,8 +299,8 @@ class Scripted(nmmo.Agent):
                 continue
 
             #Buy best heuristic upgrade
-            self.actions[Action.Buy] = {
-                    Action.Item: itm.instance}
+            self.actions[action.Buy] = {
+                    action.Item: itm.instance}
 
             return itm
 
@@ -323,39 +317,35 @@ class Scripted(nmmo.Agent):
         if self.config.EQUIPMENT_SYSTEM_ENABLED and not self.consume():
             self.equip(items=self.wishlist)
 
-    def __call__(self, obs):
-        '''Process observations and return actions
-
-        Args:
-           obs: An observation object from the environment. Unpack with scripting.Observation
-        '''
+    def __call__(self, observation: Observation):
+        '''Process observations and return actions'''
         self.actions = {}
 
-        self.ob = scripting.Observation(self.config, obs)
-        agent   = self.ob.agent
+        self.ob = observation
+        self.me = observation.agent()
 
         # Time Alive
-        self.timeAlive = scripting.Observation.attribute(agent, Serialized.Entity.TimeAlive)
+        self.timeAlive = self.me.attribute(Serialized.Entity.TimeAlive)
 
         # Pos
-        self.r = scripting.Observation.attribute(agent, Serialized.Entity.R)
-        self.c = scripting.Observation.attribute(agent, Serialized.Entity.C)
+        self.r = self.me.attribute(Serialized.Entity.R)
+        self.c = self.me.attribute(Serialized.Entity.C)
 
         #Resources
-        self.health = scripting.Observation.attribute(agent, Serialized.Entity.Health)
-        self.food   = scripting.Observation.attribute(agent, Serialized.Entity.Food)
-        self.water  = scripting.Observation.attribute(agent, Serialized.Entity.Water)
+        self.health = self.me.attribute(Serialized.Entity.Health)
+        self.food   = self.me.attribute(Serialized.Entity.Food)
+        self.water  = self.me.attribute(Serialized.Entity.Water)
 
        
         #Skills
-        self.melee       = scripting.Observation.attribute(agent, Serialized.Entity.Melee)
-        self.range       = scripting.Observation.attribute(agent, Serialized.Entity.Range)
-        self.mage        = scripting.Observation.attribute(agent, Serialized.Entity.Mage)
-        self.fishing     = scripting.Observation.attribute(agent, Serialized.Entity.Fishing)
-        self.herbalism   = scripting.Observation.attribute(agent, Serialized.Entity.Herbalism)
-        self.prospecting = scripting.Observation.attribute(agent, Serialized.Entity.Prospecting)
-        self.carving     = scripting.Observation.attribute(agent, Serialized.Entity.Carving)
-        self.alchemy     = scripting.Observation.attribute(agent, Serialized.Entity.Alchemy)
+        self.melee       = self.me.attribute(Serialized.Entity.Melee)
+        self.range       = self.me.attribute(Serialized.Entity.Range)
+        self.mage        = self.me.attribute(Serialized.Entity.Mage)
+        self.fishing     = self.me.attribute(Serialized.Entity.Fishing)
+        self.herbalism   = self.me.attribute(Serialized.Entity.Herbalism)
+        self.prospecting = self.me.attribute(Serialized.Entity.Prospecting)
+        self.carving     = self.me.attribute(Serialized.Entity.Carving)
+        self.alchemy     = self.me.attribute(Serialized.Entity.Alchemy)
 
         #Combat level
         # TODO: Get this from agent properties
@@ -374,9 +364,9 @@ class Scripted(nmmo.Agent):
               skill.Alchemy: self.alchemy}
 
         if self.spawnR is None:
-            self.spawnR = scripting.Observation.attribute(agent, Serialized.Entity.R)
+            self.spawnR = self.me.attribute(Serialized.Entity.R)
         if self.spawnC is None:
-            self.spawnC = scripting.Observation.attribute(agent, Serialized.Entity.C)
+            self.spawnC = self.me.attribute(Serialized.Entity.C)
 
         # When to run from death fog in BR configs
         self.fog_criterion = None
@@ -427,7 +417,7 @@ class Combat(Scripted):
     '''Forages, fights, and explores'''
     def __init__(self, config, idx):
         super().__init__(config, idx)
-        self.style  = [Action.Melee, Action.Range, Action.Mage]
+        self.style  = [action.Melee, action.Range, action.Mage]
 
     @property
     def supplies(self):
@@ -435,7 +425,13 @@ class Combat(Scripted):
 
     @property
     def wishlist(self):
-        return {item.Hat, item.Top, item.Bottom, self.weapon, self.ammo}
+        return {
+            item.Hat.ITEM_TYPE_ID, 
+            item.Top,
+            item.Bottom, 
+            self.weapon,
+            self.ammo
+        }
 
     def __call__(self, obs):
         super().__call__(obs)
@@ -512,7 +508,7 @@ class Melee(Combat):
     def __init__(self, config, idx):
         super().__init__(config, idx)
         if config.SPECIALIZE:
-            self.style  = [Action.Melee]
+            self.style  = [action.Melee]
         self.weapon = item.Sword
         self.ammo   = item.Scrap
 
@@ -520,7 +516,7 @@ class Range(Combat):
     def __init__(self, config, idx):
         super().__init__(config, idx)
         if config.SPECIALIZE:
-            self.style  = [Action.Range]
+            self.style  = [action.Range]
         self.weapon = item.Bow
         self.ammo   = item.Shaving
 
@@ -528,6 +524,6 @@ class Mage(Combat):
     def __init__(self, config, idx):
         super().__init__(config, idx)
         if config.SPECIALIZE:
-            self.style  = [Action.Mage]
+            self.style  = [action.Mage]
         self.weapon = item.Wand
         self.ammo   = item.Shard

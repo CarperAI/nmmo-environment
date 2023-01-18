@@ -5,7 +5,9 @@ import random
 from queue import PriorityQueue, Queue
 
 import nmmo
+from nmmo.core.observation import Observation
 from nmmo.lib import material
+from nmmo.lib.datastore.datastore import ResultSet
 
 from scripted import utils
 
@@ -20,10 +22,10 @@ def inSight(dr, dc, vision):
           dr <= vision and
           dc <= vision)
 
-def vacant(tile):
+def vacant(tile: ResultSet):
    Tile     = nmmo.Serialized.Tile
-   occupied = nmmo.scripting.Observation.attribute(tile, Tile.NEnts)
-   matl     = nmmo.scripting.Observation.attribute(tile, Tile.Index)
+   occupied = tile.attribute(Tile.NEnts)
+   matl     = tile.attribute(Tile.Index)
 
    return matl in material.Habitable and not occupied
 
@@ -84,27 +86,27 @@ def explore(config, ob, actions, r, c):
    cc   = int(np.round(vision*vC/mmag))
    pathfind(config, ob, actions, rr, cc)
 
-def evade(config, ob, actions, attacker):
+def evade(config, ob: Observation, actions, attacker):
    Entity = nmmo.Serialized.Entity
 
-   sr     = nmmo.scripting.Observation.attribute(ob.agent, Entity.R)
-   sc     = nmmo.scripting.Observation.attribute(ob.agent, Entity.C)
+   sr     = ob.agent().attribute(Entity.R)
+   sc     = ob.agent().attribute(Entity.C)
 
-   gr     = nmmo.scripting.Observation.attribute(attacker, Entity.R)
-   gc     = nmmo.scripting.Observation.attribute(attacker, Entity.C)
+   gr     = ob.agent().attribute(Entity.R)
+   gc     = ob.agent().attribute(Entity.C)
 
    rr, cc = (2*sr - gr, 2*sc - gc)
 
    pathfind(config, ob, actions, rr, cc)
 
-def forageDijkstra(config, ob, actions, food_max, water_max, cutoff=100):
+def forageDijkstra(config, ob: Observation, actions, food_max, water_max, cutoff=100):
    vision = config.PLAYER_VISION_RADIUS
    Entity = nmmo.Serialized.Entity
    Tile   = nmmo.Serialized.Tile
 
-   agent  = ob.agent
-   food   = nmmo.scripting.Observation.attribute(agent, Entity.Food)
-   water  = nmmo.scripting.Observation.attribute(agent, Entity.Water)
+   agent  = ob.agent()
+   food   = agent.attribute(Entity.Food)
+   water  = agent.attribute(Entity.Water)
 
    best      = -1000 
    start     = (0, 0)
@@ -130,8 +132,8 @@ def forageDijkstra(config, ob, actions, food_max, water_max, cutoff=100):
             continue
 
          tile     = ob.tile(*nxt)
-         matl     = nmmo.scripting.Observation.attribute(tile, Tile.Index)
-         occupied = nmmo.scripting.Observation.attribute(tile, Tile.NEnts)
+         matl     = tile.attribute(Tile.Index)
+         occupied = tile.attribute(Tile.NEnts)
 
          if not vacant(tile):
             continue
@@ -147,7 +149,7 @@ def forageDijkstra(config, ob, actions, food_max, water_max, cutoff=100):
                continue
 
             tile = ob.tile(*pos)
-            matl = nmmo.scripting.Observation.attribute(tile, Tile.Index)
+            matl = tile.attribute(Tile.Index)
  
             if matl == material.Water.index:
                water = min(water+water_max//2, water_max)
@@ -169,7 +171,7 @@ def forageDijkstra(config, ob, actions, food_max, water_max, cutoff=100):
    direction = towards(goal)
    actions[nmmo.action.Move] = {nmmo.action.Direction: direction}
 
-def findResource(config, ob, resource):
+def findResource(config, ob: Observation, resource):
     vision = config.PLAYER_VISION_RADIUS
     Tile   = Stimulus.Tile
              
@@ -178,7 +180,7 @@ def findResource(config, ob, resource):
     for r in range(-vision, vision+1):
         for c in range(-vision, vision+1):
             tile = ob.tile(r, c)
-            material_index = nmmo.scripting.Observation.attribute(tile, Tile.Index)
+            material_index = tile.attribute(Tile.Index)
         
         if material_index == resource_index:
             return (r, c)
@@ -199,12 +201,11 @@ def gatherAStar(config, ob, actions, resource, cutoff=100):
     actions[nmmo.action.Move] = {nmmo.action.Direction: direction}
     return True
 
-def gatherBFS(config, ob, actions, resource, cutoff=100):
+def gatherBFS(config, ob: Observation, actions, resource, cutoff=100):
     vision = config.PLAYER_VISION_RADIUS
     Entity = nmmo.Serialized.Entity
     Tile   = nmmo.Serialized.Tile
 
-    agent  = ob.agent
     start  = (0, 0)
 
     backtrace = {start: None}
@@ -230,8 +231,7 @@ def gatherBFS(config, ob, actions, resource, cutoff=100):
                 continue
                                                        
             tile     = ob.tile(*nxt)
-            matl     = nmmo.scripting.Observation.attribute(tile, Tile.Index)
-            occupied = nmmo.scripting.Observation.attribute(tile, Tile.NEnts)
+            matl     = tile.attribute(Tile.Index)
 
             if material.Fish in resource and material.Fish.index == matl:
                 found = nxt
@@ -251,7 +251,7 @@ def gatherBFS(config, ob, actions, resource, cutoff=100):
                     continue
 
                 tile = ob.tile(*pos)
-                matl = nmmo.scripting.Observation.attribute(tile, Tile.Index)
+                matl = tile.attribute(Tile.Index)
 
                 if matl == material.Fish.index:
                     backtrace[nxt] = cur
@@ -274,7 +274,7 @@ def gatherBFS(config, ob, actions, resource, cutoff=100):
     return True
 
 
-def aStar(config, ob, actions, rr, cc, cutoff=100):
+def aStar(config, ob: Observation, actions, rr, cc, cutoff=100):
    Entity = nmmo.Serialized.Entity
    Tile   = nmmo.Serialized.Tile
    vision = config.PLAYER_VISION_RADIUS
@@ -313,8 +313,8 @@ def aStar(config, ob, actions, rr, cc, cutoff=100):
             continue
 
          tile     = ob.tile(*nxt)
-         matl     = nmmo.scripting.Observation.attribute(tile, Tile.Index)
-         occupied = nmmo.scripting.Observation.attribute(tile, Tile.NEnts)
+         matl     = tile.attribute(Tile.Index)
+         occupied = tile.attribute(Tile.NEnts)
 
          #if not vacant(tile):
          #   continue

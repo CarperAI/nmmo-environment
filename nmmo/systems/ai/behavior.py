@@ -40,26 +40,6 @@ def explore(realm, actions, entity):
    tile = realm.map.tiles[rr, cc]
    pathfind(realm, actions, entity, tile)
 
-def explore(config, ob, actions, spawnR, spawnC):
-   vision = config.NSTIM
-   sz     = config.TERRAIN_SIZE
-   Entity = nmmo.Serialized.Entity
-   Tile   = nmmo.Serialized.Tile
-
-   agent  = ob.agent
-   r      = utils.Observation.attribute(agent, Entity.R)
-   c      = utils.Observation.attribute(agent, Entity.C)
-
-   centR, centC   = sz//2, sz//2
-
-   vR, vC = centR-spawnR, centC-spawnC
-
-   mmag = max(abs(vR), abs(vC))
-   rr   = int(np.round(vision*vR/mmag))
-   cc   = int(np.round(vision*vC/mmag))
-
-   pathfind(config, ob, actions, rr, cc)
-
 def meander(realm, actions, entity):
    actions[nmmo.action.Move] = {nmmo.action.Direction: move.habitable(realm.map.tiles, entity)}
 

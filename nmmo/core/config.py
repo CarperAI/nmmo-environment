@@ -236,6 +236,7 @@ class Config(Template):
    PLAYER_DEATH_FOG_FINAL_SIZE  = 8
    '''Number of tiles from the center that the fog stops'''
 
+   # xcxc implement in realm
    RESPAWN = False
 
    PLAYER_LOADER                = spawn.SequentialLoader

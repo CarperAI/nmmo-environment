@@ -10,6 +10,7 @@ from nmmo.lib.colors import Neon
 from nmmo.systems import item as Item
 from nmmo.systems import droptable
 from nmmo.io import action as Action
+from nmmo.systems.inventory import EquipmentSlot
 
 
 class Equipment:
@@ -18,7 +19,7 @@ class Equipment:
            melee_defense, range_defense, mage_defense):
 
       self.level         = total
-      self.ammunition    = None
+      self.ammunition    = EquipmentSlot()
 
       self.melee_attack  = melee_attack
       self.range_attack  = range_attack
@@ -147,7 +148,6 @@ class NPC(entity.Entity):
 class Passive(NPC):
    def __init__(self, realm, pos, iden):
       super().__init__(realm, pos, iden, 'Passive', Neon.GREEN, -1)
-      self.dataframe.init(nmmo.Serialized.Entity, iden, pos)
 
    def decide(self, realm):
       return ai.policy.passive(realm, self)
@@ -155,7 +155,6 @@ class Passive(NPC):
 class PassiveAggressive(NPC):
    def __init__(self, realm, pos, iden):
       super().__init__(realm, pos, iden, 'Neutral', Neon.ORANGE, -2)
-      self.dataframe.init(nmmo.Serialized.Entity, iden, pos)
 
    def decide(self, realm):
       return ai.policy.neutral(realm, self)
@@ -163,7 +162,6 @@ class PassiveAggressive(NPC):
 class Aggressive(NPC):
    def __init__(self, realm, pos, iden):
       super().__init__(realm, pos, iden, 'Hostile', Neon.RED, -3)
-      self.dataframe.init(nmmo.Serialized.Entity, iden, pos)
 
    def decide(self, realm):
       return ai.policy.hostile(realm, self)

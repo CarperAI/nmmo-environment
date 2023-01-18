@@ -1,26 +1,27 @@
+from functools import lru_cache
 from pdb import set_trace as T
 import numpy as np
 
 import nmmo
+from nmmo.lib.serialized import SerializedAttributeDef as Attr, SerializedState
 from nmmo.lib import material
 
-class Tile:
+TileState = SerializedState.subclass(
+   "Tile", lambda config: [
+      Attr("r", max=config.MAP_SIZE-1),
+      Attr("c", max=config.MAP_SIZE-1),
+      Attr("entity_id"),
+      Attr("material_id", max=config.MAP_N_TILE)
+   ])
+   
+class Tile(TileState):
    def __init__(self, config, realm, r, c):
+      super().__init__(realm.datastore, config)
       self.config = config
       self.realm  = realm
 
-      self.serialized = 'R{}-C{}'.format(r, c)
-
-      self.r     = nmmo.Serialized.Tile.R(realm.dataframe, self.serial, r)
-      self.c     = nmmo.Serialized.Tile.C(realm.dataframe, self.serial, c)
-      self.nEnts = nmmo.Serialized.Tile.NEnts(realm.dataframe, self.serial)
-      self.index = nmmo.Serialized.Tile.Index(realm.dataframe, self.serial, 0)
-
-      realm.dataframe.init(nmmo.Serialized.Tile, self.serial, (r, c))
-
-   @property
-   def serial(self):
-      return self.serialized
+      self.r.update(r)
+      self.c.update(c)
 
    @property
    def repr(self):
@@ -32,11 +33,11 @@ class Tile:
 
    @property
    def habitable(self):
-      return self.mat in material.Habitable
+      return self.material in material.Habitable
 
    @property
    def vacant(self):
-      return len(self.ents) == 0 and self.habitable
+      return self.entity_id.val == 0 and self.habitable
 
    @property
    def occupied(self):
@@ -44,11 +45,11 @@ class Tile:
 
    @property
    def impassible(self):
-      return self.mat in material.Impassible
+      return self.material in material.Impassible
 
    @property
    def lava(self):
-      return self.mat == material.Lava
+      return self.material == material.Lava
 
    def reset(self, mat, config):
       self.state  = mat(config)
@@ -56,20 +57,17 @@ class Tile:
 
       self.depleted = False
       self.tex      = mat.tex
-      self.ents     = {}
 
-      self.nEnts.update(0)
-      self.index.update(self.state.index)
+      self.entity_id.update(0)
+      self.material_id.update(self.state.index)
  
    def addEnt(self, ent):
-      assert ent.entID not in self.ents
-      self.nEnts.update(1)
-      self.ents[ent.entID] = ent
+      assert self.entity_id.val == 0
+      self.entity_id.update(ent.entID)
 
    def delEnt(self, entID):
-      assert entID in self.ents
-      self.nEnts.update(0)
-      del self.ents[entID]
+      assert self.entity_id.val == entID
+      self.entity_id.update(0)
 
    def step(self):
       if not self.depleted or np.random.rand() > self.mat.respawn:
@@ -78,7 +76,7 @@ class Tile:
       self.depleted = False
       self.state = self.mat
 
-      self.index.update(self.state.index)
+      self.material_id.update(self.state.index)
 
    def harvest(self, deplete):
       if __debug__:
@@ -88,6 +86,6 @@ class Tile:
       if deplete:
           self.depleted = True
           self.state    = self.mat.deplete(self.config)
-          self.index.update(self.state.index)
+          self.material_id.update(self.state.index)
 
       return self.mat.harvest()

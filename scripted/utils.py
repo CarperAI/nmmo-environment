@@ -1,6 +1,7 @@
 from pdb import set_trace as T
 
 import nmmo
+from nmmo.core.observation import Observation
 from nmmo.lib import material
 
 def l1(start, goal):
@@ -32,10 +33,10 @@ def inSight(dr, dc, vision):
           dr <= vision and
           dc <= vision)
 
-def vacant(tile):
+def vacant(tile: Observation):
    Tile     = nmmo.Serialized.Tile
-   occupied = nmmo.scripting.Observation.attribute(tile, Tile.NEnts)
-   matl     = nmmo.scripting.Observation.attribute(tile, Tile.Index)
+   occupied = tile.attribute(Tile.NEnts)
+   matl     = tile.attribute(Tile.Index)
 
    lava    = material.Lava.index
    water   = material.Water.index

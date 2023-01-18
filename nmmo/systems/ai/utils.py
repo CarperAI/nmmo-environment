@@ -39,6 +39,7 @@ def closestTarget(ent, tiles, rng=1):
    sr, sc = ent.base.pos
    for d in range(rng+1):
       for r in range(-d, d+1):
+         # xcxc ents.values is gone
          for e in tiles[sr+r, sc-d].ents.values():
             if e is not ent and validTarget(ent, e, rng): return e
 
