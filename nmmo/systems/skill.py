@@ -1,11 +1,10 @@
+from __future__ import annotations
 from pdb import set_trace as T
 import numpy as np
 
 from ordered_set import OrderedSet
 import logging
 import abc
-
-from nmmo.io.stimulus import Serialized
 from nmmo.systems import experience, combat, ai
 from nmmo.lib import material
 
@@ -197,17 +196,17 @@ class Skills(Basic, Harvest, Combat):
 ### Skills ###
 class Melee(CombatSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Melee(ent.dataframe, ent.entID)
+        self.level = ent.melee_level
         super().__init__(realm, ent, skillGroup)
 
 class Range(CombatSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Range(ent.dataframe, ent.entID)
+        self.level = ent.range_level
         super().__init__(realm, ent, skillGroup)
 
 class Mage(CombatSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Mage(ent.dataframe, ent.entID)
+        self.level = ent.mage_level
         super().__init__(realm, ent, skillGroup)
 
 Melee.weakness = Mage
@@ -237,7 +236,7 @@ class Water(HarvestSkill):
 
         depletion = config.RESOURCE_DEPLETION_RATE
         water = entity.resources.water
-        water.decrement(depletion)
+        water.decrement(depletion, 0)
 
         if self.config.IMMORTAL:
          return
@@ -248,7 +247,7 @@ class Water(HarvestSkill):
 
         restore = np.floor(config.RESOURCE_BASE
                          * config.RESOURCE_HARVEST_RESTORE_FRACTION)
-        water.increment(restore)
+        water.increment(restore, config.RESOURCE_BASE)
 
 class Food(HarvestSkill):
     def __init__(self, realm, entity, skillGroup):
@@ -262,18 +261,18 @@ class Food(HarvestSkill):
 
         depletion = config.RESOURCE_DEPLETION_RATE
         food = entity.resources.food
-        food.decrement(depletion)
+        food.decrement(depletion, 0)
 
         if not self.harvest(realm, entity, material.Forest):
             return
 
         restore = np.floor(config.RESOURCE_BASE
                          * config.RESOURCE_HARVEST_RESTORE_FRACTION)
-        food.increment(restore)
+        food.increment(restore, config.RESOURCE_BASE)
 
 class Fishing(ConsumableSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Fishing(ent.dataframe, ent.entID)
+        self.level = ent.fishing_level
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):
@@ -281,7 +280,7 @@ class Fishing(ConsumableSkill):
 
 class Herbalism(ConsumableSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Herbalism(ent.dataframe, ent.entID)
+        self.level = ent.herbalism_level
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):
@@ -289,7 +288,7 @@ class Herbalism(ConsumableSkill):
 
 class Prospecting(AmmunitionSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Prospecting(ent.dataframe, ent.entID)
+        self.level = ent.prospecting_level
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):
@@ -297,7 +296,7 @@ class Prospecting(AmmunitionSkill):
 
 class Carving(AmmunitionSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Carving(ent.dataframe, ent.entID)
+        self.level = ent.carving_level
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):
@@ -305,7 +304,7 @@ class Carving(AmmunitionSkill):
 
 class Alchemy(AmmunitionSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Alchemy(ent.dataframe, ent.entID)
+        self.level = ent.alchemy_level
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):

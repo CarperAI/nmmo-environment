@@ -103,7 +103,7 @@ class Action(Node):
       return edges
 
    def args(stim, entity, config):
-      return nmmo.Serialized.edges 
+      raise NotImplementedError
 
 class Move(Node):
    priority = 1
@@ -117,15 +117,12 @@ class Move(Node):
       
       #One agent per cell
       tile = env.map.tiles[rNew, cNew] 
-      if tile.occupied and not tile.lava:
-         return
 
       if entity.status.freeze > 0:
          return
 
-      env.dataframe.move(nmmo.Serialized.Entity, entID, (r, c), (rNew, cNew))
-      entity.base.r.update(rNew)
-      entity.base.c.update(cNew)
+      entity.r.update(rNew)
+      entity.c.update(cNew)
 
       env.map.tiles[r, c].delEnt(entID)
       env.map.tiles[rNew, cNew].addEnt(entity)
@@ -186,7 +183,7 @@ class Attack(Node):
       rets = OrderedSet([entity])
       for r in range(R-N, R+N+1):
          for c in range(C-N, C+N+1):
-            for e in stim[r, c].ents.values():
+            for e in stim[r, c].entities.values():
                rets.add(e)
 
       rets = list(rets)
@@ -205,7 +202,7 @@ class Attack(Node):
 
       # Testing a spawn immunity against old agents to avoid spawn camping
       immunity = config.COMBAT_SPAWN_IMMUNITY
-      if entity.isPlayer and targ.isPlayer and entity.history.timeAlive.val > immunity and targ.history.timeAlive < immunity:
+      if entity.isPlayer and targ.isPlayer and entity.history.time_alive.val > immunity and targ.history.time_alive < immunity:
          return
 
       #Check if self targeted
@@ -213,13 +210,13 @@ class Attack(Node):
          return
 
       #ADDED: POPULATION IMMUNITY
-      if not config.COMBAT_FRIENDLY_FIRE and entity.isPlayer and entity.base.population.val == targ.base.population.val:
+      if not config.COMBAT_FRIENDLY_FIRE and entity.isPlayer and entity.population_id.val == targ.population_id.val:
          return
 
       #Check attack range
       rng     = style.attackRange(config)
-      start   = np.array(entity.base.pos)
-      end     = np.array(targ.base.pos)
+      start   = np.array(entity.pos)
+      end     = np.array(targ.pos)
       dif     = np.max(np.abs(start - end))
 
       #Can't attack same cell or out of range
@@ -231,7 +228,7 @@ class Attack(Node):
       entity.history.attack['target'] = targ.entID
       entity.history.attack['style'] = style.__name__
       targ.attacker = entity
-      targ.attackerID.update(entity.entID)
+      targ.attacker_id.update(entity.entID)
 
       from nmmo.systems import combat
       dmg = combat.attack(env, entity, targ, style.skill)
@@ -362,7 +359,7 @@ class Buy(Node):
         if not entity.inventory.space:
             return
 
-        return env.exchange.buy(env, entity, item)
+        return env.exchange.buy(entity, item)
 
 class Sell(Node):
     priority = 4
@@ -386,7 +383,7 @@ class Sell(Node):
         if type(price) != int:
             price = price.val
 
-        return env.exchange.sell(env, entity, item, price)
+        return env.exchange.sell(entity, item, price, env.tick)
 
 def init_discrete(values):
     classes = []
@@ -433,7 +430,7 @@ class Comm(Node):
         return [Token]
 
     def call(env, entity, token):
-        entity.base.comm.update(token.val)
+        entity.message.update(token.val)
 
 #TODO: Solve AGI
 class BecomeSkynet:

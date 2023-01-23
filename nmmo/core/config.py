@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from pdb import set_trace as T
 import numpy as np
 import os
 
 import nmmo
+from nmmo.core.terrain import MapGenerator
 from nmmo.lib import utils, material, spawn
 
 
@@ -236,8 +239,6 @@ class Config(Template):
    PLAYER_DEATH_FOG_FINAL_SIZE  = 8
    '''Number of tiles from the center that the fog stops'''
 
-   RESPAWN = False
-
    PLAYER_LOADER                = spawn.SequentialLoader
    '''Agent loader class specifying spawn sampling'''
 
@@ -283,7 +284,7 @@ class Config(Template):
    def MAP_SIZE(self):
       return int(self.MAP_CENTER + 2*self.MAP_BORDER)
 
-   MAP_GENERATOR                = None
+   MAP_GENERATOR                = MapGenerator
    '''Specifies a user map generator. Uses default generator if unspecified.'''
 
    MAP_FORCE_GENERATION         = True
@@ -616,6 +617,8 @@ class Exchange:
 
    EXCHANGE_SYSTEM_ENABLED             = True
    '''Game system flag'''
+
+   EXCHANGE_LISTING_DURATION           = 5
 
    @property
    def EXCHANGE_N_OBS(self):

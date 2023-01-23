@@ -24,7 +24,7 @@ class Map:
 
       for r in range(sz):
          for c in range(sz):
-            self.tiles[r, c] = core.Tile(config, realm, r, c)
+            self.tiles[r, c] = core.Tile(realm, r, c)
 
    @property
    def packet(self):

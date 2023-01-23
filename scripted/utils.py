@@ -1,6 +1,7 @@
 from pdb import set_trace as T
 
 import nmmo
+from nmmo.core.observation import Observation
 from nmmo.lib import material
 
 def l1(start, goal):
@@ -31,18 +32,3 @@ def inSight(dr, dc, vision):
           dc >= -vision and
           dr <= vision and
           dc <= vision)
-
-def vacant(tile):
-   Tile     = nmmo.Serialized.Tile
-   occupied = nmmo.scripting.Observation.attribute(tile, Tile.NEnts)
-   matl     = nmmo.scripting.Observation.attribute(tile, Tile.Index)
-
-   lava    = material.Lava.index
-   water   = material.Water.index
-   grass   = material.Grass.index
-   scrub   = material.Scrub.index
-   forest  = material.Forest.index
-   stone   = material.Stone.index
-   orerock = material.Orerock.index
-
-   return matl in (grass, scrub, forest) and not occupied

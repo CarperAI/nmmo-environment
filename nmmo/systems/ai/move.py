@@ -9,7 +9,7 @@ def rand():
    return random.choice(nmmo.action.Direction.edges)
 
 def randomSafe(tiles, ent):
-   r, c  = ent.base.pos
+   r, c  = ent.pos
    cands = []
    if not tiles[r-1, c].lava:
       cands.append(nmmo.action.North)
@@ -23,15 +23,15 @@ def randomSafe(tiles, ent):
    return rand.choice(cands)
 
 def habitable(tiles, ent):
-   r, c  = ent.base.pos
+   r, c  = ent.pos
    cands = []
-   if tiles[r-1, c].vacant:
+   if tiles[r-1, c].habitable:
       cands.append(nmmo.action.North)
-   if tiles[r+1, c].vacant:
+   if tiles[r+1, c].habitable:
       cands.append(nmmo.action.South)
-   if tiles[r, c-1].vacant:
+   if tiles[r, c-1].habitable:
       cands.append(nmmo.action.West)
-   if tiles[r, c+1].vacant:
+   if tiles[r, c+1].habitable:
       cands.append(nmmo.action.East)
    
    if len(cands) == 0:

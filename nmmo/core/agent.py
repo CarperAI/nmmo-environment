@@ -3,7 +3,6 @@ from pdb import set_trace as T
 from nmmo.lib import colors
 
 class Agent:
-    scripted = False
     policy   = 'Neural'
 
     color    = colors.Neon.CYAN

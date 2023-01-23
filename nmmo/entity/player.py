@@ -1,9 +1,4 @@
-import numpy as np
-from pdb import set_trace as T
 
-import nmmo
-from nmmo.systems import ai, equipment, inventory
-from nmmo.lib import material
 
 from nmmo.systems.skill import Skills
 from nmmo.systems.achievement import Diary
@@ -20,8 +15,6 @@ class Player(entity.Entity):
 
       # Scripted hooks
       self.target = None
-      self.food   = None
-      self.water  = None
       self.vision = 7
 
       # Logs
@@ -40,11 +33,9 @@ class Player(entity.Entity):
       if tasks:
           self.diary = Diary(tasks)
 
-      self.dataframe.init(nmmo.Serialized.Entity, self.entID, self.pos)
-
    @property
    def serial(self):
-      return self.population, self.entID
+      return self.population_id, self.entID
 
    @property
    def isPlayer(self) -> bool:
@@ -53,7 +44,7 @@ class Player(entity.Entity):
    @property
    def population(self):
       if __debug__:
-          assert self.base.population.val == self.pop
+          assert self.population_id.val == self.pop
       return self.pop
 
    @property
@@ -74,7 +65,7 @@ class Player(entity.Entity):
       if not self.config.ITEM_SYSTEM_ENABLED:
           return False
 
-      for item in list(self.inventory._item_references):
+      for item in list(self.inventory._items):
           if not item.quantity.val:
               continue
 
@@ -83,7 +74,7 @@ class Player(entity.Entity):
 
       if not super().receiveDamage(source, dmg):
          if source:
-            source.history.playerKills += 1
+            source.history.player_kills += 1
          return 
 
       self.skills.receiveDamage(dmg)
@@ -98,7 +89,6 @@ class Player(entity.Entity):
       data['entID']     = self.entID
       data['annID']     = self.population
 
-      data['base']      = self.base.packet()
       data['resource']  = self.resources.packet()
       data['skills']    = self.skills.packet()
       data['inventory'] = self.inventory.packet()
@@ -135,7 +125,7 @@ class Player(entity.Entity):
       if not self.alive:
          return
 
-      self.resources.update(realm, self, actions)
+      self.resources.update()
       self.skills.update(realm, self)
 
       if self.diary:

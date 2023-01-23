@@ -5,6 +5,8 @@ maps/
 # local replay file from tests/test_deterministic_replay.py
 tests/replay_local*.pickle
 
+.vscode
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -2,7 +2,6 @@ from pdb import set_trace as T
 import numpy as np
 
 import nmmo
-from nmmo import scripting
 from nmmo.systems.ai import move, attack, utils
 
 def update(entity):
@@ -24,26 +23,6 @@ def update(entity):
       
 def pathfind(config, ob, actions, rr, cc):
    actions[nmmo.action.Move]   = {nmmo.action.Direction: move.pathfind(config, ob, actions, rr, cc)}
-
-def explore(config, ob, actions, spawnR, spawnC):
-   vision = config.NSTIM
-   sz     = config.TERRAIN_SIZE
-   Entity = nmmo.Serialized.Entity
-   Tile   = nmmo.Serialized.Tile
-
-   agent  = ob.agent
-   r      = scripting.Observation.attribute(agent, Entity.R)
-   c      = scripting.Observation.attribute(agent, Entity.C)
-
-   centR, centC   = sz//2, sz//2
-
-   vR, vC = centR-spawnR, centC-spawnC
-
-   mmag = max(abs(vR), abs(vC))
-   rr   = int(np.round(vision*vR/mmag))
-   cc   = int(np.round(vision*vC/mmag))
-
-   pathfind(config, ob, actions, rr, cc)
 
 def meander(realm, actions, entity):
    actions[nmmo.action.Move] = {nmmo.action.Direction: move.habitable(realm.map.tiles, entity)}

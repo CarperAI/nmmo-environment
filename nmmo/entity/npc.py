@@ -1,15 +1,13 @@
-from pdb import set_trace as T
-import numpy as np
 
 import random
 
-import nmmo
 from nmmo.entity import entity
-from nmmo.systems import combat, equipment, ai, combat, skill
+from nmmo.systems import ai, combat, combat, skill
 from nmmo.lib.colors import Neon
 from nmmo.systems import item as Item
 from nmmo.systems import droptable
 from nmmo.io import action as Action
+from nmmo.systems.inventory import EquipmentSlot
 
 
 class Equipment:
@@ -18,7 +16,7 @@ class Equipment:
            melee_defense, range_defense, mage_defense):
 
       self.level         = total
-      self.ammunition    = None
+      self.ammunition    = EquipmentSlot()
 
       self.melee_attack  = melee_attack
       self.range_attack  = range_attack
@@ -59,14 +57,14 @@ class NPC(entity.Entity):
       if not self.alive:
          return
 
-      self.resources.health.increment(1)
+      self.resources.health.increment(1, self.config.BASE_HEALTH)
       self.lastAction = actions
 
    def receiveDamage(self, source, dmg):
        if super().receiveDamage(source, dmg):
            return True
 
-       for item in self.droptable.roll(self.realm, self.level):
+       for item in self.droptable.roll(self.realm, self.attack_level):
            if source.inventory.space:
                source.inventory.receive(item)
 
@@ -108,7 +106,7 @@ class NPC(entity.Entity):
 
       # Gold
       if config.EXCHANGE_SYSTEM_ENABLED:
-          ent.inventory.gold.quantity.update(level)
+          ent.gold.update(level)
 
       ent.droptable = droptable.Standard()
 
@@ -134,7 +132,6 @@ class NPC(entity.Entity):
    def packet(self):
       data = super().packet()
 
-      data['base']     = self.base.packet()      
       data['skills']   = self.skills.packet()      
       data['resource'] = {'health': self.resources.health.packet()}
 
@@ -147,7 +144,6 @@ class NPC(entity.Entity):
 class Passive(NPC):
    def __init__(self, realm, pos, iden):
       super().__init__(realm, pos, iden, 'Passive', Neon.GREEN, -1)
-      self.dataframe.init(nmmo.Serialized.Entity, iden, pos)
 
    def decide(self, realm):
       return ai.policy.passive(realm, self)
@@ -155,7 +151,6 @@ class Passive(NPC):
 class PassiveAggressive(NPC):
    def __init__(self, realm, pos, iden):
       super().__init__(realm, pos, iden, 'Neutral', Neon.ORANGE, -2)
-      self.dataframe.init(nmmo.Serialized.Entity, iden, pos)
 
    def decide(self, realm):
       return ai.policy.neutral(realm, self)
@@ -163,7 +158,6 @@ class PassiveAggressive(NPC):
 class Aggressive(NPC):
    def __init__(self, realm, pos, iden):
       super().__init__(realm, pos, iden, 'Hostile', Neon.RED, -3)
-      self.dataframe.init(nmmo.Serialized.Entity, iden, pos)
 
    def decide(self, realm):
       return ai.policy.hostile(realm, self)

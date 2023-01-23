@@ -24,14 +24,9 @@ def create_config(base, *systems):
 def benchmark_config(benchmark, base, nent, *systems):
     conf = create_config(base, *systems)
     conf.PLAYER_N = nent
+    conf.PLAYERS = [nmmo.agent.Random]
 
     env = nmmo.Env(conf)
-    env.reset()
-
-    benchmark(env.step, actions={})
-
-def benchmark_env(benchmark, env, nent):
-    env.config.PLAYER_N = nent
     env.reset()
 
     benchmark(env.step, actions={})
@@ -100,6 +95,12 @@ def test_fps_all_med_100_pop(benchmark):
 
 
 '''
+def benchmark_env(benchmark, env, nent):
+    env.config.PLAYER_N = nent
+    env.config.PLAYERS = [nmmo.agent.Random]
+    env.reset()
+
+    benchmark(env.step, actions={})
 # Reuse large maps since we aren't benchmarking the reset function
 def test_large_env_creation(benchmark):
     benchmark(lambda: nmmo.Env(Large()))

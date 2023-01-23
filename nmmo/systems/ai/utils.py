@@ -24,8 +24,8 @@ def validResource(ent, tile, rng):
 
 
 def directionTowards(ent, targ):
-   sr, sc = ent.base.pos
-   tr, tc = targ.base.pos
+   sr, sc = ent.pos
+   tr, tc = targ.pos
 
    if abs(sc - tc) > abs(sr - tr):
       direction = (0, np.sign(tc - sc))
@@ -36,19 +36,19 @@ def directionTowards(ent, targ):
 
 
 def closestTarget(ent, tiles, rng=1):
-   sr, sc = ent.base.pos
+   sr, sc = ent.pos
    for d in range(rng+1):
       for r in range(-d, d+1):
-         for e in tiles[sr+r, sc-d].ents.values():
+         for e in tiles[sr+r, sc-d].entities.values():
             if e is not ent and validTarget(ent, e, rng): return e
 
-         for e in tiles[sr + r, sc + d].ents.values():
+         for e in tiles[sr + r, sc + d].entities.values():
             if e is not ent and validTarget(ent, e, rng): return e
 
-         for e in tiles[sr - d, sc + r].ents.values():
+         for e in tiles[sr - d, sc + r].entities.values():
             if e is not ent and validTarget(ent, e, rng): return e
 
-         for e in tiles[sr + d, sc + r].ents.values():
+         for e in tiles[sr + d, sc + r].entities.values():
             if e is not ent and validTarget(ent, e, rng): return e
 
 def distance(ent, targ):
@@ -79,31 +79,8 @@ def inSight(dr, dc, vision):
           dr <= vision and
           dc <= vision)
 
-def vacant(tile):
-   from nmmo.io.stimulus.static import Stimulus
-   Tile     = Stimulus.Tile
-   occupied = Observation.attribute(tile, Tile.NEnts)
-   matl     = Observation.attribute(tile, Tile.Index)
-
-   lava    = material.Lava.index
-   water   = material.Water.index
-   grass   = material.Grass.index
-   scrub   = material.Scrub.index
-   forest  = material.Forest.index
-   stone   = material.Stone.index
-   orerock = material.Orerock.index
-
-   return matl in (grass, scrub, forest) and not occupied
-
 def meander(obs):
-   from nmmo.io.stimulus.static import Stimulus
-
    agent  = obs.agent
-   Entity = Stimulus.Entity
-   Tile   = Stimulus.Tile
-
-   r = Observation.attribute(agent, Entity.R)
-   c = Observation.attribute(agent, Entity.C)
 
    cands = []
    if vacant(obs.tile(-1, 0)):
@@ -164,8 +141,6 @@ def aStar(tiles, start, goal, cutoff=100):
       for nxt in adjacentPos(cur):
          if not inBounds(*nxt, tiles.shape):
             continue
-         if tiles[nxt].occupied:
-            continue
 
          newCost = cost[cur] + 1
          if nxt not in cost or newCost < cost[nxt]:
@@ -194,7 +169,7 @@ def aStar(tiles, start, goal, cutoff=100):
 
 # Adjacency functions
 def adjacentTiles(tiles, ent):
-   r, c = ent.base.pos
+   r, c = ent.pos
 
 
 def adjacentDeltas():
