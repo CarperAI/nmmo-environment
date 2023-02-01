@@ -1,8 +1,11 @@
 import unittest
+
+import numpy as np
+
 import nmmo
 from nmmo.lib.datastore.numpy_datastore import NumpyDatastore
 from nmmo.systems.item import Hat, ItemState
-import numpy as np
+
 
 class MockRealm:
   def __init__(self):
@@ -11,6 +14,7 @@ class MockRealm:
     self.items = {}
     self.datastore.register_object_type("Item", ItemState.State.num_attributes)
 
+# pylint: disable=no-member
 class TestItem(unittest.TestCase):
   def test_item(self):
     realm = MockRealm()
@@ -36,10 +40,10 @@ class TestItem(unittest.TestCase):
     hat_2.owner_id.update(1)
 
     np.testing.assert_array_equal(
-      ItemState.Query.owned_by(realm.datastore, 1)[:,0], 
+      ItemState.Query.owned_by(realm.datastore, 1)[:,0],
       [hat_1.id.val, hat_2.id.val])
 
     self.assertEqual(Hat.Query.owned_by(realm.datastore, 2).size, 0)
 
 if __name__ == '__main__':
-    unittest.main()
+  unittest.main()

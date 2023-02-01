@@ -11,9 +11,10 @@ class MockRealm:
     self.config = nmmo.config.Small()
 
 class MockEntity():
-  def __init__(self, id):
-    self.ent_id = id
+  def __init__(self, ent_id):
+    self.ent_id = ent_id
 
+# pylint: disable=no-member
 class TestTile(unittest.TestCase):
   def test_tile(self):
     mock_realm = MockRealm()
@@ -36,4 +37,4 @@ class TestTile(unittest.TestCase):
     self.assertEqual(tile.material_id.val, material.Scrub.index)
 
 if __name__ == '__main__':
-    unittest.main()
+  unittest.main()

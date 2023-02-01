@@ -76,42 +76,30 @@ class Observation:
   def to_gym(self):
     '''Convert the observation to a format that can be used by OpenAI Gym'''
 
-    # TODO: The padding slows things down significantly.
-    # maybe there's a better way?
-
-    # gym_obs = {
-    #   "Tile": self.tiles,
-    #   "Entity": self.entities.values,
-    # }
-    # if self.config.ITEM_SYSTEM_ENABLED:
-    #   gym_obs["Inventory"] = self.inventory.values
-
-    # if self.config.EXCHANGE_SYSTEM_ENABLED:
-    #   gym_obs["Market"] = self.market.values
-    # return gym_obs
-
     gym_obs = {
-      "Tile": np.pad(
+      "Tile": np.vstack([
         self.tiles,
-        [(0, self.config.MAP_N_OBS - self.tiles.shape[0]), (0, 0)],
-        mode="constant"),
-
-      "Entity": np.pad(
-        self.entities.values,
-        [(0, self.config.PLAYER_N_OBS - self.entities.values.shape[0]), (0, 0)],
-        mode="constant")
+        np.zeros((self.config.MAP_N_OBS - self.tiles.shape[0], self.tiles.shape[1]))
+      ]),
+      "Entity": np.vstack([
+        self.entities.values, np.zeros((
+          self.config.PLAYER_N_OBS - self.entities.values.shape[0],
+          self.entities.values.shape[1]))
+      ]),
     }
 
     if self.config.ITEM_SYSTEM_ENABLED:
-      gym_obs["Inventory"] = np.pad(
-        self.inventory.values,
-        [(0, self.config.ITEM_N_OBS - self.inventory.values.shape[0]), (0, 0)],
-        mode="constant")
+      gym_obs["Inventory"] = np.vstack([
+        self.inventory.values, np.zeros((
+          self.config.ITEM_N_OBS - self.inventory.values.shape[0],
+          self.inventory.values.shape[1]))
+      ])
 
     if self.config.EXCHANGE_SYSTEM_ENABLED:
-      gym_obs["Market"] = np.pad(
-        self.market.values,
-        [(0, self.config.EXCHANGE_N_OBS - self.market.values.shape[0]), (0, 0)],
-        mode="constant")
+      gym_obs["Market"] = np.vstack([
+        self.market.values, np.zeros((
+          self.config.EXCHANGE_N_OBS - self.market.values.shape[0],
+          self.market.values.shape[1]))
+      ])
 
     return gym_obs

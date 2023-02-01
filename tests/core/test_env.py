@@ -90,12 +90,11 @@ class TestEnv(unittest.TestCase):
     # Make sure that we see entities IFF they are in our vision radius
     row = realm.players.entities[player_id].row.val
     col = realm.players.entities[player_id].col.val
+    rad = realm.config.PLAYER_VISION_RADIUS
     visible_entities = {
       e for r, c, e in entity_locations
-      if r >= row - realm.config.PLAYER_VISION_RADIUS
-      and c >= col - realm.config.PLAYER_VISION_RADIUS
-      and r <= row + realm.config.PLAYER_VISION_RADIUS
-      and c <= col + realm.config.PLAYER_VISION_RADIUS
+      if row - rad <= r <= row + rad
+      and c >= col - rad <= c <= col + rad
     }
     self.assertSetEqual(visible_entities, observed_entities,
       f"Mismatch between observed: {observed_entities} " \

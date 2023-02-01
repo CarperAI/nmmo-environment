@@ -12,9 +12,18 @@ fi
 git_status=$(git status --porcelain)
 
 if [ -n "$git_status" ]; then
-  echo "You have uncommitted changes. Please commit or stash them before running 'git pr'."
-  exit 1
+  read -p "Uncommitted changes found. Commit before running 'git pr'? (y/n) " ans
+  if [ "$ans" = "y" ]; then
+    git commit -m -a "Automatic commit for git-pr"
+  else
+    echo "Please commit or stash changes before running 'git pr'."
+    exit 1
+  fi
 fi
+
+# Merging master
+echo "Merging master..."
+git merge origin/$MASTER_BRANCH
 
 # check if there are any "xcxc" strings in the code
 files=$(find . -name '*.py')
@@ -33,20 +42,21 @@ if ! pytest; then
 fi
 
 echo "Running linter..."
-if ! pylint --rcfile=pylint.cfg --fail-under=10 nmmo tests; then
+if ! pylint --recursive=y --rcfile=pylint.cfg --fail-under=10 nmmo tests; then
     echo "Lint failed. Exiting."
     exit 1
 fi
 
 # create a new branch from current branch and reset to master
 echo "Creating and switching to new topic branch..."
-branch_name="git-pr-$RANDOM-$RANDOM"
+git_user=$(git config user.email | cut -d'@' -f1)
+branch_name="${git_user}-git-pr-$RANDOM-$RANDOM"
 git checkout -b $branch_name
-git reset --soft $MASTER_BRANCH
+git reset --soft origin/$MASTER_BRANCH
 
 # Verify that a commit message was added
 echo "Verifying commit message..."
-if ! git commit ; then
+if ! git commit -a ; then
     echo "Commit message is empty. Exiting."
     exit 1
 fi

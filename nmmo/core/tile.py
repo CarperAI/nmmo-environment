@@ -25,6 +25,7 @@ TileState.Query = SimpleNamespace(
     r, c, radius),
 )
 
+# pylint: disable=no-member
 class Tile(TileState):
   def __init__(self, realm, r, c):
     super().__init__(realm.datastore, TileState.Limits(realm.config))
