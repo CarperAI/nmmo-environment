@@ -56,7 +56,7 @@ class Player(entity.Entity):
     super().apply_damage(dmg, style)
     self.skills.apply_damage(style)
 
-  # xcxc what's going on?
+  # TODO(daveey): The returns for this function are a mess
   def receive_damage(self, source, dmg):
     if self.immortal:
       return False
