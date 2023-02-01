@@ -1,5 +1,5 @@
 #Various utilities for managing combat, including hit/damage
-
+# pylint: disable=all
 
 import numpy as np
 
@@ -72,7 +72,8 @@ def attack(realm, player, target, skillFn):
     skill_offense     = base_damage + level_damage * skill.level.val
 
     if config.PROGRESSION_SYSTEM_ENABLED:
-        skill_defense     = config.PROGRESSION_BASE_DEFENSE  + config.PROGRESSION_LEVEL_DEFENSE*level(target.skills)
+        skill_defense     = config.PROGRESSION_BASE_DEFENSE  + \
+            config.PROGRESSION_LEVEL_DEFENSE*level(target.skills)
     else:
         skill_defense     = 0
 
@@ -90,31 +91,28 @@ def attack(realm, player, target, skillFn):
     #damage  = multiplier * (offense - defense)
     damage  = max(int(damage), 0)
 
-    if player.isPlayer:
+    if player.is_player:
         realm.log_milestone(f'Damage_{skill_name}', damage,
                             f'COMBAT: Inflicted {damage} {skill_name} damage ' +
                             f'(lvl {player.equipment.total(lambda e: e.level)} vs' +
                             f'lvl {target.equipment.total(lambda e: e.level)})')
 
-    player.applyDamage(damage, skill.__class__.__name__.lower())
-    target.receiveDamage(player, damage)
+    player.apply_damage(damage, skill.__class__.__name__.lower())
+    target.receive_damage(player, damage)
 
     return damage
 
 
-def danger(config, pos, full=False):
+def danger(config, pos):
    border = config.MAP_BORDER
    center = config.MAP_CENTER
    r, c   = pos
-  
+
    #Distance from border
    rDist  = min(r - border, center + border - r - 1)
    cDist  = min(c - border, center + border - c - 1)
    dist   = min(rDist, cDist)
    norm   = 2 * dist / center
-
-   if full:
-      return norm, mag
 
    return norm
 

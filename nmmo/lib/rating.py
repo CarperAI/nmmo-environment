@@ -1,3 +1,4 @@
+# pylint: disable=all
 
 from collections import defaultdict
 import numpy as np
@@ -13,7 +14,7 @@ def rank(policy_ids, scores):
 
     # Double argsort returns ranks
     return np.argsort(np.argsort(
-        [-np.mean(vals) + 1e-8 * np.random.normal() for policy, vals in 
+        [-np.mean(vals) + 1e-8 * np.random.normal() for policy, vals in
         sorted(agents.items())])).tolist()
 
 

@@ -1,3 +1,5 @@
+# pylint: disable=all
+
 # TODO: This test is currently broken, and needs to be fixed
 
 # from pdb import set_trace as T
@@ -19,7 +21,7 @@
 #    with open(replay_file, 'rb') as handle:
 #       ref_data = pickle.load(handle)
 
-#       print('[TestDetReplay] Loading the existing replay file with seed', ref_data['seed'])   
+#       print('[TestDetReplay] Loading the existing replay file with seed', ref_data['seed'])
 #       seed = ref_data['seed']
 #       config = ref_data['config']
 #       init_obs = ref_data['init_obs']
@@ -62,7 +64,7 @@
 
 #       pickle.dump(ref_data, handle)
 
-#    return seed, config, init_obs, actions, final_obs, final_npcs   
+#    return seed, config, init_obs, actions, final_obs, final_npcs
 
 
 # class TestDeterministicReplay(unittest.TestCase):

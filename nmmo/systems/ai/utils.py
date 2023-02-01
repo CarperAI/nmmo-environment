@@ -1,8 +1,12 @@
-import numpy as np
-import random
+# pylint: disable=all
 
-from nmmo.lib.utils import inBounds
+
 import heapq
+from typing import Tuple
+
+import numpy as np
+
+from nmmo.lib.utils import in_bounds
 
 
 def validTarget(ent, targ, rng):
@@ -60,35 +64,11 @@ def adjacentPos(pos):
    return [(r - 1, c), (r, c - 1), (r + 1, c), (r, c + 1)]
 
 
-def cropTilesAround(position: (int, int), horizon: int, tiles):
+def cropTilesAround(position: Tuple[int, int], horizon: int, tiles):
    line, column = position
 
    return tiles[max(line - horizon, 0): min(line + horizon + 1, len(tiles)),
           max(column - horizon, 0): min(column + horizon + 1, len(tiles[0]))]
-
-
-def inSight(dr, dc, vision):
-    return (
-          dr >= -vision and
-          dc >= -vision and
-          dr <= vision and
-          dc <= vision)
-
-def meander(obs):
-   agent  = obs.agent
-
-   cands = []
-   if vacant(obs.tile(-1, 0)):
-      cands.append((-1, 0))
-   if vacant(obs.tile(1, 0)):
-      cands.append((1, 0))
-   if vacant(obs.tile(0, -1)):
-      cands.append((0, -1))
-   if vacant(obs.tile(0, 1)):
-      cands.append((0, 1))
-   if not cands:
-      return (-1, 0)
-   return random.choice(cands)
 
 # A* Search
 def l1(start, goal):
@@ -134,7 +114,7 @@ def aStar(tiles, start, goal, cutoff=100):
          break
 
       for nxt in adjacentPos(cur):
-         if not inBounds(*nxt, tiles.shape):
+         if not in_bounds(*nxt, tiles.shape):
             continue
 
          newCost = cost[cur] + 1
@@ -185,17 +165,17 @@ def posSum(pos1, pos2):
 
 def adjacentEmptyPos(env, pos):
    return [p for p in adjacentPos(pos)
-           if inBounds(*p, env.size)]
+           if in_bounds(*p, env.size)]
 
 
 def adjacentTiles(env, pos):
    return [env.tiles[p] for p in adjacentPos(pos)
-           if inBounds(*p, env.size)]
+           if in_bounds(*p, env.size)]
 
 
 def adjacentMats(tiles, pos):
    return [type(tiles[p].state) for p in adjacentPos(pos)
-           if inBounds(*p, tiles.shape)]
+           if in_bounds(*p, tiles.shape)]
 
 
 def adjacencyDelMatPairs(env, pos):

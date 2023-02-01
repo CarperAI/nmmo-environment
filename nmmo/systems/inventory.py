@@ -2,11 +2,11 @@ from typing import Dict, Tuple
 
 from ordered_set import OrderedSet
 
-from nmmo.systems import item as Item 
+from nmmo.systems import item as Item
 class EquipmentSlot:
   def __init__(self) -> None:
     self.item = None
-  
+
   def equip(self, item: Item.Item) -> None:
     self.item = item
 
@@ -18,7 +18,7 @@ class Equipment:
     self.hat = EquipmentSlot()
     self.top = EquipmentSlot()
     self.bottom = EquipmentSlot()
-    self.held = EquipmentSlot() 
+    self.held = EquipmentSlot()
     self.ammunition = EquipmentSlot()
 
   def total(self, lambda_getter):
@@ -74,8 +74,9 @@ class Equipment:
     self.conditional_packet(packet, 'held',       self.held)
     self.conditional_packet(packet, 'ammunition', self.ammunition)
 
+    # pylint: disable=R0801
+    # Similar lines here and in npc.py
     packet['item_level']    = self.item_level
-
     packet['melee_attack']  = self.melee_attack
     packet['range_attack']  = self.range_attack
     packet['mage_attack']   = self.mage_attack
@@ -96,83 +97,83 @@ class Inventory:
     self.equipment   = Equipment()
 
     if not config.ITEM_SYSTEM_ENABLED:
-        return
+      return
 
     self.capacity         = config.ITEM_INVENTORY_CAPACITY
 
     self._item_stacks: Dict[Tuple, Item.Stack] = {}
-    self._items: OrderedSet[Item.Item] = OrderedSet([])
+    self.items: OrderedSet[Item.Item] = OrderedSet([])
 
   @property
   def space(self):
-    return self.capacity - len(self._items)
+    return self.capacity - len(self.items)
 
   def packet(self):
     item_packet = []
     if self.config.ITEM_SYSTEM_ENABLED:
-        item_packet = [e.packet for e in self._items]
+      item_packet = [e.packet for e in self.items]
 
     return {
           'items':     item_packet,
           'equipment': self.equipment.packet}
 
   def __iter__(self):
-    for item in self._items:
+    for item in self.items:
       yield item
 
   def receive(self, item: Item.Item):
     assert isinstance(item, Item.Item), f'{item} received is not an Item instance'
-    assert item not in self._items, f'{item} object received already in inventory'
+    assert item not in self.items, f'{item} object received already in inventory'
     assert not item.equipped.val, f'Received equipped item {item}'
     assert item.quantity.val, f'Received empty item {item}'
 
-    config = self.config
-
     if isinstance(item, Item.Stack):
-        signature = item.signature
-        if signature in self._item_stacks:
-            stack = self._item_stacks[signature]
-            assert item.level.val == stack.level.val, f'{item} stack level mismatch'
-            stack.quantity.increment(item.quantity.val)
-            return
-        elif not self.space:
-            return
-
-        self._item_stacks[signature] = item
-
-    if not self.space:
+      signature = item.signature
+      if signature in self._item_stacks:
+        stack = self._item_stacks[signature]
+        assert item.level.val == stack.level.val, f'{item} stack level mismatch'
+        stack.quantity.increment(item.quantity.val)
         return
 
-    self.realm.log_milestone(f'Receive_{item.__class__.__name__}', item.level.val, 
+      if not self.space:
+        return
+
+      self._item_stacks[signature] = item
+
+    if not self.space:
+      return
+
+    self.realm.log_milestone(f'Receive_{item.__class__.__name__}', item.level.val,
       f'INVENTORY: Received level {item.level.val} {item.__class__.__name__}')
 
     item.owner_id.update(self.entity.id.val)
-    self._items.add(item)
+    self.items.add(item)
 
   def remove(self, item, quantity=None):
     assert isinstance(item, Item.Item), f'{item} removing item is not an Item instance'
-    assert item in self._items, f'No item {item} to remove'
+    assert item in self.items, f'No item {item} to remove'
 
     if isinstance(item, Item.Equipment) and item.equipped.val:
       item.unequip(self.entity)
 
     if isinstance(item, Item.Stack):
-        signature = item.signature 
+      signature = item.signature
 
-        assert item.signature in self._item_stacks, f'{item} stack to remove not in inventory'
-        stack = self._item_stacks[signature]
+      assert item.signature in self._item_stacks, f'{item} stack to remove not in inventory'
+      stack = self._item_stacks[signature]
 
-        if quantity is None or stack.quantity.val == quantity:
-          self._items.remove(stack)
-          del self._item_stacks[signature]
-          return
-
-        assert 0 < quantity <= stack.quantity.val, f'Invalid remove {quantity} x {item} ({stack.quantity.val} available)'
-        stack.quantity.val -= quantity
-
+      if quantity is None or stack.quantity.val == quantity:
+        self.items.remove(stack)
+        del self._item_stacks[signature]
         return
+
+      assert 0 < quantity <= stack.quantity.val, \
+        f'Invalid remove {quantity} x {item} ({stack.quantity.val} available)'
+      stack.quantity.val -= quantity
+
+      return
 
     self.realm.exchange.unlist_item(item)
     item.owner_id.update(0)
 
-    self._items.remove(item)
+    self.items.remove(item)

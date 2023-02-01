@@ -1,8 +1,10 @@
-import numpy as np
 import unittest
 
-from nmmo.lib.datastore.numpy_datastore import NumpyTable    
+import numpy as np
 
+from nmmo.lib.datastore.numpy_datastore import NumpyTable
+
+# pylint: disable=protected-access
 class TestNumpyTable(unittest.TestCase):
   def test_continous_table(self):
     table = NumpyTable(3, 10, np.float32)
@@ -11,7 +13,7 @@ class TestNumpyTable(unittest.TestCase):
     table.update(5, 0, 5.1)
     table.update(5, 2, 5.3)
     np.testing.assert_array_equal(
-      table.get([1,2,5]), 
+      table.get([1,2,5]),
       np.array([[0, 0, 0], [2.1, 2.2, 0], [5.1, 0, 5.3]], dtype=np.float32)
     )
 
@@ -22,7 +24,7 @@ class TestNumpyTable(unittest.TestCase):
     table.update(5, 0, 51)
     table.update(5, 2, 53)
     np.testing.assert_array_equal(
-      table.get([1,2,5]), 
+      table.get([1,2,5]),
       np.array([[0, 0, 0], [11, 12, 0], [51, 0, 53]], dtype=np.int32)
     )
 
@@ -37,9 +39,9 @@ class TestNumpyTable(unittest.TestCase):
     table.update(10, 0, 10.1)
 
     np.testing.assert_array_equal(
-      table.get([10, 2]), 
+      table.get([10, 2]),
       np.array([[10.1, 0, 0], [2.1, 0, 0]], dtype=np.float32)
     )
 
 if __name__ == '__main__':
-    unittest.main()
+  unittest.main()

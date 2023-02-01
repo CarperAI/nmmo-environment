@@ -1,3 +1,5 @@
+# pylint: disable=all
+
 import numpy as np
 
 from nmmo.lib import overlay
@@ -87,7 +89,7 @@ class Skills(Overlay):
    def update(self, obs):
       '''Computes a count-based exploration map by painting
       tiles as agents walk over them'''
-      for entID, agent in self.realm.realm.players.items():
+      for ent_id, agent in self.realm.realm.players.items():
          r, c = agent.pos
 
          skillLvl  = (agent.skills.food.level.val + agent.skills.water.level.val)/2.0
@@ -130,7 +132,7 @@ class Counts(Overlay):
    def update(self, obs):
       '''Computes a count-based exploration map by painting
       tiles as agents walk over them'''
-      for entID, agent in self.realm.realm.players.items():
+      for ent_id, agent in self.realm.realm.players.items():
          pop  = agent.population_id.val
          r, c = agent.pos
          self.values[r, c][pop] += 1

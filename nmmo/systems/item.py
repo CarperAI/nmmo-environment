@@ -1,4 +1,5 @@
 from __future__ import annotations
+from abc import ABC
 import math
 
 from types import SimpleNamespace
@@ -7,6 +8,7 @@ from typing import Dict
 from nmmo.lib.colors import Tier
 from nmmo.lib.serialized import SerializedState
 
+# pylint: disable=no-member
 ItemState = SerializedState.subclass("Item", [
   "id",
   "type_id",
@@ -51,10 +53,10 @@ ItemState.Limits = lambda config: {
 
 ItemState.Query = SimpleNamespace(
   owned_by = lambda ds, id: ds.table("Item").where_eq(
-    ItemState._attr_name_to_col["owner_id"], id),
+    ItemState.State.attr_name_to_col["owner_id"], id),
 
   for_sale = lambda ds: ds.table("Item").where_neq(
-    ItemState._attr_name_to_col["listed_price"], 0),
+    ItemState.State.attr_name_to_col["listed_price"], 0),
 )
 
 class Item(ItemState):
@@ -66,7 +68,7 @@ class Item(ItemState):
     assert item_type.ITEM_TYPE_ID is not None
     if item_type.ITEM_TYPE_ID not in Item._item_type_id_to_class:
       Item._item_type_id_to_class[item_type.ITEM_TYPE_ID] = item_type
-  
+
   @staticmethod
   def item_class(type_id: int):
     return Item._item_type_id_to_class[type_id]
@@ -75,7 +77,7 @@ class Item(ItemState):
               capacity=0, quantity=1,
               melee_attack=0, range_attack=0, mage_attack=0,
               melee_defense=0, range_defense=0, mage_defense=0,
-              health_restore=0, resource_restore=0, price=0):
+              health_restore=0, resource_restore=0):
 
     super().__init__(realm.datastore, ItemState.Limits(realm.config))
     self.realm = realm
@@ -83,7 +85,7 @@ class Item(ItemState):
 
     Item.register(self.__class__)
 
-    self.id.update(self._datastore_record.id)
+    self.id.update(self.datastore_record.id)
     self.type_id.update(self.ITEM_TYPE_ID)
     self.level.update(level)
     self.capacity.update(capacity)
@@ -134,18 +136,17 @@ class Equipment(Item):
       return Tier.BLACK
     if self.level < 10:
       return Tier.WOOD
-    elif self.level < 20:
+    if self.level < 20:
       return Tier.BRONZE
-    elif self.level < 40:
+    if self.level < 40:
       return Tier.SILVER
-    elif self.level < 60:
+    if self.level < 60:
       return Tier.GOLD
-    elif self.level < 80:
+    if self.level < 80:
       return Tier.PLATINUM
-    else:
-      return Tier.DIAMOND
+    return Tier.DIAMOND
 
-  def unequip(self, entity, equip_slot):
+  def unequip(self, equip_slot):
     assert self.equipped.val == 1
     self.equipped.update(0)
     equip_slot.unequip(self)
@@ -158,7 +159,7 @@ class Equipment(Item):
     self.equipped.update(1)
     equip_slot.equip(self)
 
-    if self.config.LOG_MILESTONES and entity.isPlayer and self.config.LOG_VERBOSE:
+    if self.config.LOG_MILESTONES and entity.is_player and self.config.LOG_VERBOSE:
       for (label, level) in [
         (f"{self.__class__.__name__}_Level", self.level.val),
         ("Item_Level", entity.equipment.item_level),
@@ -168,9 +169,9 @@ class Equipment(Item):
         ("Melee_Defense", entity.equipment.melee_defense),
         ("Range_Defense", entity.equipment.range_defense),
         ("Mage_Defense", entity.equipment.mage_defense)]:
-      
+
         self.realm.log_milestone(label, level, f'EQUIPMENT: {label} {level}')
-    
+
   def _slot(self, entity):
     raise NotImplementedError
 
@@ -179,11 +180,11 @@ class Equipment(Item):
 
   def use(self, entity):
     if self.equipped.val:
-      self.unequip(entity, self._slot(entity))
+      self.unequip(self._slot(entity))
     else:
       self.equip(entity, self._slot(entity))
 
-class Armor(Equipment):
+class Armor(Equipment, ABC):
   def __init__(self, realm, level, **kwargs):
     defense = realm.config.EQUIPMENT_ARMOR_BASE_DEFENSE + \
               level*realm.config.EQUIPMENT_ARMOR_LEVEL_DEFENSE
@@ -203,7 +204,7 @@ class Top(Armor):
 class Bottom(Armor):
   ITEM_TYPE_ID = 4
   def _slot(self, entity):
-      return entity.inventory.equipment.bottom
+    return entity.inventory.equipment.bottom
 
 class Weapon(Equipment):
   def __init__(self, realm, level, **kwargs):
@@ -252,7 +253,7 @@ class Tool(Equipment):
                       range_defense=defense,
                       mage_defense=defense,
                       **kwargs)
-  
+
   def _slot(self, entity):
     return entity.inventory.equipment.held
 class Rod(Tool):
@@ -305,7 +306,7 @@ class Scrap(Ammunition):
     self.melee_attack.update(self.attack)
 
   def _level(self, entity):
-    return entity.skills.melee.level.val  
+    return entity.skills.melee.level.val
 
   @property
   def damage(self):
@@ -345,8 +346,8 @@ class Consumable(Item):
       return False
 
     self.realm.log_milestone(
-      f'Consumed_{self.__class__.__name__()}', self.level.val,
-      f"PROF: Consumed {self.level.val} {self.__class__.__name__()} "
+      f'Consumed_{self.__class__.__name__}', self.level.val,
+      f"PROF: Consumed {self.level.val} {self.__class__.__name__} "
       f"by Entity level {entity.attack_level}")
 
     self._apply_effects(entity)

@@ -13,7 +13,7 @@ class MockRealm:
     self.config.EXCHANGE_LISTING_DURATION = 3
     self.datastore = NumpyDatastore()
     self.items = {}
-    self.datastore.register_object_type("Item", ItemState._num_attributes)
+    self.datastore.register_object_type("Item", ItemState.State.num_attributes)
 
 class MockEntity:
   def __init__(self) -> None:

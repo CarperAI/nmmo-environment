@@ -9,7 +9,7 @@ class MockRealm:
     self.config = nmmo.config.Default()
     self.datastore = NumpyDatastore()
     self.items = {}
-    self.datastore.register_object_type("Item", ItemState._num_attributes)
+    self.datastore.register_object_type("Item", ItemState.State.num_attributes)
 
 class TestItem(unittest.TestCase):
   def test_item(self):

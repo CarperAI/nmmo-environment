@@ -2,14 +2,12 @@ from __future__ import annotations
 
 from nmmo.core.replay import Replay
 
-
 class ReplayHelper():
   @staticmethod
   def create(realm) -> ReplayHelper:
     if realm.config.SAVE_REPLAY:
       return SimpleReplayHelper(realm)
-    else:
-      return DummyReplayHelper()
+    return DummyReplayHelper()
 
 
 class DummyReplayHelper(ReplayHelper):
@@ -22,12 +20,12 @@ class SimpleReplayHelper(ReplayHelper):
     self.config = realm.config
     self.replay = Replay(self.config)
     self.packet = None
+    self.overlay = None
 
   def update(self) -> None:
     if self.config.RENDER or self.config.SAVE_REPLAY:
       packet = {
         'config': self.config,
-        'pos': self.env.overlayPos,
         'wilderness': 0
       }
 
@@ -35,7 +33,6 @@ class SimpleReplayHelper(ReplayHelper):
 
       if self.overlay is not None:
         packet['overlay'] = self.overlay
-        self.overlay      = None
 
     self.packet = packet
 

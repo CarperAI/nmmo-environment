@@ -1,18 +1,5 @@
 from .version import __version__
 
-import os
-motd = r'''      ___           ___           ___           ___
-     /__/\         /__/\         /__/\         /  /\      Version {:<8}
-     \  \:\       |  |::\       |  |::\       /  /::\ 
-      \  \:\      |  |:|:\      |  |:|:\     /  /:/\:\    An open source
-  _____\__\:\   __|__|:|\:\   __|__|:|\:\   /  /:/  \:\   project originally
- /__/::::::::\ /__/::::| \:\ /__/::::| \:\ /__/:/ \__\:\  founded by Joseph Suarez
- \  \:\~~\~~\/ \  \:\~~\__\/ \  \:\~~\__\/ \  \:\ /  /:/  and formalized at OpenAI
-  \  \:\  ~~~   \  \:\        \  \:\        \  \:\  /:/
-   \  \:\        \  \:\        \  \:\        \  \:\/:/    Now developed and
-    \  \:\        \  \:\        \  \:\        \  \::/     maintained at MIT in
-     \__\/         \__\/         \__\/         \__\/      Phillip Isola's lab '''.format(__version__)
-
 from .lib import material, spawn
 from .overlay import Overlay, OverlayRegistry
 from .io import action
@@ -23,13 +10,23 @@ from .core.env import Env
 from .systems.achievement import Task
 from .core.terrain import MapGenerator, Terrain
 
-__all__ = ['Env', 'config', 'emulation', 'integrations', 'agent', 'Agent', 'MapGenerator', 'Terrain',
-        'action', 'Action', 'scripting', 'material', 'spawn',
+MOTD = rf'''      ___           ___           ___           ___
+     /__/\         /__/\         /__/\         /  /\      Version {__version__:<8}
+     \  \:\       |  |::\       |  |::\       /  /::\
+      \  \:\      |  |:|:\      |  |:|:\     /  /:/\:\    An open source
+  _____\__\:\   __|__|:|\:\   __|__|:|\:\   /  /:/  \:\   project originally
+ /__/::::::::\ /__/::::| \:\ /__/::::| \:\ /__/:/ \__\:\  founded by Joseph Suarez
+ \  \:\~~\~~\/ \  \:\~~\__\/ \  \:\~~\__\/ \  \:\ /  /:/  and formalized at OpenAI
+  \  \:\  ~~~   \  \:\        \  \:\        \  \:\  /:/
+   \  \:\        \  \:\        \  \:\        \  \:\/:/    Now developed and
+    \  \:\        \  \:\        \  \:\        \  \::/     maintained at MIT in
+     \__\/         \__\/         \__\/         \__\/      Phillip Isola's lab '''
+
+__all__ = ['Env', 'config', 'agent', 'Agent', 'MapGenerator', 'Terrain',
+        'action', 'Action', 'material', 'spawn',
         'Task', 'Overlay', 'OverlayRegistry']
 
 try:
-    import openskill
-    from .lib.rating import OpenSkillRating
-    __all__.append('OpenSkillRating')
-except:
-    print('Warning: OpenSkill not installed. Ignore if you do not need this feature')
+  __all__.append('OpenSkillRating')
+except RuntimeError:
+  print('Warning: OpenSkill not installed. Ignore if you do not need this feature')

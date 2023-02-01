@@ -1,17 +1,18 @@
 from __future__ import annotations
+
 from typing import Dict
 
 from nmmo.core.agent import Agent
 from nmmo.entity.player import Player
 from nmmo.lib.log import Logger, MilestoneLogger
 
+
 class LogHelper:
   @staticmethod
   def create(realm) -> LogHelper:
     if realm.config.LOG_ENV:
       return SimpleLogHelper(realm)
-    else:
-      return DummyLogHelper()
+    return DummyLogHelper()
 
 class DummyLogHelper(LogHelper):
   def reset(self) -> None:
@@ -27,20 +28,20 @@ class DummyLogHelper(LogHelper):
     pass
 class SimpleLogHelper(LogHelper):
   def __init__(self, realm) -> None:
-      self.realm = realm
-      self.config = realm.config
+    self.realm = realm
+    self.config = realm.config
 
-      self._env_logger    = Logger()
-      self._player_logger = Logger()
-      self._event_logger  = Logger()
-      self._milestone_logger = None
+    self._env_logger    = Logger()
+    self._player_logger = Logger()
+    self._event_logger  = Logger()
+    self._milestone_logger = None
 
-      if self.config.LOG_MILESTONES:
-          self.milestone = MilestoneLogger(self.config.LOG_FILE)
+    if self.config.LOG_MILESTONES:
+      self.milestone = MilestoneLogger(self.config.LOG_FILE)
 
-      self._player_stats_funcs = {}
-      self._register_player_stats()
-  
+    self._player_stats_funcs = {}
+    self._register_player_stats()
+
   def log_milestone(self, milestone: str, value: float) -> None:
     if self.config.LOG_MILESTONES:
       self._milestone_logger.log(milestone, value)
@@ -55,12 +56,12 @@ class SimpleLogHelper(LogHelper):
               'Player': self._player_logger.stats}
 
     if self.config.LOG_EVENTS:
-      packet['Event'] = self.event.stats
+      packet['Event'] = self._event_logger.stats
     else:
       packet['Event'] = 'Unavailable: config.LOG_EVENTS = False'
 
     if self.config.LOG_MILESTONES:
-      packet['Milestone'] = self.event.stats
+      packet['Milestone'] = self._event_logger.stats
     else:
       packet['Milestone'] = 'Unavailable: config.LOG_MILESTONES = False'
 
@@ -87,13 +88,20 @@ class SimpleLogHelper(LogHelper):
         self._register_player_stat('Skill/Melee', lambda player: player.skills.melee.level.val)
       if self.config.PROFESSION_SYSTEM_ENABLED:
         self._register_player_stat('Skill/Fishing', lambda player: player.skills.fishing.level.val)
-        self._register_player_stat('Skill/Herbalism', lambda player: player.skills.herbalism.level.val)
-        self._register_player_stat('Skill/Prospecting', lambda player: player.skills.prospecting.level.val)
-        self._register_player_stat('Skill/Carving', lambda player: player.skills.carving.level.val)
-        self._register_player_stat('Skill/Alchemy', lambda player: player.skills.alchemy.level.val)
+        self._register_player_stat('Skill/Herbalism',
+          lambda player: player.skills.herbalism.level.val)
+        self._register_player_stat('Skill/Prospecting',
+          lambda player: player.skills.prospecting.level.val)
+        self._register_player_stat('Skill/Carving',
+          lambda player: player.skills.carving.level.val)
+        self._register_player_stat('Skill/Alchemy',
+        lambda player: player.skills.alchemy.level.val)
       if self.config.EQUIPMENT_SYSTEM_ENABLED:
-        self._register_player_stat('Item/Held-Level', lambda player: player.inventory.equipment.held.item.level.val if player.inventory.equipment.held.item else 0)
-        self._register_player_stat('Item/Equipment-Total', lambda player: player.equipment.total(lambda e: e.level))
+        self._register_player_stat('Item/Held-Level',
+          lambda player: player.inventory.equipment.held.item.level.val \
+            if player.inventory.equipment.held.item else 0)
+        self._register_player_stat('Item/Equipment-Total',
+          lambda player: player.equipment.total(lambda e: e.level))
 
     if self.config.EXCHANGE_SYSTEM_ENABLED:
       self._register_player_stat('Exchange/Player-Sells', lambda player: player.sells)
@@ -105,7 +113,8 @@ class SimpleLogHelper(LogHelper):
       self._register_player_stat('Item/Ration-Consumed', lambda player: player.ration_consumed)
       self._register_player_stat('Item/Poultice-Consumed', lambda player: player.poultice_consumed)
       self._register_player_stat('Item/Ration-Level', lambda player: player.ration_level_consumed)
-      self._register_player_stat('Item/Poultice-Level', lambda player: player.poultice_level_consumed)
+      self._register_player_stat('Item/Poultice-Level',
+        lambda player: player.poultice_level_consumed)
 
   def update(self, dead_players: Dict[int, Player]) -> None:
     for player in dead_players.values():
@@ -118,19 +127,19 @@ class SimpleLogHelper(LogHelper):
     stats = {}
     policy = player.policy
 
-    for key, fn in self._player_stats_funcs.items():
-      stats[f'{key}_{policy}'] = fn(player)
+    for key, stat_func in self._player_stats_funcs.items():
+      stats[f'{key}_{policy}'] = stat_func(player)
 
-    stats[f'Task_Reward'] = player.history.time_alive.val
+    stats['Task_Reward'] = player.history.time_alive.val
 
     # If diary is enabled, log task and achievement stats
     if player.diary:
-      stats[f'Task_Reward'] = player.diary.cumulative_reward
+      stats['Task_Reward'] = player.diary.cumulative_reward
 
       for achievement in player.diary.achievements:
-        stats[f"Achievement_{achievement.name}"] = float(achievement.completed)
+        stats["Achievement_{achievement.name}"] = float(achievement.completed)
 
     # Used for SR
-    stats[f'PolicyID'] = player.policyID
+    stats['PolicyID'] = player.policyID
 
     return stats

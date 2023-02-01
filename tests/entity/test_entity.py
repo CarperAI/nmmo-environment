@@ -8,8 +8,9 @@ class MockRealm:
     self.config = nmmo.config.Default()
     self.config.PLAYERS = range(100)
     self.datastore = NumpyDatastore()
-    self.datastore.register_object_type("Entity", EntityState._num_attributes)
-    
+    self.datastore.register_object_type("Entity", EntityState.State.num_attributes)
+
+# pylint: disable=no-member
 class TestEntity(unittest.TestCase):
   def test_entity(self):
     realm = MockRealm()
@@ -18,8 +19,8 @@ class TestEntity(unittest.TestCase):
     entity = Entity(realm, (10,20), entity_id, "name", "color", population_id)
 
     self.assertEqual(entity.id.val, entity_id)
-    self.assertEqual(entity.r.val, 10)
-    self.assertEqual(entity.c.val, 20)
+    self.assertEqual(entity.row.val, 10)
+    self.assertEqual(entity.col.val, 20)
     self.assertEqual(entity.population_id.val, population_id)
     self.assertEqual(entity.damage.val, 0)
     self.assertEqual(entity.time_alive.val, 0)
@@ -48,13 +49,13 @@ class TestEntity(unittest.TestCase):
 
     entities = EntityState.Query.by_ids(realm.datastore, [entity_id])
     self.assertEqual(len(entities), 1)
-    self.assertEqual(entities[0][Entity._attr_name_to_col["id"]], entity_id)
-    self.assertEqual(entities[0][Entity._attr_name_to_col["r"]], 10)
-    self.assertEqual(entities[0][Entity._attr_name_to_col["c"]], 20)
-    
+    self.assertEqual(entities[0][Entity.State.attr_name_to_col["id"]], entity_id)
+    self.assertEqual(entities[0][Entity.State.attr_name_to_col["row"]], 10)
+    self.assertEqual(entities[0][Entity.State.attr_name_to_col["col"]], 20)
+
     entity.food.update(11)
     e_row = EntityState.Query.by_id(realm.datastore, entity_id)
-    self.assertEqual(e_row[Entity._attr_name_to_col["food"]], 11)
+    self.assertEqual(e_row[Entity.State.attr_name_to_col["food"]], 11)
 
 
 if __name__ == '__main__':

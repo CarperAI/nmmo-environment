@@ -1,18 +1,18 @@
-from typing import Any, Dict, List
-import numpy as np
-import random
-
 import functools
+import random
+from typing import Any, Dict, List
 
 import gym
-from pettingzoo.utils.env import ParallelEnv, AgentID
+import numpy as np
+from pettingzoo.utils.env import AgentID, ParallelEnv
 
 import nmmo
+from nmmo.core.config import Default
 from nmmo.core.observation import Observation
 from nmmo.core.tile import Tile
 from nmmo.entity.entity import Entity
-from nmmo.core.config import Default
 from nmmo.systems.item import Item
+from nmmo.core import realm
 from scripted.baselines import Scripted
 
 
@@ -30,8 +30,10 @@ class Env(ParallelEnv):
     super().__init__()
 
     self.config = config
-    self.realm = nmmo.core.Realm(config)
+    self.realm = realm.Realm(config)
+    self.obs = None
 
+  # pylint: disable=method-cache-max-size-none
   @functools.lru_cache(maxsize=None)
   def observation_space(self, agent: int):
     '''Neural MMO Observation Space
@@ -46,22 +48,22 @@ class Env(ParallelEnv):
         encoder can be used to convert this structured observation into
         a flat vector embedding.'''
 
-    def box(rows, cols): return gym.spaces.Box(
-      low=-2**20, high=2**20,
-      shape=(rows, cols),
-      dtype=np.float32
-    )
+    def box(rows, cols):
+      return gym.spaces.Box(
+          low=-2**20, high=2**20,
+          shape=(rows, cols),
+          dtype=np.float32)
 
     obs_space = {
-      "Tile": box(self.config.MAP_N_OBS, Tile._num_attributes),
-      "Entity": box(self.config.PLAYER_N_OBS, Entity._num_attributes)
+      "Tile": box(self.config.MAP_N_OBS, Tile.State.num_attributes),
+      "Entity": box(self.config.PLAYER_N_OBS, Entity.State.num_attributes)
     }
 
     if self.config.ITEM_SYSTEM_ENABLED:
-      obs_space["Item"] = box(self.config.ITEM_N_OBS, Item._num_attributes)
+      obs_space["Item"] = box(self.config.ITEM_N_OBS, Item.State.num_attributes)
 
     if self.config.EXCHANGE_SYSTEM_ENABLED:
-      obs_space["Market"] = box(self.config.EXCHANGE_N_OBS, Item._num_attributes)
+      obs_space["Market"] = box(self.config.EXCHANGE_N_OBS, Item.State.num_attributes)
 
     return gym.spaces.Dict(obs_space)
 
@@ -83,7 +85,7 @@ class Env(ParallelEnv):
         of discrete-valued arguments. These consist of both fixed, k-way
         choices (such as movement direction) and selections from the
         observation space (such as targeting)'''
-    
+
     actions = {}
     for atn in sorted(nmmo.Action.edges(self.config)):
       actions[atn] = {}
@@ -98,6 +100,8 @@ class Env(ParallelEnv):
   ############################################################################
   # Core API
 
+  # TODO: This doesn't conform to the PettingZoo API
+  # pylint: disable=arguments-renamed
   def reset(self, map_id=None, seed=None, options=None):
     '''OpenAI Gym API reset function
 
@@ -144,7 +148,7 @@ class Env(ParallelEnv):
                 ...
               }
 
-          Where agent_i is the integer index of the i\'th agent 
+          Where agent_i is the integer index of the i\'th agent
 
           The environment only evaluates provided actions for provided
           agents. Unprovided action types are interpreted as no-ops and
@@ -244,8 +248,8 @@ class Env(ParallelEnv):
 
     return gym_obs, rewards, dones, infos
 
-  def _process_actions(self, 
-      actions: Dict[int, Dict[str, Dict[str, Any]]], 
+  def _process_actions(self,
+      actions: Dict[int, Dict[str, Dict[str, Any]]],
       obs: Dict[int, Observation]):
 
     processed_actions = {}
@@ -269,14 +273,16 @@ class Env(ParallelEnv):
 
           elif arg == nmmo.action.Target:
             target_id = entity_obs.entities.ids[val]
-            target = self.realm.entityOrNone(target_id)
+            target = self.realm.entity_or_none(target_id)
             if target is not None:
               processed_action[arg] = target
             else:
               action_valid = False
               break
 
-          elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) and arg == nmmo.action.Item:
+          elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) \
+            and arg == nmmo.action.Item:
+
             item_id = entity_obs.inventory.ids[val]
             item = self.realm.items.get(item_id)
             if item is not None:
@@ -332,8 +338,8 @@ class Env(ParallelEnv):
 
     for agent in self.realm.players.values():
       agent_id = agent.id.val
-      agent_r = agent.r.val
-      agent_c = agent.c.val
+      agent_r = agent.row.val
+      agent_c = agent.col.val
 
       visible_entities = Entity.Query.window(
           self.realm.datastore,
@@ -353,41 +359,41 @@ class Env(ParallelEnv):
     return obs
 
   def _compute_rewards(self, agents: List[AgentID] = None):
-      '''Computes the reward for the specified agent
+    '''Computes the reward for the specified agent
 
-      Override this method to create custom reward functions. You have full
-      access to the environment state via self.realm. Our baselines do not
-      modify this method; specify any changes when comparing to baselines
+    Override this method to create custom reward functions. You have full
+    access to the environment state via self.realm. Our baselines do not
+    modify this method; specify any changes when comparing to baselines
 
-      Args:
-          player: player object
+    Args:
+        player: player object
 
-      Returns:
-          reward:
-            The reward for the actions on the previous timestep of the
-            entity identified by entID.
-      '''
-      infos = {}
-      rewards = {}
+    Returns:
+        reward:
+          The reward for the actions on the previous timestep of the
+          entity identified by ent_id.
+    '''
+    infos = {}
+    rewards = {}
 
-      for agent_id in agents:
-        infos[agent_id] = {}
-        agent = self.realm.players.get(agent_id)
+    for agent_id in agents:
+      infos[agent_id] = {}
+      agent = self.realm.players.get(agent_id)
 
-        if agent is None:
-          rewards[agent_id] = -1
-          continue
+      if agent is None:
+        rewards[agent_id] = -1
+        continue
 
-        infos[agent_id] =  {'population': agent.population}
+      infos[agent_id] =  {'population': agent.population}
 
-        if agent.diary is None:
-          rewards[agent_id] = 0
-          continue
+      if agent.diary is None:
+        rewards[agent_id] = 0
+        continue
 
-        rewards[agent_id] = sum(agent.diary.rewards.values())
-        infos[agent_id].update(agent.diary.rewards)
+      rewards[agent_id] = sum(agent.diary.rewards.values())
+      infos[agent_id].update(agent.diary.rewards)
 
-      return rewards, infos
+    return rewards, infos
 
 
   ############################################################################
@@ -395,14 +401,20 @@ class Env(ParallelEnv):
   ############################################################################
 
   def render(self, mode='human'):
-      '''For conformity with the PettingZoo API only; rendering is external'''
+    '''For conformity with the PettingZoo API only; rendering is external'''
 
   @property
   def agents(self) -> List[AgentID]:
-      '''For conformity with the PettingZoo API only; rendering is external'''
-      return list(self.realm.players.keys())
+    '''For conformity with the PettingZoo API only; rendering is external'''
+    return list(self.realm.players.keys())
 
   def close(self):
-      '''For conformity with the PettingZoo API only; rendering is external'''
+    '''For conformity with the PettingZoo API only; rendering is external'''
+
+  def seed(self, seed=None):
+    return self._init_random(seed)
+
+  def state(self) -> np.ndarray:
+    raise NotImplementedError
 
   metadata = {'render.modes': ['human'], 'name': 'neural-mmo'}

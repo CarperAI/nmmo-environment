@@ -1,3 +1,5 @@
+# pylint: disable=all
+
 from ordered_set import OrderedSet
 import numpy as np
 
@@ -75,10 +77,10 @@ class Action(Node):
             args.init(config)
             if not 'edges' in args.__dict__:
                continue
-            for arg in args.edges: 
+            for arg in args.edges:
                arguments.append(arg)
                arg.serial = tuple([idx])
-               arg.idx = idx 
+               arg.idx = idx
                idx += 1
       Action.arguments = arguments
 
@@ -108,25 +110,25 @@ class Move(Node):
    nodeType = NodeType.SELECTION
    def call(env, entity, direction):
       r, c  = entity.pos
-      entID = entity.entID
-      entity.history.lastPos = (r, c)
-      rDelta, cDelta = direction.delta
-      rNew, cNew = r+rDelta, c+cDelta
-      
-      #One agent per cell
-      tile = env.map.tiles[rNew, cNew] 
+      ent_id = entity.ent_id
+      entity.history.last_pos = (r, c)
+      r_delta, c_delta = direction.delta
+      rNew, cNew = r+r_delta, c+c_delta
+
+      # One agent per cell
+      tile = env.map.tiles[rNew, cNew]
 
       if entity.status.freeze > 0:
          return
 
-      entity.r.update(rNew)
-      entity.c.update(cNew)
+      entity.row.update(rNew)
+      entity.col.update(cNew)
 
-      env.map.tiles[r, c].delEnt(entID)
-      env.map.tiles[rNew, cNew].addEnt(entity)
+      env.map.tiles[r, c].remove_entity(ent_id)
+      env.map.tiles[rNew, cNew].add_entity(entity)
 
       if env.map.tiles[rNew, cNew].lava:
-         entity.receiveDamage(None, entity.resources.health.val)
+         entity.receive_damage(None, entity.resources.health.val)
 
    @staticproperty
    def edges():
@@ -195,20 +197,20 @@ class Attack(Node):
    def call(env, entity, style, targ):
       config = env.config
 
-      if entity.isPlayer and not config.COMBAT_SYSTEM_ENABLED:
-         return 
+      if entity.is_player and not config.COMBAT_SYSTEM_ENABLED:
+         return
 
       # Testing a spawn immunity against old agents to avoid spawn camping
       immunity = config.COMBAT_SPAWN_IMMUNITY
-      if entity.isPlayer and targ.isPlayer and entity.history.time_alive.val > immunity and targ.history.time_alive < immunity:
+      if entity.is_player and targ.is_player and entity.history.time_alive.val > immunity and targ.history.time_alive < immunity:
          return
 
       #Check if self targeted
-      if entity.entID == targ.entID:
+      if entity.ent_id == targ.ent_id:
          return
 
       #ADDED: POPULATION IMMUNITY
-      if not config.COMBAT_FRIENDLY_FIRE and entity.isPlayer and entity.population_id.val == targ.population_id.val:
+      if not config.COMBAT_FRIENDLY_FIRE and entity.is_player and entity.population_id.val == targ.population_id.val:
          return
 
       #Check attack range
@@ -219,14 +221,14 @@ class Attack(Node):
 
       #Can't attack same cell or out of range
       if dif == 0 or dif > rng:
-         return 
-      
+         return
+
       #Execute attack
       entity.history.attack = {}
-      entity.history.attack['target'] = targ.entID
+      entity.history.attack['target'] = targ.ent_id
       entity.history.attack['style'] = style.__name__
       targ.attacker = entity
-      targ.attacker_id.update(entity.entID)
+      targ.attacker_id.update(entity.ent_id)
 
       from nmmo.systems import combat
       dmg = combat.attack(env, entity, targ, style.skill)
@@ -314,7 +316,7 @@ class Give(Node):
         if item not in entity.inventory:
             return
 
-        if not target.isPlayer:
+        if not target.is_player:
             return
 
         if not target.inventory.space:

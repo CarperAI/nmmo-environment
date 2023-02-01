@@ -3,13 +3,16 @@ import unittest
 
 from nmmo.lib.serialized import SerializedState
 
+# pylint: disable=no-member,unused-argument
+
 FooState = SerializedState.subclass("FooState", [
-  "a", "b", "c"
+  "a", "b", "col"
 ])
 
-FooState.Limits = lambda: {
+FooState.Limits = {
   "a": (-10, 10),
 }
+
 class MockDatastoreRecord():
   def __init__(self):
     self._data = defaultdict(lambda: 0)
@@ -26,12 +29,12 @@ class MockDatastore():
 
   def register_object_type(self, name, attributes):
     assert name == "FooState"
-    assert attributes == ["a", "b", "c"]
+    assert attributes == ["a", "b", "col"]
 
 class TestSerialized(unittest.TestCase):
 
   def test_serialized(self):
-    state = FooState(MockDatastore(), FooState.Limits())
+    state = FooState(MockDatastore(), FooState.Limits)
 
     self.assertEqual(state.a.val, 0)
     state.a.update(1)
@@ -42,4 +45,4 @@ class TestSerialized(unittest.TestCase):
     self.assertEqual(state.a.val, 10)
 
 if __name__ == '__main__':
-    unittest.main()
+  unittest.main()

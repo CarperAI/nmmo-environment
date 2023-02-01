@@ -1,3 +1,5 @@
+# pylint: disable=all
+
 from typing import Dict
 
 from collections import defaultdict
@@ -23,7 +25,7 @@ class Scripted(nmmo.Agent):
         '''
         Args:
            config : A forge.blade.core.Config object or subclass object
-        ''' 
+        '''
         super().__init__(config, idx)
         self.health_max = config.PLAYER_BASE_HEALTH
 
@@ -54,7 +56,7 @@ class Scripted(nmmo.Agent):
 
     def explore(self):
         '''Route away from spawn'''
-        move.explore(self.config, self.ob, self.actions, self.me.r, self.me.c)
+        move.explore(self.config, self.ob, self.actions, self.me.row, self.me.col)
 
     @property
     def downtime(self):
@@ -83,7 +85,7 @@ class Scripted(nmmo.Agent):
         selfLevel  = self.me.level
         targLevel  = max(self.closest.melee_level, self.closest.range_level, self.closest.mage_level)
         population = self.closest.population_id
-        
+
         if population == -1 or targLevel <= selfLevel <= 5 or selfLevel >= targLevel + 3:
            self.target     = self.closest
            self.targetID   = self.closestID
@@ -138,7 +140,7 @@ class Scripted(nmmo.Agent):
             item_system.Sword: self.me.melee_level,
             item_system.Bow: self.me.range_level,
             item_system.Wand: self.me.mage_level,
-            item_system.Rod: self.me.fishing_level,  
+            item_system.Rod: self.me.fishing_level,
             item_system.Gloves: self.me.herbalism_level,
             item_system.Pickaxe: self.me.prospecting_level,
             item_system.Chisel: self.me.carving_level,
@@ -217,9 +219,9 @@ class Scripted(nmmo.Agent):
 
             self.actions[action.Use] = {
                action.Item: itm.id}
-           
+
             return True
- 
+
     def consume(self):
         if self.me.health <= self.health_max // 2 and item_system.Poultice in self.best_items:
             itm = self.best_items[item_system.Poultice.ITEM_TYPE_ID]
@@ -230,7 +232,7 @@ class Scripted(nmmo.Agent):
 
         self.actions[action.Use] = {
            action.Item: itm.id}
- 
+
     def sell(self, keep_k: dict, keep_best: set):
         for itm in self.inventory.values():
             price = itm.level
@@ -241,7 +243,7 @@ class Scripted(nmmo.Agent):
                 k     = keep_k[itm.type_id]
                 if owned <= k:
                     continue
- 
+
             #Exists an equippable of the current class, best needs to be kept, and this is the best item
             if itm.type_id in self.best_items and \
                 itm.type_id in keep_best and \
@@ -322,9 +324,9 @@ class Scripted(nmmo.Agent):
         }
 
         if self.spawnR is None:
-            self.spawnR = self.me.r
+            self.spawnR = self.me.row
         if self.spawnC is None:
-            self.spawnC = self.me.c
+            self.spawnC = self.me.col
 
         # When to run from death fog in BR configs
         self.fog_criterion = None
@@ -339,7 +341,7 @@ class Random(Scripted):
     def __call__(self, obs):
         super().__call__(obs)
 
-        move.random(self.config, self.ob, self.actions)
+        move.rand(self.config, self.ob, self.actions)
         return self.actions
 
 class Meander(Scripted):
@@ -384,9 +386,9 @@ class Combat(Scripted):
     @property
     def wishlist(self):
         return {
-            item_system.Hat.ITEM_TYPE_ID, 
+            item_system.Hat.ITEM_TYPE_ID,
             item_system.Top,
-            item_system.Bottom, 
+            item_system.Bottom,
             self.weapon,
             self.ammo
         }

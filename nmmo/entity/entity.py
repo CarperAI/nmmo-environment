@@ -9,19 +9,20 @@ from nmmo.lib import utils
 from nmmo.lib.serialized import SerializedState
 from nmmo.systems import inventory
 
+# pylint: disable=no-member
 EntityState = SerializedState.subclass(
   "Entity", [
     "id",
     "population_id",
-    "r",
-    "c",
+    "row",
+    "col",
 
     # Status
     "damage",
     "time_alive",
     "freeze",
     "item_level",
-    "attacker_id", 
+    "attacker_id",
     "message",
 
     # Resources
@@ -37,7 +38,7 @@ EntityState = SerializedState.subclass(
 
     # Skills
     "fishing_level",
-    "herbalism_level", 
+    "herbalism_level",
     "prospecting_level",
     "carving_level",
     "alchemy_level",
@@ -47,8 +48,8 @@ EntityState.Limits = lambda config: {
   **{
     "id": (-math.inf, math.inf),
     "population_id": (-3, config.PLAYER_POLICIES-1),
-    "r": (0, config.MAP_SIZE-1),
-    "c": (0, config.MAP_SIZE-1),
+    "row": (0, config.MAP_SIZE-1),
+    "col": (0, config.MAP_SIZE-1),
     "damage": (0, math.inf),
     "time_alive": (0, math.inf),
     "freeze": (0, 3),
@@ -79,16 +80,16 @@ EntityState.Limits = lambda config: {
 EntityState.Query = SimpleNamespace(
   # Single entity
   by_id=lambda ds, id: ds.table("Entity").where_eq(
-    EntityState._attr_name_to_col["id"], id)[0],
+    EntityState.State.attr_name_to_col["id"], id)[0],
 
   # Multiple entities
   by_ids=lambda ds, ids: ds.table("Entity").where_in(
-    EntityState._attr_name_to_col["id"], ids),
+    EntityState.State.attr_name_to_col["id"], ids),
 
   # Entities in a radius
   window=lambda ds, r, c, radius: ds.table("Entity").window(
-    EntityState._attr_name_to_col["r"],
-    EntityState._attr_name_to_col["c"],
+    EntityState.State.attr_name_to_col["row"],
+    EntityState.State.attr_name_to_col["col"],
     r, c, radius),
 )
 
@@ -107,7 +108,7 @@ class Resources:
   def update(self):
     if not self.config.RESOURCE_SYSTEM_ENABLED:
       return
-      
+
     regen = self.config.RESOURCE_HEALTH_RESTORE_FRACTION
     thresh = self.config.RESOURCE_HEALTH_REGEN_THRESHOLD
 
@@ -135,7 +136,7 @@ class Status:
   def __init__(self, ent):
     self.freeze = ent.freeze
 
-  def update(self, realm, entity, actions):
+  def update(self):
     if self.freeze.val > 0:
       self.freeze.decrement(1)
 
@@ -160,15 +161,15 @@ class History:
     self.damage = ent.damage
     self.time_alive = ent.time_alive
 
-    self.lastPos = None
+    self.last_pos = None
 
-  def update(self, realm, entity, actions):
+  def update(self, entity, actions):
     self.attack = None
     self.damage.update(0)
 
     self.actions = {}
-    if entity.entID in actions:
-      self.actions = actions[entity.entID]
+    if entity.ent_id in actions:
+      self.actions = actions[entity.ent_id]
 
     exploration = utils.linf(entity.pos, self.starting_position)
     self.exploration = max(exploration, self.exploration)
@@ -195,15 +196,15 @@ class History:
 
       for key, val in args.items():
         if hasattr(val, 'packet'):
-            atn_packet[key.__name__] = val.packet
+          atn_packet[key.__name__] = val.packet
         else:
-            atn_packet[key.__name__] = val.__name__
+          atn_packet[key.__name__] = val.__name__
       actions[atn.__name__] = atn_packet
     data['actions'] = actions
 
     return data
 
-
+# pylint: disable=no-member
 class Entity(EntityState):
   def __init__(self, realm, pos, entity_id, name, color, population_id):
     super().__init__(realm.datastore, EntityState.Limits(realm.config))
@@ -217,10 +218,9 @@ class Entity(EntityState):
 
     self.name = name + str(entity_id)
     self.color = color
-    r, c = pos
 
-    self.r.update(r)
-    self.c.update(c)
+    self.row.update(pos[0])
+    self.col.update(pos[1])
     self.population_id.update(population_id)
     self.id.update(entity_id)
 
@@ -238,7 +238,7 @@ class Entity(EntityState):
     self.inventory = inventory.Inventory(realm, self)
 
   @property
-  def entID(self):
+  def ent_id(self):
     return self.id.val
 
   def packet(self):
@@ -249,8 +249,8 @@ class Entity(EntityState):
     data['inventory'] = self.inventory.packet()
     data['alive'] = self.alive
     data['base'] = {
-      'r': self.r.val,
-      'c': self.c.val,
+      'r': self.row.val,
+      'c': self.col.val,
       'name': self.name,
       'level': self.attack_level,
       'item_level': self.item_level.val,
@@ -264,51 +264,53 @@ class Entity(EntityState):
   def update(self, realm, actions):
     '''Update occurs after actions, e.g. does not include history'''
     if self.history.damage == 0:
-        self.attacker = None
-        self.attacker_id.update(0)
+      self.attacker = None
+      self.attacker_id.update(0)
 
     if realm.config.EQUIPMENT_SYSTEM_ENABLED:
-        self.item_level.update(self.equipment.total(lambda e: e.level))
+      self.item_level.update(self.equipment.total(lambda e: e.level))
 
-    self.status.update(realm, self, actions)
-    self.history.update(realm, self, actions)
+    self.status.update()
+    self.history.update(self, actions)
 
-  def receiveDamage(self, source, dmg):
+  # Returns True if the entity is alive
+  def receive_damage(self, source, dmg):
     self.history.damage_received += dmg
     self.history.damage.update(dmg)
     self.resources.health.decrement(dmg)
 
     if self.alive:
-        return True
+      return True
 
     if source is None:
-        return True
+      return True
 
-    if not source.isPlayer:
-        return True
+    if not source.is_player:
+      return True
 
     return False
 
-  def applyDamage(self, dmg, style):
+  # pylint: disable=unused-argument
+  def apply_damage(self, dmg, style):
     self.history.damage_inflicted += dmg
 
   @property
   def pos(self):
-    return int(self.r.val), int(self.c.val)
+    return int(self.row.val), int(self.col.val)
 
   @property
   def alive(self):
     if self.resources.health.empty:
-        return False
+      return False
 
     return True
 
   @property
-  def isPlayer(self) -> bool:
+  def is_player(self) -> bool:
     return False
 
   @property
-  def isNPC(self) -> bool:
+  def is_npc(self) -> bool:
     return False
 
   @property

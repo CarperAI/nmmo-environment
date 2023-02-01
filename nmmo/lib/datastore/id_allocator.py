@@ -8,12 +8,12 @@ class IdAllocator:
   def full(self):
     return len(self.free) == 0
 
-  def remove(self, id):
-    self.free.add(id)
+  def remove(self, row_id):
+    self.free.add(row_id)
 
   def allocate(self):
     return self.free.pop()
 
   def expand(self, max_id):
-    self.free.update({idx for idx in range(self.max_id, max_id)})
+    self.free.update(set(range(self.max_id, max_id)))
     self.max_id = max_id

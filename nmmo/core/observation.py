@@ -1,16 +1,18 @@
 from functools import lru_cache
 from types import SimpleNamespace
-from nmmo.core.tile import TileState
 
-from nmmo.entity.entity import EntityState
 import numpy as np
 
+from nmmo.core.tile import TileState
+from nmmo.entity.entity import EntityState
 from nmmo.systems.item import ItemState
+
+
 class Observation:
   def __init__(self,
     config,
     agent_id: int,
-    tiles, 
+    tiles,
     entities,
     inventory,
     market) -> None:
@@ -23,13 +25,13 @@ class Observation:
     entities = entities[0:config.PLAYER_N_OBS]
     self.entities = SimpleNamespace(
         values = entities,
-        ids = entities[:,EntityState._attr_name_to_col["id"]])
+        ids = entities[:,EntityState.State.attr_name_to_col["id"]])
 
     if config.ITEM_SYSTEM_ENABLED:
       inventory = inventory[0:config.ITEM_N_OBS]
       self.inventory = SimpleNamespace(
         values = inventory,
-        ids = inventory[:,ItemState._attr_name_to_col["id"]])
+        ids = inventory[:,ItemState.State.attr_name_to_col["id"]])
     else:
       assert inventory.size == 0
 
@@ -37,26 +39,28 @@ class Observation:
       market = market[0:config.EXCHANGE_N_OBS]
       self.market = SimpleNamespace(
         values = market,
-        ids = market[:,ItemState._attr_name_to_col["id"]])
+        ids = market[:,ItemState.State.attr_name_to_col["id"]])
     else:
       assert market.size == 0
 
+  # pylint: disable=method-cache-max-size-none
   @lru_cache(maxsize=None)
-  def tile(self, rDelta, cDelta):
+  def tile(self, r_delta, c_delta):
     '''Return the array object corresponding to a nearby tile
-    
+
     Args:
-        rDelta: row offset from current agent
-        cDelta: col offset from current agent
+        r_delta: row offset from current agent
+        c_delta: col offset from current agent
 
     Returns:
         Vector corresponding to the specified tile
     '''
     agent = self.agent()
-    r_cond = (self.tiles[:,TileState._attr_name_to_col["r"]] == agent.r + rDelta)
-    c_cond = (self.tiles[:,TileState._attr_name_to_col["c"]] == agent.c + cDelta)
+    r_cond = (self.tiles[:,TileState.State.attr_name_to_col["row"]] == agent.row + r_delta)
+    c_cond = (self.tiles[:,TileState.State.attr_name_to_col["col"]] == agent.col + c_delta)
     return TileState.parse_array(self.tiles[r_cond & c_cond][0])
 
+  # pylint: disable=method-cache-max-size-none
   @lru_cache(maxsize=None)
   def entity(self, entity_id):
     rows = self.entities.values[self.entities.ids == entity_id]
@@ -64,6 +68,7 @@ class Observation:
       return None
     return EntityState.parse_array(rows[0])
 
+  # pylint: disable=method-cache-max-size-none
   @lru_cache(maxsize=None)
   def agent(self):
     return self.entity(self.agent_id)
@@ -73,36 +78,36 @@ class Observation:
 
     # TODO: The padding slows things down significantly.
     # maybe there's a better way?
-        
+
     # gym_obs = {
-    #   "Tile": self.tiles, 
-    #   "Entity": self.entities.values, 
+    #   "Tile": self.tiles,
+    #   "Entity": self.entities.values,
     # }
     # if self.config.ITEM_SYSTEM_ENABLED:
     #   gym_obs["Inventory"] = self.inventory.values
-    
+
     # if self.config.EXCHANGE_SYSTEM_ENABLED:
     #   gym_obs["Market"] = self.market.values
     # return gym_obs
-    
+
     gym_obs = {
       "Tile": np.pad(
-        self.tiles, 
+        self.tiles,
         [(0, self.config.MAP_N_OBS - self.tiles.shape[0]), (0, 0)],
         mode="constant"),
 
       "Entity": np.pad(
-        self.entities.values, 
+        self.entities.values,
         [(0, self.config.PLAYER_N_OBS - self.entities.values.shape[0]), (0, 0)],
         mode="constant")
     }
-    
+
     if self.config.ITEM_SYSTEM_ENABLED:
       gym_obs["Inventory"] = np.pad(
         self.inventory.values,
         [(0, self.config.ITEM_N_OBS - self.inventory.values.shape[0]), (0, 0)],
         mode="constant")
-    
+
     if self.config.EXCHANGE_SYSTEM_ENABLED:
       gym_obs["Market"] = np.pad(
         self.market.values,

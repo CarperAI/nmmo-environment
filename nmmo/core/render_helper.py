@@ -1,3 +1,5 @@
+# pylint: disable=all
+
 from __future__ import annotations
 import numpy as np
 
@@ -27,7 +29,7 @@ class WebsocketRenderHelper(RenderHelper):
     self.overlayPos = [256, 256]
     self.client     = None
     self.registry   = OverlayRegistry(realm)
-     
+
   ############################################################################
   ### Client data
   def render(self, mode='human') -> None:
@@ -42,7 +44,7 @@ class WebsocketRenderHelper(RenderHelper):
 
     if not self.client:
         from nmmo.websocket import Application
-        self.client = Application(self) 
+        self.client = Application(self)
 
     pos, cmd = self.client.update(packet)
     self.registry.step(self.obs, pos, cmd)
@@ -51,7 +53,7 @@ class WebsocketRenderHelper(RenderHelper):
     '''Register an overlay to be sent to the client
 
     The intended use of this function is: User types overlay ->
-    client sends cmd to server -> server computes overlay update -> 
+    client sends cmd to server -> server computes overlay update ->
     register(overlay) -> overlay is sent to client -> overlay rendered
 
     Args:

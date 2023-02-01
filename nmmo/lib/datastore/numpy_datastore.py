@@ -14,8 +14,8 @@ class NumpyTable(DataTable):
     self._data = np.zeros((0, self._num_columns), dtype=self._dtype)
     self._expand(initial_size)
 
-  def update(self, id: int, col: int, value):
-    self._data[id, col] = value
+  def update(self, row_id: int, col: int, value):
+    self._data[row_id, col] = value
 
   def get(self, ids: List[int]):
     return self._data[ids]
@@ -38,12 +38,12 @@ class NumpyTable(DataTable):
   def add_row(self) -> int:
     if self._id_allocator.full():
       self._expand(self._max_rows * 2)
-    id = self._id_allocator.allocate()
-    return id
+    row_id = self._id_allocator.allocate()
+    return row_id
 
-  def remove_row(self, id) -> int:
-    self._id_allocator.remove(id)
-    self._data[id] = 0
+  def remove_row(self, row_id: int) -> int:
+    self._id_allocator.remove(row_id)
+    self._data[row_id] = 0
 
   def _expand(self, max_rows: int):
     assert max_rows > self._max_rows
@@ -53,13 +53,6 @@ class NumpyTable(DataTable):
     self._id_allocator.expand(max_rows)
     self._data = data
 
-  def window(self, row_idx: int, col_idx: int, row: int, col: int, radius: int):
-    return self._data[(
-      (np.abs(self._data[:,row_idx] - row) <= radius) &
-      (np.abs(self._data[:,col_idx] - col) <= radius)
-    ).ravel()]
-
 class NumpyDatastore(Datastore):
   def _create_table(self, num_columns: int) -> DataTable:
     return NumpyTable(num_columns, 100)
-    

@@ -16,10 +16,25 @@ if [ -n "$git_status" ]; then
   exit 1
 fi
 
+# check if there are any "xcxc" strings in the code
+files=$(find . -name '*.py')
+for file in $files; do
+    if grep -q 'xcxc' $file; then
+        echo "Found xcxc in $file!" >&2
+        exit 1
+    fi
+done
+
 # Run unit tests
 echo "Running unit tests..."
 if ! pytest; then
     echo "Unit tests failed. Exiting."
+    exit 1
+fi
+
+echo "Running linter..."
+if ! pylint --rcfile=pylint.cfg --fail-under=10 nmmo tests; then
+    echo "Lint failed. Exiting."
     exit 1
 fi
 

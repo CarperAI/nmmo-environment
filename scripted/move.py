@@ -1,9 +1,11 @@
+# pylint: disable=all
+
 import numpy as np
 import random
 
 import heapq
 
-import nmmo
+from nmmo.io import action
 from nmmo.core.observation import Observation
 from nmmo.lib import material
 
@@ -21,25 +23,25 @@ def inSight(dr, dc, vision):
           dc <= vision)
 
 def rand(config, ob, actions):
-   direction                 = random.choice(nmmo.action.Direction.edges)
-   actions[nmmo.action.Move] = {nmmo.action.Direction: direction}
+   direction                 = random.choice(action.Direction.edges)
+   actions[action.Move] = {action.Direction: direction}
 
 def towards(direction):
    if direction == (-1, 0):
-      return nmmo.action.North
+      return action.North
    elif direction == (1, 0):
-      return nmmo.action.South
+      return action.South
    elif direction == (0, -1):
-      return nmmo.action.West
+      return action.West
    elif direction == (0, 1):
-      return nmmo.action.East
+      return action.East
    else:
-      return random.choice(nmmo.action.Direction.edges)
+      return random.choice(action.Direction.edges)
 
 def pathfind(config, ob, actions, rr, cc):
    direction = aStar(config, ob, actions, rr, cc)
    direction = towards(direction)
-   actions[nmmo.action.Move] = {nmmo.action.Direction: direction}
+   actions[action.Move] = {action.Direction: direction}
 
 def meander(config, ob, actions):
    cands = []
@@ -56,7 +58,7 @@ def meander(config, ob, actions):
 
    direction = random.choices(cands)[0]
    direction = towards(direction)
-   actions[nmmo.action.Move] = {nmmo.action.Direction: direction}
+   actions[action.Move] = {action.Direction: direction}
 
 def explore(config, ob, actions, r, c):
    vision = config.PLAYER_VISION_RADIUS
@@ -74,7 +76,7 @@ def explore(config, ob, actions, r, c):
 def evade(config, ob: Observation, actions, attacker):
    agent = ob.agent()
 
-   rr, cc = (2*agent.r - attacker.r, 2*agent.c - attacker.c)
+   rr, cc = (2*agent.row - attacker.row, 2*agent.col - attacker.col)
 
    pathfind(config, ob, actions, rr, cc)
 
@@ -85,7 +87,7 @@ def forageDijkstra(config, ob: Observation, actions, food_max, water_max, cutoff
    food = agent.food
    water = agent.water
 
-   best      = -1000 
+   best      = -1000
    start     = (0, 0)
    goal      = (0, 0)
 
@@ -125,7 +127,7 @@ def forageDijkstra(config, ob: Observation, actions, food_max, water_max, cutoff
 
             tile = ob.tile(*pos)
             matl = tile.material_id
- 
+
             if matl == material.Water.index:
                water = min(water+water_max//2, water_max)
                break
@@ -144,18 +146,18 @@ def forageDijkstra(config, ob: Observation, actions, food_max, water_max, cutoff
    while goal in backtrace and backtrace[goal] != start:
       goal = backtrace[goal]
    direction = towards(goal)
-   actions[nmmo.action.Move] = {nmmo.action.Direction: direction}
+   actions[action.Move] = {action.Direction: direction}
 
 def findResource(config, ob: Observation, resource):
     vision = config.PLAYER_VISION_RADIUS
-             
+
     resource_index = resource.index
 
     for r in range(-vision, vision+1):
         for c in range(-vision, vision+1):
             tile = ob.tile(r, c)
             material_id = tile.material_id
-        
+
         if material_id == resource_index:
             return (r, c)
 
@@ -172,7 +174,7 @@ def gatherAStar(config, ob, actions, resource, cutoff=100):
         return
 
     direction = towards(next_pos)
-    actions[nmmo.action.Move] = {nmmo.action.Direction: direction}
+    actions[action.Move] = {action.Direction: direction}
     return True
 
 def gatherBFS(config, ob: Observation, actions, resource, cutoff=100):
@@ -197,10 +199,10 @@ def gatherBFS(config, ob: Observation, actions, resource, cutoff=100):
 
             if nxt in backtrace:
                 continue
-        
+
             if not inSight(*nxt, vision):
                 continue
-                                                       
+
             tile     = ob.tile(*nxt)
             matl     = tile.material_id
 
@@ -240,7 +242,7 @@ def gatherBFS(config, ob: Observation, actions, resource, cutoff=100):
         found = backtrace[found]
 
     direction = towards(found)
-    actions[nmmo.action.Move] = {nmmo.action.Direction: direction}
+    actions[action.Move] = {action.Direction: direction}
 
     return True
 

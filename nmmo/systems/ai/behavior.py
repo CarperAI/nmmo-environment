@@ -1,7 +1,9 @@
+# pylint: disable=all
+
 import numpy as np
 
 import nmmo
-from nmmo.systems.ai import move, attack, utils
+from nmmo.systems.ai import move, utils
 
 def update(entity):
    '''Update validity of tracked entities'''
@@ -19,7 +21,7 @@ def update(entity):
       entity.food = None
    if not utils.validResource(entity, entity.water, entity.vision):
       entity.water = None
-      
+
 def pathfind(realm, actions, entity, target):
    actions[nmmo.action.Move]   = {nmmo.action.Direction: move.pathfind(realm.map.tiles, entity, target)}
 

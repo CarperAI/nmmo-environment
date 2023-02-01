@@ -7,17 +7,17 @@ class TestIdAllocator(unittest.TestCase):
     id_allocator = IdAllocator(10)
 
     for i in range(1, 10):
-      id = id_allocator.allocate()
-      self.assertEqual(i, id)
+      row_id = id_allocator.allocate()
+      self.assertEqual(i, row_id)
     self.assertTrue(id_allocator.full())
 
     id_allocator.remove(5)
     id_allocator.remove(6)
-    id_allocator.remove(1),
+    id_allocator.remove(1)
     self.assertFalse(id_allocator.full())
 
     self.assertSetEqual(
-      set([id_allocator.allocate() for i in range(3)]),
+      set(id_allocator.allocate() for i in range(3)),
       set([5, 6, 1])
     )
     self.assertTrue(id_allocator.full())
@@ -34,17 +34,17 @@ class TestIdAllocator(unittest.TestCase):
     id_allocator = IdAllocator(10)
 
     for i in range(1, 10):
-      id = id_allocator.allocate()
-      self.assertEqual(i, id)
+      row_id = id_allocator.allocate()
+      self.assertEqual(i, row_id)
     self.assertTrue(id_allocator.full())
 
     id_allocator.remove(5)
     id_allocator.remove(6)
-    id_allocator.remove(1),
+    id_allocator.remove(1)
     self.assertFalse(id_allocator.full())
 
     self.assertSetEqual(
-      set([id_allocator.allocate() for i in range(3)]),
+      set(id_allocator.allocate() for i in range(3)),
       set([5, 6, 1])
     )
     self.assertTrue(id_allocator.full())
@@ -61,4 +61,4 @@ class TestIdAllocator(unittest.TestCase):
     self.assertEqual(id_allocator.allocate(), 10)
 
 if __name__ == '__main__':
-    unittest.main()
+  unittest.main()

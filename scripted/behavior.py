@@ -1,3 +1,4 @@
+# pylint: disable=all
 
 import nmmo
 from nmmo.systems.ai import move, attack, utils
@@ -18,7 +19,7 @@ def update(entity):
       entity.food = None
    if not utils.validResource(entity, entity.water, entity.vision):
       entity.water = None
-      
+
 def pathfind(config, ob, actions, rr, cc):
    actions[nmmo.action.Move]   = {nmmo.action.Direction: move.pathfind(config, ob, actions, rr, cc)}
 
@@ -34,7 +35,7 @@ def hunt(realm, actions, entity):
 
    direction = None
    if distance == 0:
-      direction = move.random()
+      direction = move.random_direction()
    elif distance > 1:
       direction = move.pathfind(realm.map.tiles, entity, entity.target)
 

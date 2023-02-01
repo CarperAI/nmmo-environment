@@ -1,3 +1,5 @@
+# pylint: disable=all
+
 # TODO: This test is currently broken. It needs to be fixed.
 
 # from pdb import set_trace as T
@@ -18,41 +20,41 @@
 
 # def serialize_actions(realm, actions, debug=True):
 #     atn_copy = {}
-#     for entID in list(actions.keys()):
-#         if entID not in realm.players:
+#     for ent_id in list(actions.keys()):
+#         if ent_id not in realm.players:
 #             if debug:
-#                 print("invalid player id", entID)
+#                 print("invalid player id", ent_id)
 #             continue
 
-#         ent = realm.players[entID]
+#         ent = realm.players[ent_id]
 
-#         atn_copy[entID] = {}
-#         for atn, args in actions[entID].items():
-#             atn_copy[entID][atn] = {}
+#         atn_copy[ent_id] = {}
+#         for atn, args in actions[ent_id].items():
+#             atn_copy[ent_id][atn] = {}
 #             drop = False
 #             for arg, val in args.items():
 #                 if arg.argType == nmmo.action.Fixed:
-#                     atn_copy[entID][atn][arg] = arg.edges.index(val)
+#                     atn_copy[ent_id][atn][arg] = arg.edges.index(val)
 #                 elif arg == nmmo.action.Target:
-#                     if val.entID not in ent.targets:
+#                     if val.ent_id not in ent.targets:
 #                         if debug:
-#                             print("invalid target", entID, ent.targets, val.entID)
+#                             print("invalid target", ent_id, ent.targets, val.ent_id)
 #                         drop = True
 #                         continue
-#                     atn_copy[entID][atn][arg] = ent.targets.index(val.entID)
+#                     atn_copy[ent_id][atn][arg] = ent.targets.index(val.ent_id)
 #                 elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) and arg == nmmo.action.Item:
 #                     if val not in ent.inventory._item_references:
 #                         if debug:
 #                             itm_list = [type(itm) for itm in ent.inventory._item_references]
-#                             print("invalid item to sell/use/give", entID, itm_list, type(val))
+#                             print("invalid item to sell/use/give", ent_id, itm_list, type(val))
 #                         drop = True
 #                         continue
 #                     if type(val) == nmmo.systems.item.Gold:
 #                         if debug:
-#                             print("cannot sell/use/give gold", entID, itm_list, type(val))
+#                             print("cannot sell/use/give gold", ent_id, itm_list, type(val))
 #                         drop = True
 #                         continue
-#                     atn_copy[entID][atn][arg] = [e for e in ent.inventory._item_references].index(val)
+#                     atn_copy[ent_id][atn][arg] = [e for e in ent.inventory._item_references].index(val)
 #                 elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
 #                     if val not in realm.exchange.listings:
 #                     if val not in realm.exchange.listings:
@@ -62,22 +64,22 @@
 #                             print("invalid item to buy (not listed in the exchange)", itm_list, type(val))
 #                         drop = True
 #                         continue
-#                     atn_copy[entID][atn][arg] = realm.exchange.listings.index(val)
-#                     atn_copy[entID][atn][arg] = realm.exchange.listings.index(val)
+#                     atn_copy[ent_id][atn][arg] = realm.exchange.listings.index(val)
+#                     atn_copy[ent_id][atn][arg] = realm.exchange.listings.index(val)
 #                 else:
 #                     # scripted ais have not bought any stuff
 #                     assert False, f'Argument {arg} invalid for action {atn}'
 
 #             # Cull actions with bad args
-#             if drop and atn in atn_copy[entID]:
-#                 del atn_copy[entID][atn]
+#             if drop and atn in atn_copy[ent_id]:
+#                 del atn_copy[ent_id][atn]
 
 #     return atn_copy
 
 # # this function can be replaced by assertDictEqual
 # # but might be still useful for debugging
 # def are_actions_equal(source_atn, target_atn, debug=True):
-    
+
 #     # compare the numbers and player ids
 #     player_src = list(source_atn.keys())
 #     player_tgt = list(target_atn.keys())
@@ -87,19 +89,19 @@
 #         return False
 
 #     # for each player, compare the actions
-#     for entID in player_src:
-#         atn1 = source_atn[entID]
-#         atn2 = target_atn[entID]
+#     for ent_id in player_src:
+#         atn1 = source_atn[ent_id]
+#         atn2 = target_atn[ent_id]
 
 #         if list(atn1.keys()) != list(atn2.keys()):
 #             if debug:
-#                 print("action keys don't match. player:", entID)
+#                 print("action keys don't match. player:", ent_id)
 #             return False
 
 #         for atn, args in atn1.items():
 #             if atn2[atn] != args:
 #                 if debug:
-#                     print("action args don't match. player:", entID, ", action:", atn)
+#                     print("action args don't match. player:", ent_id, ", action:", atn)
 #                 return False
 
 #     return True
@@ -121,7 +123,7 @@
 #             if debug:
 #                 print("entities don't match. key:", k)
 #             return False
-        
+
 #         obj = ent_src.keys()
 #         for o in obj:
 #             obj_src = ent_src[o]
@@ -160,54 +162,54 @@
 #         assert self.initialized, 'step before reset'
 
 #         # if actions are empty, then skip below to proceed with self.actions
-#         # if actions are provided, 
+#         # if actions are provided,
 #         #   forget self.actions and preprocess the provided actions
 #         if actions != {}:
 #             self.actions = {}
-#             for entID in list(actions.keys()):
-#                 if entID not in self.realm.players:
+#             for ent_id in list(actions.keys()):
+#                 if ent_id not in self.realm.players:
 #                     continue
 
-#                 ent = self.realm.players[entID]
+#                 ent = self.realm.players[ent_id]
 
 #                 if not ent.alive:
 #                     continue
 
-#                 self.actions[entID] = {}
-#                 for atn, args in actions[entID].items():
-#                     self.actions[entID][atn] = {}
+#                 self.actions[ent_id] = {}
+#                 for atn, args in actions[ent_id].items():
+#                     self.actions[ent_id][atn] = {}
 #                     drop = False
 #                     for arg, val in args.items():
 #                         if arg.argType == nmmo.action.Fixed:
-#                             self.actions[entID][atn][arg] = arg.edges[val]
+#                             self.actions[ent_id][atn][arg] = arg.edges[val]
 #                         elif arg == nmmo.action.Target:
 #                             if val >= len(ent.targets):
 #                                 drop = True
 #                                 continue
 #                             targ = ent.targets[val]
-#                             self.actions[entID][atn][arg] = self.realm.entity(targ)
+#                             self.actions[ent_id][atn][arg] = self.realm.entity(targ)
 #                         elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) and arg == nmmo.action.Item:
-#                             if val >= len(ent.inventory._items):
+#                             if val >= len(ent.inventory.items):
 #                                 drop = True
 #                                 continue
-#                             itm = [e for e in ent.inventory._items][val]
+#                             itm = [e for e in ent.inventory.items][val]
 #                             if type(itm) == nmmo.systems.item.Gold:
 #                                 drop = True
 #                                 continue
-#                             self.actions[entID][atn][arg] = itm
+#                             self.actions[ent_id][atn][arg] = itm
 #                         elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
 #                             if val >= len(self.realm.exchange.item_listings):
 #                             if val >= len(self.realm.exchange.item_listings):
 #                                 drop = True
 #                                 continue
 #                             itm = self.realm.exchange.dataframeVals[val]
-#                             self.actions[entID][atn][arg] = itm
+#                             self.actions[ent_id][atn][arg] = itm
 #                         elif __debug__: #Fix -inf in classifier and assert err on bad atns
 #                             assert False, f'Argument {arg} invalid for action {atn}'
 
 #                     # Cull actions with bad args
-#                     if drop and atn in self.actions[entID]:
-#                         del self.actions[entID][atn]
+#                     if drop and atn in self.actions[ent_id]:
+#                         del self.actions[ent_id][atn]
 
 #         #Step: Realm, Observations, Logs
 #         self.dead    = self.realm.step(self.actions)
@@ -216,37 +218,37 @@
 #         infos        = {}
 
 #         obs, rewards, dones, self.raw = {}, {}, {}, {}
-#         for entID, ent in self.realm.players.items():
+#         for ent_id, ent in self.realm.players.items():
 #             ob = self.realm.datastore.observations([ent])
-#             self.obs[entID] = ob
+#             self.obs[ent_id] = ob
 
 #             # Generate decisions of scripted agents and save these to self.actions
 #             if ent.agent.scripted:
-#                 atns = ent.agent(ob[entID])
+#                 atns = ent.agent(ob[ent_id])
 #                 for atn, args in atns.items():
 #                     for arg, val in args.items():
 #                         atns[atn][arg] = arg.deserialize(self.realm, ent, val)
-#                 self.actions[entID] = atns
+#                 self.actions[ent_id] = atns
 
 #             # also, return below for the scripted agents
-#             obs[entID]     = ob
-#             rewards[entID], infos[entID] = self.reward(ent)
-#             dones[entID]   = False
+#             obs[ent_id]     = ob
+#             rewards[ent_id], infos[ent_id] = self.reward(ent)
+#             dones[ent_id]   = False
 
 #         self.log_env()
-#         for entID, ent in self.dead.items():
+#         for ent_id, ent in self.dead.items():
 #             self.log_player(ent)
 
 #         self.realm.exchange.step()
 
-#         for entID, ent in self.dead.items():
+#         for ent_id, ent in self.dead.items():
 #             #if ent.agent.scripted:
 #             #    continue
-#             rewards[ent.entID], infos[ent.entID] = self.reward(ent)
+#             rewards[ent.ent_id], infos[ent.ent_id] = self.reward(ent)
 
-#             dones[ent.entID] = False #TODO: Is this correct behavior?
+#             dones[ent.ent_id] = False #TODO: Is this correct behavior?
 
-#             #obs[ent.entID]     = self.dummy_ob
+#             #obs[ent.ent_id]     = self.dummy_ob
 
 #         #Pettingzoo API
 #         self.agents = list(self.realm.players.keys())
@@ -256,7 +258,7 @@
 
 
 # class TestConfig(nmmo.config.Small, nmmo.config.AllGameSystems):
-    
+
 #     __test__ = False
 
 #     RENDER = False
@@ -304,7 +306,7 @@
 #             npcs_rep[nid] = npc.packet()
 #             del npcs_rep[nid]['alive'] # to use the same 'are_observations_equal' function
 #         cls.final_npcs_rep = npcs_rep
-        
+
 #     def test_func_are_observations_equal(self):
 #         # are_observations_equal CANNOT be replaced with assertDictEqual
 #         self.assertTrue(are_observations_equal(self.init_obs_src, self.init_obs_src))

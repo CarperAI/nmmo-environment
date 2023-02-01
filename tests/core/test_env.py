@@ -1,18 +1,21 @@
 
-from typing import List
 import unittest
+from typing import List
+
 from tqdm import tqdm
 
 import nmmo
+from nmmo.core.realm import Realm
 from nmmo.core.tile import TileState
 from nmmo.entity.entity import Entity, EntityState
-from nmmo.core.realm import Realm
 from nmmo.systems.item import ItemState
-
 from scripted import baselines
 
+# Allow private access for testing
+# pylint: disable=protected-access
+
 # 30 seems to be enough to test variety of agent actions
-TEST_HORIZON = 30
+TEST_HORIZON = 1024
 RANDOM_SEED = 342
 # TODO: We should check that milestones have been reached, to make
 # sure that the agents aren't just dying
@@ -20,11 +23,12 @@ class Config(nmmo.config.Small, nmmo.config.AllGameSystems):
   RENDER = False
   SPECIALIZE = True
   PLAYERS = [
-    baselines.Fisher, baselines.Herbalist, baselines.Prospector, baselines.Carver, baselines.Alchemist,
+    baselines.Fisher, baselines.Herbalist, baselines.Prospector,
+    baselines.Carver, baselines.Alchemist,
     baselines.Melee, baselines.Range, baselines.Mage]
 
 class TestEnv(unittest.TestCase):
-  @classmethod 
+  @classmethod
   def setUpClass(cls):
     cls.config = Config()
     cls.env = nmmo.Env(cls.config, RANDOM_SEED)
@@ -42,9 +46,9 @@ class TestEnv(unittest.TestCase):
 
     for _ in tqdm(range(TEST_HORIZON)):
       entity_locations = [
-        [ev.r.val, ev.c.val, e] for e, ev in self.env.realm.players.entities.items()
+        [ev.row.val, ev.col.val, e] for e, ev in self.env.realm.players.entities.items()
       ] + [
-        [ev.r.val, ev.c.val, e] for e, ev in self.env.realm.npcs.entities.items()
+        [ev.row.val, ev.col.val, e] for e, ev in self.env.realm.npcs.entities.items()
       ]
 
       for player_id, player_obs in obs.items():
@@ -58,11 +62,11 @@ class TestEnv(unittest.TestCase):
   def _validate_tiles(self, obs, realm: Realm):
     for tile_obs in obs["Tile"]:
       tile_obs = TileState.parse_array(tile_obs)
-      tile = realm.map.tiles[(int(tile_obs.r), int(tile_obs.c))]
-      for k,v in tile_obs.__dict__.items():
-        if v != getattr(tile, k).val:
-          self.assertEqual(v, getattr(tile, k).val, 
-            f"Mismatch for {k} in tile {tile_obs.r}, {tile_obs.c}")
+      tile = realm.map.tiles[(int(tile_obs.row), int(tile_obs.col))]
+      for key, val in tile_obs.__dict__.items():
+        if val != getattr(tile, key).val:
+          self.assertEqual(val, getattr(tile, key).val,
+            f"Mismatch for {key} in tile {tile_obs.row}, {tile_obs.col}")
 
   def _validate_entitites(self, player_id, obs, realm: Realm, entity_locations: List[List[int]]):
     observed_entities = set()
@@ -75,28 +79,32 @@ class TestEnv(unittest.TestCase):
 
       entity: Entity = realm.entity(entity_obs.id)
 
-      observed_entities.add(entity.entID)
+      observed_entities.add(entity.ent_id)
 
-      for k,v in entity_obs.__dict__.items():
-        if getattr(entity, k) is None:
-          raise ValueError(f"Entity {entity} has no attribute {k}")
-        self.assertEqual(v, getattr(entity, k).val,
-          f"Mismatch for {k} in entity {entity_obs.id}")
+      for key, val in entity_obs.__dict__.items():
+        if getattr(entity, key) is None:
+          raise ValueError(f"Entity {entity} has no attribute {key}")
+        self.assertEqual(val, getattr(entity, key).val,
+          f"Mismatch for {key} in entity {entity_obs.id}")
 
     # Make sure that we see entities IFF they are in our vision radius
-    pr = realm.players.entities[player_id].r.val
-    pc = realm.players.entities[player_id].c.val
-    visible_entitites = set([e for r, c, e in entity_locations if
-                              r >= pr - realm.config.PLAYER_VISION_RADIUS and
-                              r <= pr + realm.config.PLAYER_VISION_RADIUS and
-                              c >= pc - realm.config.PLAYER_VISION_RADIUS and
-                              c <= pc + realm.config.PLAYER_VISION_RADIUS])
-    self.assertSetEqual(visible_entitites, observed_entities,
-      f"Mismatch between observed: {observed_entities} and visible {visible_entitites} for {player_id}")
+    row = realm.players.entities[player_id].row.val
+    col = realm.players.entities[player_id].col.val
+    visible_entities = {
+      e for r, c, e in entity_locations
+      if r >= row - realm.config.PLAYER_VISION_RADIUS
+      and c >= col - realm.config.PLAYER_VISION_RADIUS
+      and r <= row + realm.config.PLAYER_VISION_RADIUS
+      and c <= col + realm.config.PLAYER_VISION_RADIUS
+    }
+    self.assertSetEqual(visible_entities, observed_entities,
+      f"Mismatch between observed: {observed_entities} " \
+        f"and visible {visible_entities} for player {player_id}, "\
+        f" step {self.env.realm.tick}")
 
   def _validate_inventory(self, player_id, obs, realm: Realm):
     self._validate_items(
-        {i.id.val: i for i in realm.players[player_id].inventory._items},
+        {i.id.val: i for i in realm.players[player_id].inventory.items},
         obs["Inventory"]
     )
 
@@ -110,12 +118,12 @@ class TestEnv(unittest.TestCase):
     item_obs = item_obs[item_obs[:,0] != 0]
     if len(items_dict) != len(item_obs):
       assert len(items_dict) == len(item_obs)
-    for ob in item_obs:
-      item_ob = ItemState.parse_array(ob)
+    for item_ob in item_obs:
+      item_ob = ItemState.parse_array(item_ob)
       item = items_dict[item_ob.id]
-      for k,v in item_ob.__dict__.items():
-        self.assertEqual(v, getattr(item, k).val,
-          f"Mismatch for {k} in item {item_ob.id}: {v} != {getattr(item, k).val}")
+      for key, val in item_ob.__dict__.items():
+        self.assertEqual(val, getattr(item, key).val,
+          f"Mismatch for {key} in item {item_ob.id}: {val} != {getattr(item, key).val}")
 
 if __name__ == '__main__':
   unittest.main()
