@@ -126,7 +126,7 @@ class Observation:
           self.market.values.shape[1]))
       ])
 
-    gym_obs["ActionTargets"] = self._make_action_targets()
+    # gym_obs["ActionTargets"] = self._make_action_targets()
 
     return gym_obs
 
