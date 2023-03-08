@@ -100,6 +100,9 @@ class Exchange:
       tags={"player_id": seller.ent_id})
 
   def buy(self, buyer, item: Item):
+    if item.quantity.val == 0:
+      return
+
     assert item.quantity.val > 0, f'{item} purchase has quantity {item.quantity.val}'
 
     # TODO: Handle ammo stacks
