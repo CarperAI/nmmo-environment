@@ -1,11 +1,13 @@
 from types import SimpleNamespace
 import unittest
+
+import numpy as np
+
 import nmmo
 from nmmo.datastore.numpy_datastore import NumpyDatastore
 from nmmo.systems.exchange import Exchange
 from nmmo.systems.item import ItemState
-import nmmo.systems.item as item
-import numpy as np
+from nmmo.systems import item
 
 class MockRealm:
   def __init__(self):
@@ -16,14 +18,17 @@ class MockRealm:
     self.datastore.register_object_type("Item", ItemState.State.num_attributes)
 
 class MockEntity:
+  # pylint: disable=unnecessary-lambda
   def __init__(self) -> None:
     self.items = []
     self.inventory = SimpleNamespace(
       receive = lambda item: self.items.append(item),
       remove = lambda item: self.items.remove(item)
      )
-  
+
 class TestExchange(unittest.TestCase):
+  # pylint: disable=protected-access,no-member
+
   def test_listings(self):
     realm = MockRealm()
     exchange = Exchange(realm)
@@ -87,4 +92,4 @@ class TestExchange(unittest.TestCase):
       item.Item.Query.for_sale(realm.datastore)[:,0], [])
 
 if __name__ == '__main__':
-    unittest.main()
+  unittest.main()

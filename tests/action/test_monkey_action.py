@@ -4,6 +4,7 @@ from tqdm import tqdm
 
 import numpy as np
 
+# pylint: disable=import-error
 from testhelpers import ScriptedAgentTestConfig, ScriptedAgentTestEnv
 
 import nmmo
@@ -37,7 +38,7 @@ class TestMonkeyAction(unittest.TestCase):
   def test_monkey_action(self):
     env = ScriptedAgentTestEnv(self.config)
     obs = env.reset(seed=RANDOM_SEED)
-    
+
     # the goal is just to run TEST_HORIZON without runtime errors
     # TODO(kywch): add more sophisticate/correct action validation tests
     #   for example, one cannot USE/SELL/GIVE/DESTORY the same item
