@@ -5,14 +5,18 @@ from nmmo.io import action as Action
 
 # CHECK ME: maybe this should be the default task?
 class LiveLong(PredicateTask):
-  # uses the default __init__, step, reward
-  def evaluate(self, team_gs, ent_id):
+  def __init__(self, min_tick: int):
+    super().__init__(min_tick)
+    self.min_tick = min_tick
+
+  def __call__(self, team_gs, ent_id):
     """True if the health of agent (ent_id) is greater than 0.
        Otherwise false.
     """
+    super().__call__(team_gs, ent_id)
     row = team_gs.entity_or_none(ent_id)
     if row:
-      return row.health > 0
+      return row.time_alive >= self.min_tick
 
     return False
 
@@ -22,10 +26,11 @@ class HoardGold(PredicateTask):
     super().__init__(min_amount)
     self.min_amount = min_amount
 
-  def evaluate(self, team_gs, ent_id):
+  def __call__(self, team_gs, ent_id):
     """True if the gold of agent (ent_id) is greater than or equal to min_amount.
        Otherwise false.
     """
+    super().__call__(team_gs, ent_id)
     row = team_gs.entity_or_none(ent_id)
     if row:
       return row.gold >= self.min_amount
@@ -39,14 +44,13 @@ class TeamSizeGE(PredicateTask): # greater than or equal to
     super().__init__(min_size)
     self.min_size = min_size
 
-  def evaluate(self, team_gs, ent_id):
+  def __call__(self, team_gs, ent_id):
     """True if the number of alive teammates is greater than or equal to min_size.
        Otherwise false.
     """
-    assert team_gs.is_member(ent_id), \
-      "Agent is not in the team, so cannot access the team game state"
+    super().__call__(team_gs, ent_id)
     if team_gs.pop_id in team_gs.alive_all:
-      return len(team_gs.alive_all) >= self.min_size
+      return len(team_gs.alive_all[team_gs.pop_id]) >= self.min_size
 
     return False
 
@@ -56,12 +60,11 @@ class TeamHoardGold(PredicateTask):
     super().__init__(min_amount)
     self.min_amount = min_amount
 
-  def evaluate(self, team_gs, ent_id):
+  def __call__(self, team_gs, ent_id):
     """True if the summed gold of all teammate is greater than or equal to min_amount.
        Otherwise false
     """
-    assert team_gs.is_member(ent_id), \
-      "Agent is not in the team, so cannot access the team game state"
+    super().__call__(team_gs, ent_id)
     return sum(team_gs.entity_data[:,team_gs.entity_cols['gold']]) >= self.min_amount
 
 
@@ -73,18 +76,17 @@ class OwnItem(PredicateTask):
     self.min_level = min_level
     self.quantity = quantity
 
-  def evaluate(self, team_gs, ent_id):
+  def __call__(self, team_gs, ent_id):
     """True if the agent (ent_id) owns the item (item_type, >= min_level) 
        and has greater than or equal to quantity. Otherwise false.
     """
-    assert team_gs.is_member(ent_id), \
-      "Agent is not in the team, so cannot access the team game state"
+    super().__call__(team_gs, ent_id)
     data = team_gs.item_data # 2d numpy data of the team item instances
     flt_idx = (data[:,team_gs.item_cols['owner_id']] == ent_id) & \
               (data[:,team_gs.item_cols['type_id']] == self.item_type) & \
               (data[:,team_gs.item_cols['level']] >= self.min_level)
 
-    return len(data[flt_idx,0]) >= self.quantity
+    return sum(data[flt_idx,team_gs.item_cols['quantity']]) >= self.quantity
 
 
 class EquipItem(PredicateTask):
@@ -94,12 +96,11 @@ class EquipItem(PredicateTask):
     self.item_type = item.ITEM_TYPE_ID
     self.min_level = min_level
 
-  def evaluate(self, team_gs, ent_id):
+  def __call__(self, team_gs, ent_id):
     """True if the agent (ent_id) equips the item (item_type, >= min_level).
        Otherwise false.
     """
-    assert team_gs.is_member(ent_id), \
-      "Agent is not in the team, so cannot access the team game state"
+    super().__call__(team_gs, ent_id)
     data = team_gs.item_data # 2d numpy data of the team item instances
     flt_idx = (data[:,team_gs.item_cols['owner_id']] == ent_id) & \
               (data[:,team_gs.item_cols['type_id']] == self.item_type) & \
@@ -128,15 +129,14 @@ class TeamFullyArmed(PredicateTask):
     self.item_ids = { 'hat':2, 'top':3, 'bottom':4 }
     self.item_ids.update(self.WEAPON_IDS[attack_style])
 
-  def evaluate(self, team_gs, ent_id):
+  def __call__(self, team_gs, ent_id):
     """True if the number of fully equipped agents is greater than or equal to num_agent
        Otherwise false.
 
        To determine fully equipped, we look at hat, top, bottom, weapon, ammo, respectively,
        and see whether these are equipped and has level greater than or equal to min_level.
     """
-    assert team_gs.is_member(ent_id), \
-      "Agent is not in the team, so cannot access the team game state"
+    super().__call__(team_gs, ent_id)
 
     # check if the cached result is available
     if self.__class__ in team_gs.cache_result:

@@ -89,7 +89,7 @@ class GameStateGenerator:
     alive_all = {}
     g = npi.group_by(entity_all[:,ent_cols["population_id"]])
     for pop_id, ents in zip(*g(entity_all[:,ent_cols["id"]])):
-      alive_all[pop_id] = ents
+      alive_all[int(pop_id)] = ents
 
     item_all = ItemState.Query.table(realm.datastore)
     item_cols = ItemState.State.attr_name_to_col
@@ -103,7 +103,7 @@ class GameStateGenerator:
         tick = realm.tick,
         config = self.config,
         alive_all = alive_all,
-        pop_id = pop_id,
+        pop_id = int(pop_id),
         member = member,
         env_obs = [env_obs[ent_id] for ent_id in member if ent_id in env_obs],
         entity_cols = ent_cols,
@@ -137,21 +137,21 @@ class PredicateTask:
         tmp_list.append(str(arg))
     return '_'.join(tmp_list)
 
-  def evaluate(self, team_gs: TeamGameState, ent_id: int) -> bool:
+  def __call__(self, team_gs: TeamGameState, ent_id: int) -> bool:
     """One should describe the code how evaluation is done.
        LLM wiil use it to produce goal embedding, which will be
        used by the RL agent to produce action.
     """
-    # CHECK ME: can this be really enforced?
+    # base predicates will use super().evaluate(team_gs, ent_id) to check
+    # if the provided ent_id can access team_gs
     assert team_gs.is_member(ent_id), \
-      "Agent is not in the team, so cannot access the team game state"
-    raise NotImplementedError
+      "The entity must be in the team to access the provided team gs"
 
   def _desc(self, class_type):
     return {
       "type": class_type,
       "name": self.name,
-      "evaluate": self.evaluate.__doc__
+      "evaluate": self.__call__.__doc__
     }
 
   def description(self) -> Dict:
@@ -176,10 +176,11 @@ class AND(PredicateTask):
     # the name is AND(task1,task2,task3)
     self.name = 'AND(' + ','.join([t.name for t in self._tasks]) + ')'
 
-  def evaluate(self, team_gs: TeamGameState, ent_id: int) -> bool:
+  def __call__(self, team_gs: TeamGameState, ent_id: int) -> bool:
     """True if all _tasks are evaluated to be True.
        Otherwise false."""
-    return all(t.evaluate(team_gs, ent_id) for t in self._tasks)
+    super().__call__(team_gs, ent_id)
+    return all(t(team_gs, ent_id) for t in self._tasks)
 
   def description(self) -> Dict:
     desc = self._desc("Conjunction")
@@ -195,10 +196,11 @@ class OR(PredicateTask):
     # the name is OR(task1,task2,task3,...)
     self.name = 'OR(' + ','.join([t.name for t in self._tasks]) + ')'
 
-  def evaluate(self, team_gs: TeamGameState, ent_id: int) -> bool:
+  def __call__(self, team_gs: TeamGameState, ent_id: int) -> bool:
     """True if any of _tasks is evaluated to be True.
        Otherwise false."""
-    return any(t.evaluate(team_gs, ent_id) for t in self._tasks)
+    super().__call__(team_gs, ent_id)
+    return any(t(team_gs, ent_id) for t in self._tasks)
 
   def description(self) -> Dict:
     desc = self._desc("Disjunction")
@@ -213,10 +215,11 @@ class NOT(PredicateTask):
     # the name is NOT(task)
     self.name = f'NOT({self._task.name})'
 
-  def evaluate(self, team_gs: TeamGameState, ent_id: int) -> bool:
+  def __call__(self, team_gs: TeamGameState, ent_id: int) -> bool:
     """True if _task is evaluated to be False.
        Otherwise true."""
-    return not self._task.evaluate(team_gs, ent_id)
+    super().__call__(team_gs, ent_id)
+    return not self._task(team_gs, ent_id)
 
   def description(self) -> Dict:
     desc = self._desc("Negation")
@@ -232,11 +235,12 @@ class IMPLY(PredicateTask):
     # the name is IMPLY(p->q)
     self.name = f'IMPLY({self._p.name}->{self._q.name})'
 
-  def evaluate(self, team_gs: TeamGameState, ent_id: int) -> bool:
+  def __call__(self, team_gs: TeamGameState, ent_id: int) -> bool:
     """False if _p is true and _q is false.
        Otherwise true."""
-    if self._p.evaluate(team_gs, ent_id):
-      return self._q.evaluate(team_gs, ent_id)
+    super().__call__(team_gs, ent_id)
+    if self._p(team_gs, ent_id):
+      return self._q(team_gs, ent_id)
 
     return True
 
@@ -318,9 +322,10 @@ class TeamHelper:
 
 
 class Mission:
-  def __init__(self, goal: PredicateTask, assignee: TaskForce,
+  def __init__(self, goal_fn, assignee: TaskForce,
                reward = 1, name = None, **kwargs):
-    self._goal = goal
+    assert callable(goal_fn), "Goal eval function goal_fn must be callable"
+    self._goal_fn = goal_fn
     self._assignee = assignee
     self._reward = reward
     self._num_reached = 0
@@ -331,8 +336,10 @@ class Mission:
     # then for readability, it'd be good to provide a short name
     if name:
       self.name = name
+    elif isinstance(goal_fn, PredicateTask):
+      self.name = goal_fn.name
     else:
-      self.name = goal.name
+      self.name = goal_fn.__name__
 
   # reward() may use count_down timer
   def reward(self, team_gs: TeamGameState, ent_id: int) -> float:
@@ -340,7 +347,7 @@ class Mission:
        Whether the goal is reached is evaluated by the goal's evaluate method.
     """
     assert ent_id in self._assignee.agents, "Agent is not on this mission"
-    if self._goal.evaluate(team_gs, ent_id):
+    if self._goal_fn(team_gs, ent_id):
       self._num_reached += 1
       return self._reward
 
@@ -350,10 +357,18 @@ class Mission:
   def agents(self):
     return self._assignee.agents
 
+  def _fn_desc(self, fn):
+    return {
+      "type": "EvalFunction",
+      "name": fn.__name__,
+      "evaluate": fn.__doc__
+    }
+
   def description(self) -> Dict:
     return {
       "type": "Mission",
-      "goal": self._goal.description(),
+      "goal": self._goal_fn.description() if isinstance(self._goal_fn, PredicateTask)
+                else self._fn_desc(self._goal_fn),
       "assignee": self._assignee.description(),
       "reward": self.reward.__doc__,
       "kwargs": self._kwargs
