@@ -7,7 +7,7 @@ echo
 # Run linter
 echo "--------------------------------------------------------------------"
 echo "Running linter..."
-if ! pylint --rcfile=pylint.cfg --fail-under=10 nmmo tests; then
+if ! pylint --rcfile=pylint.cfg --fail-under=10 $(git ls-files '*.py'); then
     echo "Lint failed. Exiting."
     exit 1
 fi
