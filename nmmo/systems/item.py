@@ -210,6 +210,9 @@ class Armor(Equipment, ABC):
   def __init__(self, realm, level, **kwargs):
     defense = realm.config.EQUIPMENT_ARMOR_BASE_DEFENSE + \
               level*realm.config.EQUIPMENT_ARMOR_LEVEL_DEFENSE
+    # ignore quantity for Armor, so that the default quantity of 1 is used
+    if 'quantity' in kwargs:
+      del kwargs['quantity']
     super().__init__(realm, level,
                      melee_defense=defense,
                      range_defense=defense,
@@ -231,6 +234,9 @@ class Bottom(Armor):
 
 class Weapon(Equipment):
   def __init__(self, realm, level, **kwargs):
+    # ignore quantity for Weapon, so that the default quantity of 1 is used
+    if 'quantity' in kwargs:
+      del kwargs['quantity']
     super().__init__(realm, level, **kwargs)
     self.attack = (
       realm.config.EQUIPMENT_WEAPON_BASE_DAMAGE +
@@ -272,6 +278,9 @@ class Tool(Equipment):
   def __init__(self, realm, level, **kwargs):
     defense = realm.config.EQUIPMENT_TOOL_BASE_DEFENSE + \
         level*realm.config.EQUIPMENT_TOOL_LEVEL_DEFENSE
+    # ignore quantity for Tool, so that the default quantity of 1 is used
+    if 'quantity' in kwargs:
+      del kwargs['quantity']
     super().__init__(realm, level,
                       melee_defense=defense,
                       range_defense=defense,
@@ -371,6 +380,13 @@ class Shard(Ammunition):
 # NOTE: Each consumable item (ration, poultice) cannot be stacked,
 #   so each item takes 1 inventory space
 class Consumable(Item):
+
+  def __init__(self, realm, level, **kwargs):
+    # ignore quantity for Consumable, so that the default quantity of 1 is used
+    if 'quantity' in kwargs:
+      del kwargs['quantity']
+    super().__init__(realm, level, **kwargs)
+
   def use(self, entity) -> bool:
     assert self in entity.inventory, "Item is not in entity's inventory"
     assert self.listed_price == 0, "Listed item cannot be used"

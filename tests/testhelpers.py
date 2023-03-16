@@ -206,8 +206,13 @@ class ScriptedTestTemplate(unittest.TestCase):
     realm.map.tiles[new_pos].add_entity(entity)
 
   def _provide_item(self, realm, ent_id, item, level, quantity):
-    realm.players[ent_id].inventory.receive(
-      item(realm, level=level, quantity=quantity))
+    if isinstance(item, Item.Stack):
+      realm.players[ent_id].inventory.receive(
+        item(realm, level=level, quantity=quantity))
+    else:
+      for _ in range(quantity):
+        realm.players[ent_id].inventory.receive(
+          item(realm, level=level))
 
   def _make_item_sig(self):
     item_sig = {}
