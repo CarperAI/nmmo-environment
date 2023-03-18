@@ -4,11 +4,14 @@ import unittest
 from testhelpers import ScriptedAgentTestConfig
 from scripted import baselines
 
-from nmmo.task import task
-import nmmo.task.base_predicate as predicate
 from nmmo.entity.entity import EntityState
 from nmmo.systems import item as Item
-from nmmo.io import action as Action
+from nmmo.systems import skill as Skill
+
+from nmmo.task import task
+import nmmo.task.base_predicate as bpt
+import nmmo.task.item_predicate as ipt
+import nmmo.task.gold_predicate as gpt
 
 
 class TestBasePredicate(unittest.TestCase):
@@ -30,10 +33,13 @@ class TestBasePredicate(unittest.TestCase):
 
     return env
 
+  def test_timer(self): # Timer
+    pass
+
   def test_live_long_team_size_ge(self):
     tick_success = 10
     team_size_ge = 2
-    test_tasks = [predicate.LiveLong(tick_success), predicate.TeamSizeGE(team_size_ge)]
+    test_tasks = [bpt.LiveLong(tick_success), bpt.TeamSizeGE(team_size_ge)]
 
     env = self._get_taskenv(test_tasks)
 
@@ -78,33 +84,34 @@ class TestBasePredicate(unittest.TestCase):
 
     # DONE
 
-  def test_hoard_gold_and_team(self):
-    agent_gold_goal = 10
-    team_gold_goal = 30
-    test_tasks = [predicate.HoardGold(agent_gold_goal), predicate.TeamHoardGold(team_gold_goal)]
+  def test_protect_agent(self): # ProtectAgent
+    pass
 
-    env = self._get_taskenv(test_tasks)
+  def test_search_tile_and_team(self): # SearchTile, TeamSearchTile
+    pass
 
-    # give gold to agents 1-3
-    gold_struck = [1, 2, 3]
-    for ent_id in gold_struck:
-      env.realm.players[ent_id].gold.update(ent_id * 10)
-    env.obs = env._compute_observations()
+  def test_search_agent_and_team(self): # SearchAgent, TeamSearchAgent
+    pass
 
-    _, rewards, _, infos = env.step({})
+  def test_goto_tile_and_occupy(self): # GotoTile, TeamOccupyTile
+    pass
 
-    for ent_id in env.realm.players:
-      agent_success = int(ent_id in gold_struck)
-      self.assertEqual(infos[ent_id]['mission'][test_tasks[0].name], agent_success) # HoardGold
+  def test_travel_and_team(self): # Travel, TeamTravel
+    pass
 
-      if env.realm.players[ent_id].population == 0: # team 0: team goal met 10 + 30 >= 30
-        self.assertEqual(rewards[ent_id], 1 + agent_success) # team goal met
-        self.assertEqual(infos[ent_id]['mission'][test_tasks[1].name], 1) # TeamHoardGold
+  def test_stay_close_and_team(self): # StayCloseTo, TeamStayClose
+    pass
 
-      else: # team 1: team goal NOT met, 20 < 30
-        self.assertEqual(infos[ent_id]['mission'][test_tasks[1].name], 0) # TeamHoardGold
+  def test_destroy_agent_and_eliminate(self): # DestroyAgent, EliminateFoe
+    pass
 
-    # DONE
+  def test_attain_skill_and_team(self): # AttainSkill, TeamAttainSkill
+    pass
+
+  def test_inventory_space_lt_not(self): # InventorySpaceLT
+    # also test NOT InventorySpaceLT
+    pass
+
 
   def _provide_item(self, realm, ent_id, item, level, quantity):
     if isinstance(item, Item.Stack):
@@ -115,14 +122,14 @@ class TestBasePredicate(unittest.TestCase):
         realm.players[ent_id].inventory.receive(
           item(realm, level=level))
 
-  def test_own_equip_item(self):
+  def test_own_equip_item_team(self): # OwnItem, EquipItem, TeamOwnItem
     # ration, level 2, quantity 3 (non-stackable)
     # ammo level 2, quantity 3 (stackable, equipable)
     goal_level = 2
     goal_quantity = 3
-    test_tasks = [predicate.OwnItem(Item.Ration, goal_level, goal_quantity),
-                  predicate.OwnItem(Item.Scrap, goal_level, goal_quantity),
-                  predicate.EquipItem(Item.Scrap, goal_level)]
+    test_tasks = [ipt.OwnItem(Item.Ration, goal_level, goal_quantity),
+                  ipt.OwnItem(Item.Scrap, goal_level, goal_quantity),
+                  ipt.EquipItem(Item.Scrap, goal_level)]
 
     env = self._get_taskenv(test_tasks)
 
@@ -162,7 +169,7 @@ class TestBasePredicate(unittest.TestCase):
   def test_team_fully_armed(self):
     goal_level = 5
     goal_agent = 2
-    test_tasks = [predicate.TeamFullyArmed(Action.Range, goal_level, goal_agent)]
+    test_tasks = [ipt.TeamFullyArmed(Skill.Range, goal_level, goal_agent)]
 
     env = self._get_taskenv(test_tasks)
 
@@ -186,6 +193,35 @@ class TestBasePredicate(unittest.TestCase):
       self.assertEqual(rewards[ent_id], int(pop_id == 1))
       self.assertEqual(infos[ent_id]['mission'][test_tasks[0].name],
                        int(pop_id == 1))
+
+    # DONE
+
+
+  def test_hoard_gold_and_team(self): # HoardGold, TeamHoardGold
+    agent_gold_goal = 10
+    team_gold_goal = 30
+    test_tasks = [gpt.HoardGold(agent_gold_goal), gpt.TeamHoardGold(team_gold_goal)]
+
+    env = self._get_taskenv(test_tasks)
+
+    # give gold to agents 1-3
+    gold_struck = [1, 2, 3]
+    for ent_id in gold_struck:
+      env.realm.players[ent_id].gold.update(ent_id * 10)
+    env.obs = env._compute_observations()
+
+    _, rewards, _, infos = env.step({})
+
+    for ent_id in env.realm.players:
+      agent_success = int(ent_id in gold_struck)
+      self.assertEqual(infos[ent_id]['mission'][test_tasks[0].name], agent_success) # HoardGold
+
+      if env.realm.players[ent_id].population == 0: # team 0: team goal met 10 + 30 >= 30
+        self.assertEqual(rewards[ent_id], 1 + agent_success) # team goal met
+        self.assertEqual(infos[ent_id]['mission'][test_tasks[1].name], 1) # TeamHoardGold
+
+      else: # team 1: team goal NOT met, 20 < 30
+        self.assertEqual(infos[ent_id]['mission'][test_tasks[1].name], 0) # TeamHoardGold
 
     # DONE
 

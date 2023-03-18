@@ -1,48 +1,42 @@
+# pylint: disable=unnecessary-pass
+from typing import List
+
 from nmmo.task.task import PredicateTask
-from nmmo.systems import item as Item
-from nmmo.io import action as Action
+from nmmo.systems import skill as Skill
+from nmmo.lib.material import Material
+
+
+class Timer(PredicateTask):
+  def __init__(self, num_tick: int):
+    super().__init__(num_tick)
+    self.num_tick = num_tick
+
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    pass
 
 
 # CHECK ME: maybe this should be the default task?
-class LiveLong(PredicateTask):
-  def __init__(self, min_tick: int):
-    super().__init__(min_tick)
-    self.min_tick = min_tick
-
+class LiveLong(Timer):
   def __call__(self, team_gs, ent_id):
     """True if the health of agent (ent_id) is greater than 0.
        Otherwise false.
     """
     super().__call__(team_gs, ent_id)
-    row = team_gs.entity_or_none(ent_id)
-    if row:
-      return row.time_alive >= self.min_tick
-
-    return False
-
-
-class HoardGold(PredicateTask):
-  def __init__(self, min_amount: int):
-    super().__init__(min_amount)
-    self.min_amount = min_amount
-
-  def __call__(self, team_gs, ent_id):
-    """True if the gold of agent (ent_id) is greater than or equal to min_amount.
-       Otherwise false.
-    """
-    super().__call__(team_gs, ent_id)
-    row = team_gs.entity_or_none(ent_id)
-    if row:
-      return row.gold >= self.min_amount
+    agent = team_gs.entity_or_none(ent_id)
+    if agent:
+      return agent.time_alive >= self.num_tick
 
     return False
 
 
 # each agent is rewarded if the alive teammate is greater than min_size
 class TeamSizeGE(PredicateTask): # greater than or equal to
-  def __init__(self, min_size: int):
-    super().__init__(min_size)
-    self.min_size = min_size
+  def __init__(self, num_agent: int):
+    super().__init__(num_agent)
+    self.num_agent = num_agent
 
   def __call__(self, team_gs, ent_id):
     """True if the number of alive teammates is greater than or equal to min_size.
@@ -50,113 +44,216 @@ class TeamSizeGE(PredicateTask): # greater than or equal to
     """
     super().__call__(team_gs, ent_id)
     if team_gs.pop_id in team_gs.alive_all:
-      return len(team_gs.alive_all[team_gs.pop_id]) >= self.min_size
+      return len(team_gs.alive_all[team_gs.pop_id]) >= self.num_agent
 
     return False
 
 
-class TeamHoardGold(PredicateTask):
-  def __init__(self, min_amount: int):
-    super().__init__(min_amount)
-    self.min_amount = min_amount
+class ProtectAgent(PredicateTask):
+  def __init__(self, agents: List[int]):
+    super().__init__(agents)
+    self.agents = agents
 
   def __call__(self, team_gs, ent_id):
-    """True if the summed gold of all teammate is greater than or equal to min_amount.
-       Otherwise false
-    """
-    super().__call__(team_gs, ent_id)
-    return sum(team_gs.entity_data[:,team_gs.entity_cols['gold']]) >= self.min_amount
-
-
-class OwnItem(PredicateTask):
-  '''Own an item of a certain type and level (equal or higher)'''
-  def __init__(self, item: Item.Item, min_level: int=0, quantity: int=1):
-    super().__init__(item, min_level, quantity)
-    self.item_type = item.ITEM_TYPE_ID
-    self.min_level = min_level
-    self.quantity = quantity
-
-  def __call__(self, team_gs, ent_id):
-    """True if the agent (ent_id) owns the item (item_type, >= min_level) 
-       and has greater than or equal to quantity. Otherwise false.
-    """
-    super().__call__(team_gs, ent_id)
-    data = team_gs.item_data # 2d numpy data of the team item instances
-    flt_idx = (data[:,team_gs.item_cols['owner_id']] == ent_id) & \
-              (data[:,team_gs.item_cols['type_id']] == self.item_type) & \
-              (data[:,team_gs.item_cols['level']] >= self.min_level)
-
-    return sum(data[flt_idx,team_gs.item_cols['quantity']]) >= self.quantity
-
-
-class EquipItem(PredicateTask):
-  '''Equip an item of a certain type and level (equal or higher)'''
-  def __init__(self, item: Item.Equipment, min_level: int=0):
-    super().__init__(item, min_level)
-    self.item_type = item.ITEM_TYPE_ID
-    self.min_level = min_level
-
-  def __call__(self, team_gs, ent_id):
-    """True if the agent (ent_id) equips the item (item_type, >= min_level).
+    """True if
        Otherwise false.
     """
-    super().__call__(team_gs, ent_id)
-    data = team_gs.item_data # 2d numpy data of the team item instances
-    flt_idx = (data[:,team_gs.item_cols['owner_id']] == ent_id) & \
-              (data[:,team_gs.item_cols['type_id']] == self.item_type) & \
-              (data[:,team_gs.item_cols['level']] >= self.min_level) & \
-              (data[:,team_gs.item_cols['equipped']] > 0)
+    pass
 
-    return len(data[flt_idx,0]) > 0
 
-# pylint: disable=protected-access
-class TeamFullyArmed(PredicateTask):
+class SearchTile(PredicateTask):
+  def __init__(self, tile_type: Material):
+    super().__init__(tile_type)
+    self.tile_type = tile_type
 
-  WEAPON_IDS = {
-    Action.Melee: {'weapon':5, 'ammo':13}, # Sword, Scrap
-    Action.Range: {'weapon':6, 'ammo':14}, # Bow, Shaving
-    Action.Mage: {'weapon':7, 'ammo':15} # Wand, Shard
-  }
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    pass
 
-  '''Count the number of fully-equipped agents of a specific skill in the team'''
-  def __init__(self, attack_style, min_level: int, num_agent: int):
-    assert attack_style in [Action.Melee, Action.Range, Action.Melee], "Wrong style input"
-    super().__init__(attack_style, min_level, num_agent)
-    self.attack_style = attack_style
-    self.min_level = min_level
+
+class TeamSearchTile(SearchTile):
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    pass
+
+
+class SearchAgent(PredicateTask):
+  def __init__(self, obj_agent: int):
+    super().__init__(obj_agent)
+    self.obj_agent = obj_agent
+
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    pass
+
+
+class TeamSearchAgent(SearchAgent):
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    pass
+
+
+class GotoTile(PredicateTask):
+  def __init__(self, row: int, col: int):
+    super().__init__(row, col)
+    self.coord = (row, col)
+
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    pass
+
+
+class TeamOccupyTile(GotoTile):
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    pass
+
+
+class Travel(PredicateTask):
+  def __init__(self, dist: int):
+    super().__init__(dist)
+    self.dist = dist
+
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    pass
+
+
+class TeamTravel(Travel):
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    pass
+
+
+class StayCloseTo(PredicateTask):
+  def __init__(self, obj_agent:int, dist: int):
+    super().__init__(obj_agent, dist)
+    self.obj_agent = obj_agent
+    self.dist = dist
+
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    pass
+
+
+class TeamStayClose(PredicateTask):
+  def __init__(self, dist: int):
+    super().__init__(dist)
+    self.dist = dist
+
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    pass
+
+
+class AttainSkill(PredicateTask):
+  def __init__(self, skill: Skill.Skill, level: int):
+    super().__init__(skill, level)
+    self.skill = skill
+    self.level = level
+
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    pass
+
+
+class TeamAttainSkill(PredicateTask):
+  def __init__(self, skill: Skill.Skill, level: int, num_agent: int):
+    super().__init__(skill, level)
+    self.skill = skill
+    self.level = level
     self.num_agent = num_agent
 
-    self.item_ids = { 'hat':2, 'top':3, 'bottom':4 }
-    self.item_ids.update(self.WEAPON_IDS[attack_style])
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    pass
+
+
+class DestroyAgent(PredicateTask):
+  def __init__(self, agents: List[int]):
+    super().__init__(agents)
+    self.agents = agents
 
   def __call__(self, team_gs, ent_id):
-    """True if the number of fully equipped agents is greater than or equal to num_agent
+    """True if
        Otherwise false.
+    """
+    pass
 
-       To determine fully equipped, we look at hat, top, bottom, weapon, ammo, respectively,
-       and see whether these are equipped and has level greater than or equal to min_level.
+
+class EliminateFoe(PredicateTask):
+  def __init__(self, teams: List[int]):
+    super().__init__(teams)
+    self.teams = teams
+
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    pass
+
+
+#######################################
+# Event-log based predicates
+#######################################
+
+
+class ScoreHit(PredicateTask):
+  def __init__(self, combat_style: Skill.Skill, count: int):
+    super().__init__(combat_style, count)
+    self.combat_style = combat_style
+    self.count = count
+
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
     """
     super().__call__(team_gs, ent_id)
+    pass
 
-    # check if the cached result is available
-    if self.__class__ in team_gs.cache_result:
-      return team_gs.cache_result[self.__class__]
 
-    data = team_gs.item_data # 2d numpy data of the team item instances
-    flt_idx = (data[:,team_gs.item_cols['level']] >= self.min_level) & \
-              (data[:,team_gs.item_cols['equipped']] > 0)
+class ScoreKill(PredicateTask):
+  def __init__(self, teams: List[int], num_kill: int):
+    super().__init__(teams, num_kill)
+    self.teams = teams
+    self.num_kill = num_kill
 
-    # should have all hat, top, bottom (general)
-    tmp_grpby = {}
-    for item, type_id in self.item_ids.items():
-      flt_tmp = flt_idx & (data[:,team_gs.item_cols['type_id']] == type_id)
-      tmp_grpby[item] = \
-        team_gs.group_by(data[flt_tmp], team_gs.item_cols['owner_id'])
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    super().__call__(team_gs, ent_id)
+    pass
 
-    # get the intersection of all tmp_grpby keys
-    equipped_each = [set(equipped.keys()) for equipped in tmp_grpby.values()]
-    equipped_all = set.intersection(*equipped_each)
 
-    team_gs.cache_result[self.__class__] = len(equipped_all) >= self.num_agent
-
-    return team_gs.cache_result[self.__class__]
+class TeamScoreKill(ScoreKill):
+  def __call__(self, team_gs, ent_id):
+    """True if
+       Otherwise false.
+    """
+    super().__call__(team_gs, ent_id)
+    pass

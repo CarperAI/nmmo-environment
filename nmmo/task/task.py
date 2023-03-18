@@ -133,6 +133,8 @@ class PredicateTask:
         tmp_list.append(str(arg)[1:-2].rsplit('.', maxsplit=1)[-1])
       elif "object at" in str(arg):
         tmp_list.append(str(arg).split(' object', maxsplit=1)[0].split('.')[-1])
+      elif arg is None:
+        tmp_list.append('Any')
       else:
         tmp_list.append(str(arg))
     return '_'.join(tmp_list)
