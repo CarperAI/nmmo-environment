@@ -11,10 +11,13 @@ class InventorySpaceLT(PredicateTask):
     self.space = space
 
   def __call__(self, team_gs, ent_id):
-    """True if
+    """True if the inventory space of the ent_id is less than the self.space.
        Otherwise false.
     """
-    pass
+    super().__call__(team_gs, ent_id)
+    assert ent_id in team_gs.env_obs, "The agent's obs is not in team_gs.env_obs"
+
+    return team_gs.env_obs[ent_id].inventory.len <= self.space
 
 
 class ItemTask(PredicateTask):
@@ -42,10 +45,22 @@ class OwnItem(ItemTask):
 
 class TeamOwnItem(ItemTask):
   def __call__(self, team_gs, ent_id):
-    """True if
-       Otherwise false.
+    """True if the team as whole ones the item (item_type, >= min_level) 
+       and has greater than or equal to quantity. Otherwise false.
     """
-    pass
+    super().__call__(team_gs, ent_id)
+
+    # cache the result
+    team_gs.cache_result[self.name] = False
+
+    data = team_gs.item_data # 2d numpy data of the team item instances
+    flt_idx = (data[:,team_gs.item_cols['type_id']] == self.item_type) & \
+              (data[:,team_gs.item_cols['level']] >= self.level)
+
+    team_gs.cache_result[self.name] = \
+      sum(data[flt_idx,team_gs.item_cols['quantity']]) >= self.quantity
+
+    return team_gs.cache_result[self.name]
 
 
 class EquipItem(ItemTask): # quantity is NOT used here

@@ -148,7 +148,7 @@ class TestBasePredicate(unittest.TestCase):
 
     pass
 
-  def test_travel_and_team(self): # Travel, TeamTravel
+  def test_travel_and_team(self): # GoDistance, TeamGoDistance
     agent_dist = 5
     team_dist = 10
     test_tasks = [bpt.GoDistance(agent_dist), bpt.TeamGoDistance(team_dist)]
@@ -194,15 +194,37 @@ class TestBasePredicate(unittest.TestCase):
 
     # check the cached results of TeamAttainSkill
 
-
     pass
 
 
   def test_destroy_agent_and_eliminate(self): # DestroyAgent, EliminateFoe
+    # CHECK ME: To properly test this, we may need 3 teams
+
+    target_agents = [1]
+    target_teams = [-3, 1] # npcs pop: -1,-2,-3
+    test_tasks = [bpt.DestroyAgent([]), # empty agents should always fail
+                  bpt.DestroyAgent(target_agents),
+                  bpt.EliminateFoe(target_teams),
+                  bpt.EliminateFoe()] # empty teams become Eliminate all foes
+
+    env = self._get_taskenv(test_tasks)
+
+    _, rewards, _, infos = env.step({})
+
+    # check the cached results of DestroyAgent, EliminateFoe
+
     pass
 
   def test_inventory_space_lt_not(self): # InventorySpaceLT
     # also test NOT InventorySpaceLT
+    target_space = 3
+    test_tasks = [ipt.InventorySpaceLT(target_space),
+                  ~ipt.InventorySpaceLT(target_space)]
+
+    env = self._get_taskenv(test_tasks)
+
+    _, rewards, _, infos = env.step({})
+
     pass
 
 
@@ -211,9 +233,12 @@ class TestBasePredicate(unittest.TestCase):
     # ammo level 2, quantity 3 (stackable, equipable)
     goal_level = 2
     goal_quantity = 3
+    team_quantity = 5
     test_tasks = [ipt.OwnItem(Item.Ration, goal_level, goal_quantity),
                   ipt.OwnItem(Item.Scrap, goal_level, goal_quantity),
-                  ipt.EquipItem(Item.Scrap, goal_level)]
+                  ipt.EquipItem(Item.Scrap, goal_level),
+                  ipt.TeamOwnItem(Item.Ration, quantity=team_quantity),
+                  ipt.TeamOwnItem(Item.Scrap, level=1, quantity=5)]
 
     env = self._get_taskenv(test_tasks)
 
@@ -240,13 +265,17 @@ class TestBasePredicate(unittest.TestCase):
     _, rewards, _, infos = env.step({})
 
     for ent_id in env.realm.players:
-      self.assertEqual(rewards[ent_id], int(ent_id in [3, 6]) + int(ent_id == 6))
+      self.assertEqual(rewards[ent_id], int(ent_id in [3, 6]) + int(ent_id == 6) + 1)
       self.assertEqual(infos[ent_id]['mission'][test_tasks[0].name],
                        int(ent_id == 3)) # OwnItem: Ration, level=>2, quantity=>3
       self.assertEqual(infos[ent_id]['mission'][test_tasks[1].name],
                        int(ent_id == 6)) # OwnItem: Scrap, level=>2, quantity>=3
       self.assertEqual(infos[ent_id]['mission'][test_tasks[2].name],
                        int(ent_id == 6)) # EquipItem: Scrap, level>=2
+      self.assertEqual(infos[ent_id]['mission'][test_tasks[3].name],
+                       int(ent_id in [1, 3, 5])) # TeamOwnItem: Ration, any lvl, q>=5
+      self.assertEqual(infos[ent_id]['mission'][test_tasks[4].name],
+                       int(ent_id in [2, 4, 6])) # TeamOwnItem: Scrap, lvl>=1, q>=5
 
     # DONE
 

@@ -55,6 +55,7 @@ class TeamSizeGE(PredicateTask): # greater than or equal to
 
 class ProtectAgent(PredicateTask):
   def __init__(self, agents: List[int]):
+    #   is this right?
     super().__init__(agents)
     self.agents = agents
 
@@ -63,11 +64,19 @@ class ProtectAgent(PredicateTask):
        Otherwise false.
     """
     super().__call__(team_gs, ent_id)
-    # CHECK ME: No self/foe masking for now. Do we need masking, or not at all?
-    alive_agents = set(self.agents).intersection(team_gs.alive_agents)
 
-    # if all specified agents are alive, the len(intersection) should be the same
-    return len(alive_agents) == len(self.agents)
+    # cache the result
+    team_gs.cache_result[self.name] = False
+
+    # CHECK ME: should we allow empty agents?
+    if len(self.agents):
+      # CHECK ME: No self/foe masking for now. Do we need masking, or not at all?
+      alive_target = set(self.agents).intersection(team_gs.alive_agents)
+
+      # if all specified agents are alive, the len(intersection) should be the same
+      team_gs.cache_result[self.name] = len(alive_target) == len(self.agents)
+
+    return team_gs.cache_result[self.name]
 
 
 class SearchTile(PredicateTask):
@@ -275,7 +284,7 @@ class TeamStayClose(PredicateTask):
     return team_gs.cache_result[self.name]
 
 
-def skill_2_str(skill: Skill.Skill):
+def skill2str(skill: Skill.Skill):
   # str(skill) looks like "<class 'nmmo.systems.skill.Melee'>"
   #  this function turns it to 'melee'
   return str(skill)[1:-2].rsplit('.', maxsplit=1)[-1].lower()
@@ -283,7 +292,7 @@ def skill_2_str(skill: Skill.Skill):
 class AttainSkill(PredicateTask):
   def __init__(self, skill: Skill.Skill, level: int):
     super().__init__(skill, level)
-    self.skill = skill_2_str(skill)
+    self.skill = skill2str(skill)
     self.level = level
 
   def __call__(self, team_gs, ent_id):
@@ -302,7 +311,7 @@ class AttainSkill(PredicateTask):
 class TeamAttainSkill(PredicateTask):
   def __init__(self, skill: Skill.Skill, level: int, num_agent: int):
     super().__init__(skill, level)
-    self.skill = skill_2_str(skill)
+    self.skill = skill2str(skill)
     self.level = level
     self.num_agent = num_agent
 
@@ -330,22 +339,51 @@ class DestroyAgent(PredicateTask):
     self.agents = agents
 
   def __call__(self, team_gs, ent_id):
-    """True if
+    """True if the specified agents (list of ent_id) are ALL dead
        Otherwise false.
     """
-    pass
+    super().__call__(team_gs, ent_id)
+
+    # cache the result
+    team_gs.cache_result[self.name] = False
+
+    # CHECK ME: should we allow empty agents?
+    if len(self.agents):
+      alive_target = set(self.agents).intersection(team_gs.alive_agents)
+
+      # if all specified agents are alive, the len(intersection) should be the same
+      team_gs.cache_result[self.name] = len(alive_target) == 0
+
+    return team_gs.cache_result[self.name]
 
 
 class EliminateFoe(PredicateTask):
-  def __init__(self, teams: List[int]):
+  def __init__(self, teams:List[int]=None):
     super().__init__(teams)
     self.teams = teams
 
   def __call__(self, team_gs, ent_id):
-    """True if
+    """True if the specified teams are ALL eliminated
        Otherwise false.
     """
-    pass
+    super().__call__(team_gs, ent_id)
+
+    if self.teams is None or len(self.teams) == 0:
+      # Make the task Eliminate all foes (without npcs)
+      foes = list(team_gs.alive_byteam.keys())
+      self.teams = [pop_id for pop_id in foes if pop_id >= 0 and
+                    pop_id != team_gs.pop_id] # exclude npcs and self
+
+    # cache the result
+    team_gs.cache_result[self.name] = True
+
+    for pop_id in self.teams:
+      # CHECK ME: assuming alive_byteam[pop_id] is empty, if pop_id is eliminated
+      if pop_id in team_gs.alive_byteam:
+        team_gs.cache_result[self.name] = False
+        break
+
+    return team_gs.cache_result[self.name]
 
 
 #######################################
