@@ -35,7 +35,7 @@ class FakeTask(task.PredicateTask):
 
 class MockGameState(task.TeamGameState):
   def __init__(self):
-    pass
+    self.cache_result = {}
 
   def is_member(self, ent_id): # pylint: disable=unused-argument
     return True

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from copy import deepcopy
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import json
 
 import numpy as np
@@ -15,16 +15,19 @@ from nmmo.core.observation import Observation
 
 from nmmo.entity.entity import EntityState
 from nmmo.systems.item import ItemState
+from nmmo.core.tile import TileState
 
 
 @dataclass
 class TeamGameState:
   tick: int
   config: Config
-  alive_all: Dict # all alive agents' ent_id and pop_id
-
   pop_id: int
-  member: List[int] # ent_ids
+  spawn_pos: Dict[int, Tuple[int, int]] # ent_id: (row, col)
+
+  alive_agents: List # of alive agents' ent_id
+  alive_byteam: Dict # all alive agents' ent_id and pop_id
+
   env_obs: Dict[int, Observation] # only include obs from own team
 
   entity_cols: Dict # attr2col
@@ -33,13 +36,15 @@ class TeamGameState:
   item_cols: Dict
   item_data: np.ndarray # Item ds table, has only team members
 
+  tile_cols: Dict
+
   cache_result: Dict # cache for result of team task evaluation
 
   # - add extra info that is not in the datastore (e.g., spawn pos)
   # - would IS_WITHIN, TICK, COUNT_DOWN be good here?
 
   def is_member(self, ent_id):
-    return ent_id in self.member
+    return ent_id in self.spawn_pos
 
   def entity_or_none(self, ent_id):
     flt_ent = self.entity_data[:,self.entity_cols['id']] == ent_id
@@ -67,14 +72,16 @@ class GameStateGenerator:
 
   def _map_ent_team(self, realm: Realm):
     ent2team: Dict[int, int] = {} # key: ent_id, val: pop_id
-    team2ent: Dict[int, List[int]] = {} # key: pop_id, val: list(ent-id)
+    # key: pop_id, val: spawn_pos dict -- ent_id: (row, col)
+    team2ent: Dict[int, Dict[int, Tuple[int, int]]] = {}
 
     for ent_id, ent in realm.players.items():
       ent2team[ent_id] = ent.population
+      # since _map_ent_team is called during init, the current pos is spawn pos
       if ent.population in team2ent:
-        team2ent[ent.population].append(ent_id)
+        team2ent[ent.population].update({ent_id: ent.pos})
       else:
-        team2ent[ent.population] = [ent_id]
+        team2ent[ent.population] = {ent_id: ent.pos}
 
     return ent2team, team2ent
 
@@ -82,34 +89,40 @@ class GameStateGenerator:
     team_gs = {}
 
     # get all alive entities
-    entity_all = EntityState.Query.table(realm.datastore)
+    entity_all = EntityState.Query.table(realm.datastore).astype(np.int32)
     ent_cols = EntityState.State.attr_name_to_col
 
     # CHECK_ME: Entity ds should have the latest alive agents info
-    alive_all = {}
+    alive_byteam = {}
+    alive_agents = list(entity_all[:,ent_cols["id"]])
     g = npi.group_by(entity_all[:,ent_cols["population_id"]])
     for pop_id, ents in zip(*g(entity_all[:,ent_cols["id"]])):
-      alive_all[int(pop_id)] = ents
+      alive_byteam[int(pop_id)] = ents
 
-    item_all = ItemState.Query.table(realm.datastore)
+    item_all = ItemState.Query.table(realm.datastore).astype(np.int32)
     item_cols = ItemState.State.attr_name_to_col
 
+    tile_cols = TileState.State.attr_name_to_col
+
     # CHECK ME: what gets return for eliminated teams? killed agents?
-    for pop_id, member in self.team2ent.items():
+    for pop_id, spawn_pos in self.team2ent.items():
       flt_ent = entity_all[:,ent_cols['population_id']] == pop_id
-      flt_item = np.isin(item_all[:,item_cols['owner_id']], member)
+      flt_item = np.isin(item_all[:,item_cols['owner_id']], list(spawn_pos.keys()))
 
       team_gs[pop_id] = TeamGameState(
         tick = realm.tick,
         config = self.config,
-        alive_all = alive_all,
         pop_id = int(pop_id),
-        member = member,
-        env_obs = [env_obs[ent_id] for ent_id in member if ent_id in env_obs],
+        spawn_pos = spawn_pos,
+        alive_agents = alive_agents,
+        alive_byteam = alive_byteam,
+        env_obs = { ent_id: env_obs[ent_id]
+                    for ent_id in spawn_pos.keys() if ent_id in env_obs },
         entity_cols = ent_cols,
         entity_data = entity_all[flt_ent],
         item_cols = item_cols,
         item_data = item_all[flt_item],
+        tile_cols = tile_cols,
         cache_result = {}
       )
 
@@ -137,8 +150,9 @@ class PredicateTask:
         tmp_list.append('Any')
       else:
         tmp_list.append(str(arg))
-    return '_'.join(tmp_list)
+    return '_'.join(tmp_list).replace(' ', '')
 
+  # pylint: disable=inconsistent-return-statements
   def __call__(self, team_gs: TeamGameState, ent_id: int) -> bool:
     """One should describe the code how evaluation is done.
        LLM wiil use it to produce goal embedding, which will be
@@ -148,6 +162,10 @@ class PredicateTask:
     # if the provided ent_id can access team_gs
     assert team_gs.is_member(ent_id), \
       "The entity must be in the team to access the provided team gs"
+
+    # check if the cached result is available, and if so return it
+    if self.name in team_gs.cache_result:
+      return team_gs.cache_result[self.name]
 
   def _desc(self, class_type):
     return {
@@ -393,6 +411,7 @@ class TaskWrapper(nmmo.Env):
 
     # game state generator
     self.gs_gen: GameStateGenerator = None
+    self.team_gs = None
 
   def _map_entity_mission(self, missions: List[Mission]):
     self._missions = missions
@@ -420,8 +439,7 @@ class TaskWrapper(nmmo.Env):
     infos = {}
     rewards = { eid: -1 for eid in dones }
 
-    # CHECK ME: is this a good place to do this?
-    team_gs = self.gs_gen.generate(self.realm, self.obs)
+    self.team_gs = self.gs_gen.generate(self.realm, self.obs)
 
     for agent_id in agents:
       infos[agent_id] = {}
@@ -442,7 +460,7 @@ class TaskWrapper(nmmo.Env):
       # CHECK ME: some agents may not have a assinged task. is it ok?
       if agent_id in self._ent2misn:
         for mission in self._ent2misn[agent_id]:
-          rew = mission.reward(team_gs[pop_id], agent_id)
+          rew = mission.reward(self.team_gs[pop_id], agent_id)
           rewards[agent_id] += rew
           infos[agent_id]['mission'].update({ mission.name: rew })
 

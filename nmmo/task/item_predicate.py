@@ -93,10 +93,6 @@ class TeamFullyArmed(PredicateTask):
     """
     super().__call__(team_gs, ent_id)
 
-    # check if the cached result is available
-    if self.__class__ in team_gs.cache_result:
-      return team_gs.cache_result[self.__class__]
-
     data = team_gs.item_data # 2d numpy data of the team item instances
     flt_idx = (data[:,team_gs.item_cols['level']] >= self.min_level) & \
               (data[:,team_gs.item_cols['equipped']] > 0)
