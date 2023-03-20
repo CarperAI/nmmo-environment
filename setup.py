@@ -36,7 +36,7 @@ setup(
         'pytest<7',
         'pytest-pythonpath==0.7.4',
         'pytest-benchmark==3.4.1',
-        'openskill==4.0.0',
+        #'openskill==4.0.0',
         'fire==0.4.0',
         'setproctitle==1.1.10',
         'service-identity==21.1.0',
