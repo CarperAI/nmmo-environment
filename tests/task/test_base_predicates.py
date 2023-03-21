@@ -1,8 +1,7 @@
 import unittest
 
 # pylint: disable=import-error
-from testhelpers import ScriptedAgentTestConfig, provide_item
-#from testhelpers import change_spawn_pos
+from tests.testhelpers import ScriptedAgentTestConfig, provide_item, change_spawn_pos
 
 from scripted import baselines
 
@@ -100,7 +99,7 @@ class TestBasePredicate(unittest.TestCase):
         self.assertEqual(infos[ent_id]['mission'][test_tasks[4].name], 1) # 4 -> Success
         self.assertEqual(infos[ent_id]['mission'][test_tasks[5].name], 0) # Timer -> Fail
 
-    # DONE
+    # DONEhttps://github.com/MarkHaoxiang/imc-prosperity-battlebridge.git
 
   def test_search_tile_and_team(self): # SearchTile, TeamSearchTile
     agent_target = Material.Water
@@ -129,6 +128,26 @@ class TestBasePredicate(unittest.TestCase):
     #   then run env.obs = env._compute_observations()
 
     _, rewards, _, infos = env.step({})
+    MS = env.config.MAP_SIZE
+
+    for i in range(MS):
+      for j in range(MS):
+        tile = env.realm.map.tiles[i,j]
+        tile.material = Material.Grass
+        tile.material_id.update(2)
+    for ent_id in env.realm.players:
+      change_spawn_pos(env.realm,ent_id,(0,0))
+
+    change_spawn_pos(env.realm,1,(MS-1,MS-1))
+    change_spawn_pos(env.realm,2,(MS-1,MS-1))
+
+    env.obs = env._compute_observations()
+    _, rewards, _, infos = env.step({})
+
+    self.assertEqual(infos[5]['mission'][test_tasks[1].name],1)
+    self.assertEqual(infos[3]['mission'][test_tasks[0].name],1)
+    self.assertEqual(infos[2]['mission'][test_tasks[0].name],0)
+    self.assertEqual(infos[2]['mission'][test_tasks[1].name],0)
 
     # check the cached results of TeamSearchAgent
 
@@ -137,7 +156,7 @@ class TestBasePredicate(unittest.TestCase):
   def test_goto_tile_and_occupy(self): # GotoTile, TeamOccupyTile
     target_tile = (10, 10)
     test_tasks = [bpt.GotoTile(*target_tile), bpt.TeamOccupyTile(*target_tile)]
-
+    
     env = self._get_taskenv(test_tasks)
 
     # use change_spawn_pos to create various success/failure conditions
@@ -156,7 +175,6 @@ class TestBasePredicate(unittest.TestCase):
     env = self._get_taskenv(test_tasks)
 
     # use change_spawn_pos to create various success/failure conditions
-
     _, rewards, _, infos = env.step({})
 
     # check the cached results of TeamGoDistance
@@ -186,16 +204,24 @@ class TestBasePredicate(unittest.TestCase):
 
     env = self._get_taskenv(test_tasks)
 
-    # update skill level, like:
-    #   env.realm.players[ent_id].skills.range.level.update()
-    #  then env.obs = env._compute_observations()
+    env.realm.players[1].skills.melee.level.update(4)
+    env.realm.players[1].skills.range.level.update(5)
+    env.realm.players[1].skills.fishing.level.update(5)
+    env.realm.players[1].skills.carving.level.update(5)
+    env.obs = env._compute_observations()
+    _, _, _, infos = env.step({})
+    self.assertEqual(infos[1]['mission'][test_tasks[0].name],0)
+    self.assertEqual(infos[1]['mission'][test_tasks[1].name],1)
+    self.assertEqual(infos[3]['mission'][test_tasks[2].name],1)
+    self.assertEqual(infos[3]['mission'][test_tasks[3].name],0)
+    self.assertEqual(infos[1]['mission'][test_tasks[3].name],0)
+    env.realm.players[3].skills.carving.level.update(5)
+    env.obs = env._compute_observations()
+    _, _, _, infos = env.step({})    
+    self.assertEqual(infos[3]['mission'][test_tasks[3].name],1)
+    self.assertEqual(infos[1]['mission'][test_tasks[3].name],1)
 
-    _, rewards, _, infos = env.step({})
-
-    # check the cached results of TeamAttainSkill
-
-
-    pass
+    # DONE
 
 
   def test_destroy_agent_and_eliminate(self): # DestroyAgent, EliminateFoe
