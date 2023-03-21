@@ -1,5 +1,6 @@
 import argparse
-from nmmo.task import task
+from nmmo.task.task_api import TeamHelper
+from nmmo.task.sampler import RandomTaskSampler
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
@@ -14,8 +15,11 @@ if __name__ == "__main__":
 
   flags = parser.parse_args()
 
-  team_helper = task.TeamHelper(range(flags.team_size * flags.num_teams), flags.num_teams)
-  sampler = task.TaskSampler.create_default_task_sampler(team_helper, 0)
+  team_helper = TeamHelper(range(flags.team_size * flags.num_teams), flags.num_teams)
+
+  # TODO: Implement a better heuristic task sampler
+  sampler = RandomTaskSampler() #.create_default_task_sampler(team_helper, 0)
+
   for i in range(flags.tasks):
     task = sampler.sample(
       flags.min_clauses, flags.max_clauses,

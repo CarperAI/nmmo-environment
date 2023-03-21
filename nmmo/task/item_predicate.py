@@ -1,23 +1,26 @@
 # TODO: the below line will be gone after implementation
 # pylint: disable=unnecessary-pass
-from nmmo.task.task import PredicateTask
+from nmmo.task.task_api import Predicate
 from nmmo.systems import item as Item
 from nmmo.systems import skill as Skill
 
 
-class InventorySpaceLT(PredicateTask):
+class InventorySpaceLT(Predicate):
   def __init__(self, space: int):
     super().__init__(space)
     self.space = space
 
   def __call__(self, team_gs, ent_id):
-    """True if
+    """True if the inventory space of the ent_id is less than the self.space.
        Otherwise false.
     """
-    pass
+    super().__call__(team_gs, ent_id)
+    assert ent_id in team_gs.env_obs, "The agent's obs is not in team_gs.env_obs"
+
+    return team_gs.env_obs[ent_id].inventory.len <= self.space
 
 
-class ItemTask(PredicateTask):
+class ItemPredicate(Predicate):
   def __init__(self, item: Item.Item, level: int=0, quantity: int=1):
     super().__init__(item, level, quantity)
     self.item_type = item.ITEM_TYPE_ID
@@ -25,7 +28,7 @@ class ItemTask(PredicateTask):
     self.quantity = quantity
 
 
-class OwnItem(ItemTask):
+class OwnItem(ItemPredicate):
   '''Own an item of a certain type and level (equal or higher)'''
   def __call__(self, team_gs, ent_id):
     """True if the agent (ent_id) owns the item (item_type, >= min_level) 
@@ -40,15 +43,27 @@ class OwnItem(ItemTask):
     return sum(data[flt_idx,team_gs.item_cols['quantity']]) >= self.quantity
 
 
-class TeamOwnItem(ItemTask):
+class TeamOwnItem(ItemPredicate):
   def __call__(self, team_gs, ent_id):
-    """True if
-       Otherwise false.
+    """True if the team as whole ones the item (item_type, >= min_level) 
+       and has greater than or equal to quantity. Otherwise false.
     """
-    pass
+    super().__call__(team_gs, ent_id)
+
+    # cache the result
+    team_gs.cache_result[self.name] = False
+
+    data = team_gs.item_data # 2d numpy data of the team item instances
+    flt_idx = (data[:,team_gs.item_cols['type_id']] == self.item_type) & \
+              (data[:,team_gs.item_cols['level']] >= self.level)
+
+    team_gs.cache_result[self.name] = \
+      sum(data[flt_idx,team_gs.item_cols['quantity']]) >= self.quantity
+
+    return team_gs.cache_result[self.name]
 
 
-class EquipItem(ItemTask): # quantity is NOT used here
+class EquipItem(ItemPredicate): # quantity is NOT used here
   '''Equip an item of a certain type and level (equal or higher)'''
   def __call__(self, team_gs, ent_id):
     """True if the agent (ent_id) equips the item (item_type, >= min_level).
@@ -65,7 +80,7 @@ class EquipItem(ItemTask): # quantity is NOT used here
 
 
 # pylint: disable=protected-access
-class TeamFullyArmed(PredicateTask):
+class TeamFullyArmed(Predicate):
 
   WEAPON_IDS = {
     Skill.Melee: {'weapon':5, 'ammo':13}, # Sword, Scrap
@@ -117,7 +132,7 @@ class TeamFullyArmed(PredicateTask):
 # Event-log based predicates
 #######################################
 
-class ConsumeItem(ItemTask):
+class ConsumeItem(ItemPredicate):
   def __call__(self, team_gs, ent_id):
     """True if
        Otherwise false.
@@ -126,7 +141,7 @@ class ConsumeItem(ItemTask):
     pass
 
 
-class TeamConsumeItem(ItemTask):
+class TeamConsumeItem(ItemPredicate):
   def __call__(self, team_gs, ent_id):
     """True if
        Otherwise false.
@@ -135,7 +150,7 @@ class TeamConsumeItem(ItemTask):
     pass
 
 
-class ProduceItem(ItemTask):
+class ProduceItem(ItemPredicate):
   def __call__(self, team_gs, ent_id):
     """True if
        Otherwise false.
@@ -144,7 +159,7 @@ class ProduceItem(ItemTask):
     pass
 
 
-class TeamProduceItem(ItemTask):
+class TeamProduceItem(ItemPredicate):
   def __call__(self, team_gs, ent_id):
     """True if
        Otherwise false.
@@ -153,7 +168,7 @@ class TeamProduceItem(ItemTask):
     pass
 
 
-class ListItem(ItemTask):
+class ListItem(ItemPredicate):
   def __call__(self, team_gs, ent_id):
     """True if
        Otherwise false.
@@ -162,7 +177,7 @@ class ListItem(ItemTask):
     pass
 
 
-class BuyItem(ItemTask):
+class BuyItem(ItemPredicate):
   def __call__(self, team_gs, ent_id):
     """True if
        Otherwise false.

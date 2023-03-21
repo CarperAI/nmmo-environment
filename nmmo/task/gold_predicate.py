@@ -1,14 +1,14 @@
 # TODO: the below line will be gone after implementation
 # pylint: disable=unnecessary-pass
-from nmmo.task.task import PredicateTask
+from nmmo.task.task_api import Predicate
 
-class GoldTask(PredicateTask):
+class GoldPredicate(Predicate):
   def __init__(self, amount: int):
     super().__init__(amount)
     self.amount = amount
 
 
-class HoardGold(GoldTask):
+class HoardGold(GoldPredicate):
   def __call__(self, team_gs, ent_id):
     """True if the gold of agent (ent_id) is greater than or equal to min_amount.
        Otherwise false.
@@ -21,7 +21,7 @@ class HoardGold(GoldTask):
     return False
 
 
-class TeamHoardGold(GoldTask):
+class TeamHoardGold(GoldPredicate):
   def __call__(self, team_gs, ent_id):
     """True if the summed gold of all teammate is greater than or equal to min_amount.
        Otherwise false
@@ -34,7 +34,7 @@ class TeamHoardGold(GoldTask):
 # Event-log based predicates
 #######################################
 
-class EarnGold(GoldTask):
+class EarnGold(GoldPredicate):
   def __call__(self, team_gs, ent_id):
     """True if
        Otherwise false.
@@ -43,7 +43,7 @@ class EarnGold(GoldTask):
     pass
 
 
-class TeamEarnGold(GoldTask):
+class TeamEarnGold(GoldPredicate):
   def __call__(self, team_gs, ent_id):
     """True if
        Otherwise false.
@@ -52,7 +52,7 @@ class TeamEarnGold(GoldTask):
     pass
 
 
-class SpendGold(GoldTask):
+class SpendGold(GoldPredicate):
   def __call__(self, team_gs, ent_id):
     """True if
        Otherwise false.
@@ -61,7 +61,7 @@ class SpendGold(GoldTask):
     pass
 
 
-class TeamSpendGold(GoldTask):
+class TeamSpendGold(GoldPredicate):
   def __call__(self, team_gs, ent_id):
     """True if
        Otherwise false.
@@ -70,7 +70,7 @@ class TeamSpendGold(GoldTask):
     pass
 
 
-class MakeProfit(GoldTask):
+class MakeProfit(GoldPredicate):
   def __call__(self, team_gs, ent_id):
     """True if
        Otherwise false.
@@ -79,7 +79,7 @@ class MakeProfit(GoldTask):
     pass
 
 
-class TeamMakeProfit(GoldTask):
+class TeamMakeProfit(GoldPredicate):
   def __call__(self, team_gs, ent_id):
     """True if
        Otherwise false.

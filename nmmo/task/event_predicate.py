@@ -1,12 +1,12 @@
 # TODO: the below line will be gone after implementation
 # pylint: disable=unnecessary-pass
-from nmmo.task.task import PredicateTask
+from nmmo.task.task_api import Predicate
 
 #######################################
 # Event-log based predicates
 #######################################
 
-class CountEvent(PredicateTask):
+class CountEvent(Predicate):
   def __init__(self, count: int):
     super().__init__(count)
     self.count = count

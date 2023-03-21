@@ -10,10 +10,10 @@ from nmmo.systems import item as Item
 from nmmo.systems import skill as Skill
 from nmmo.lib import material as Material
 
-from nmmo.task import task
-import nmmo.task.base_predicate as bpt
-import nmmo.task.item_predicate as ipt
-import nmmo.task.gold_predicate as gpt
+from nmmo.task.task_api import Task, TaskWrapper, TeamHelper
+import nmmo.task.base_predicate as bp
+import nmmo.task.item_predicate as ip
+import nmmo.task.gold_predicate as gp
 
 
 # TODO: complete all tests and remove the below line
@@ -30,11 +30,11 @@ class TestBasePredicate(unittest.TestCase):
     config.PLAYER_N = 6
     config.IMMORTAL = True
 
-    team_helper = task.TeamHelper(list(range(1, config.PLAYER_N+1)), len(config.PLAYERS))
-    missions = [ task.Mission(t, team_helper.all()) for t in test_tasks ]
+    team_helper = TeamHelper(list(range(1, config.PLAYER_N+1)), len(config.PLAYERS))
+    tasks = [ Task(t, team_helper.all()) for t in test_tasks ]
 
-    env = task.TaskWrapper(config)
-    env.reset(missions)
+    env = TaskWrapper(config)
+    env.reset(tasks)
 
     return env
 
@@ -43,11 +43,11 @@ class TestBasePredicate(unittest.TestCase):
     team_size_ge = 2
     tick_timer = 9
     death_note = [1, 2, 3]
-    test_tasks = [bpt.LiveLong(tick_success), bpt.TeamSizeGE(team_size_ge),
-                  bpt.ProtectAgent([3]), # 3 gets killed, so fail
-                  bpt.ProtectAgent([3, 4]), # 3 gets killed, so fail
-                  bpt.ProtectAgent([4]), # 4 is alive, so success
-                  bpt.Timer(tick_timer)]
+    test_tasks = [bp.LiveLong(tick_success), bp.TeamSizeGE(team_size_ge),
+                  bp.ProtectAgent([3]), # 3 gets killed, so fail
+                  bp.ProtectAgent([3, 4]), # 3 gets killed, so fail
+                  bp.ProtectAgent([4]), # 4 is alive, so success
+                  bp.Timer(tick_timer)]
 
     env = self._get_taskenv(test_tasks)
 
@@ -58,11 +58,11 @@ class TestBasePredicate(unittest.TestCase):
     #   But no agent has died, so TeamSizeGE = True
     for ent_id in env.realm.players.spawned:
       self.assertEqual(rewards[ent_id], 5)
-      self.assertEqual(infos[ent_id]['mission'][test_tasks[0].name], 0) # LiveLong
-      self.assertEqual(infos[ent_id]['mission'][test_tasks[1].name], 1) # TeamSizeGE
-      self.assertEqual(infos[ent_id]['mission'][test_tasks[-1].name], 1) # Timer
+      self.assertEqual(infos[ent_id]['task'][test_tasks[0].name], 0) # LiveLong
+      self.assertEqual(infos[ent_id]['task'][test_tasks[1].name], 1) # TeamSizeGE
+      self.assertEqual(infos[ent_id]['task'][test_tasks[-1].name], 1) # Timer
       for tid in range(2, 5): # 3 ProtectAgent tasks -- all are alive
-        self.assertEqual(infos[ent_id]['mission'][test_tasks[tid].name], 1) # ProtectAgent
+        self.assertEqual(infos[ent_id]['task'][test_tasks[tid].name], 1) # ProtectAgent
 
     # kill agents 1-3
     for ent_id in death_note:
@@ -85,26 +85,26 @@ class TestBasePredicate(unittest.TestCase):
       else:
         if env.realm.players[ent_id].population == 0: # team 0: only agent 5 is alive
           self.assertEqual(rewards[ent_id], 2)
-          self.assertEqual(infos[ent_id]['mission'][test_tasks[0].name], 1) # LiveLong
-          self.assertEqual(infos[ent_id]['mission'][test_tasks[1].name], 0) # TeamSizeGE
+          self.assertEqual(infos[ent_id]['task'][test_tasks[0].name], 1) # LiveLong
+          self.assertEqual(infos[ent_id]['task'][test_tasks[1].name], 0) # TeamSizeGE
 
         else: # team 1: agents 4 and 6 are alive
           self.assertEqual(rewards[ent_id], 3)
-          self.assertEqual(infos[ent_id]['mission'][test_tasks[0].name], 1) # LiveLong
-          self.assertEqual(infos[ent_id]['mission'][test_tasks[1].name], 1) # TeamSizeGE
+          self.assertEqual(infos[ent_id]['task'][test_tasks[0].name], 1) # LiveLong
+          self.assertEqual(infos[ent_id]['task'][test_tasks[1].name], 1) # TeamSizeGE
 
         # ProtectAgent tasks: team/self doesn't matter when evaluating
-        self.assertEqual(infos[ent_id]['mission'][test_tasks[2].name], 0) # 3 -> Fail
-        self.assertEqual(infos[ent_id]['mission'][test_tasks[3].name], 0) # 3,4 -> Fail
-        self.assertEqual(infos[ent_id]['mission'][test_tasks[4].name], 1) # 4 -> Success
-        self.assertEqual(infos[ent_id]['mission'][test_tasks[5].name], 0) # Timer -> Fail
+        self.assertEqual(infos[ent_id]['task'][test_tasks[2].name], 0) # 3 -> Fail
+        self.assertEqual(infos[ent_id]['task'][test_tasks[3].name], 0) # 3,4 -> Fail
+        self.assertEqual(infos[ent_id]['task'][test_tasks[4].name], 1) # 4 -> Success
+        self.assertEqual(infos[ent_id]['task'][test_tasks[5].name], 0) # Timer -> Fail
 
     # DONEhttps://github.com/MarkHaoxiang/imc-prosperity-battlebridge.git
 
   def test_search_tile_and_team(self): # SearchTile, TeamSearchTile
     agent_target = Material.Water
     team_target = Material.Forest
-    test_tasks = [bpt.SearchTile(agent_target), bpt.TeamSearchTile(team_target)]
+    test_tasks = [bp.SearchTile(agent_target), bp.TeamSearchTile(team_target)]
 
     env = self._get_taskenv(test_tasks)
 
@@ -118,7 +118,7 @@ class TestBasePredicate(unittest.TestCase):
 
   def test_search_agent_and_team(self): # SearchAgent, TeamSearchAgent
     search_target = 1
-    test_tasks = [bpt.SearchAgent(search_target), bpt.TeamSearchAgent(search_target)]
+    test_tasks = [bp.SearchAgent(search_target), bp.TeamSearchAgent(search_target)]
 
     env = self._get_taskenv(test_tasks)
 
@@ -155,8 +155,8 @@ class TestBasePredicate(unittest.TestCase):
 
   def test_goto_tile_and_occupy(self): # GotoTile, TeamOccupyTile
     target_tile = (10, 10)
-    test_tasks = [bpt.GotoTile(*target_tile), bpt.TeamOccupyTile(*target_tile)]
-    
+    test_tasks = [bp.GotoTile(*target_tile), bp.TeamOccupyTile(*target_tile)]
+
     env = self._get_taskenv(test_tasks)
 
     # use change_spawn_pos to create various success/failure conditions
@@ -167,10 +167,10 @@ class TestBasePredicate(unittest.TestCase):
 
     pass
 
-  def test_travel_and_team(self): # Travel, TeamTravel
+  def test_travel_and_team(self): # GoDistance, TeamGoDistance
     agent_dist = 5
     team_dist = 10
-    test_tasks = [bpt.GoDistance(agent_dist), bpt.TeamGoDistance(team_dist)]
+    test_tasks = [bp.GoDistance(agent_dist), bp.TeamGoDistance(team_dist)]
 
     env = self._get_taskenv(test_tasks)
 
@@ -183,7 +183,7 @@ class TestBasePredicate(unittest.TestCase):
 
   def test_stay_close_and_team(self): # StayCloseTo, TeamStayClose
     goal_dist = 5
-    test_tasks = [bpt.StayCloseTo(1, goal_dist), bpt.TeamStayClose(goal_dist)]
+    test_tasks = [bp.StayCloseTo(1, goal_dist), bp.TeamStayClose(goal_dist)]
 
     env = self._get_taskenv(test_tasks)
 
@@ -197,10 +197,10 @@ class TestBasePredicate(unittest.TestCase):
 
   def test_attain_skill_and_team(self): # AttainSkill, TeamAttainSkill
     goal_level = 5
-    test_tasks = [bpt.AttainSkill(Skill.Melee, goal_level),
-                  bpt.AttainSkill(Skill.Range, goal_level),
-                  bpt.TeamAttainSkill(Skill.Fishing, goal_level, 1),
-                  bpt.TeamAttainSkill(Skill.Carving, goal_level, 2)]
+    test_tasks = [bp.AttainSkill(Skill.Melee, goal_level),
+                  bp.AttainSkill(Skill.Range, goal_level),
+                  bp.TeamAttainSkill(Skill.Fishing, goal_level, 1),
+                  bp.TeamAttainSkill(Skill.Carving, goal_level, 2)]
 
     env = self._get_taskenv(test_tasks)
 
@@ -225,10 +225,33 @@ class TestBasePredicate(unittest.TestCase):
 
 
   def test_destroy_agent_and_eliminate(self): # DestroyAgent, EliminateFoe
+    # CHECK ME: To properly test this, we may need 3 teams
+
+    target_agents = [1]
+    target_teams = [-3, 1] # npcs pop: -1,-2,-3
+    test_tasks = [bp.DestroyAgent([]), # empty agents should always fail
+                  bp.DestroyAgent(target_agents),
+                  bp.EliminateFoe(target_teams),
+                  bp.EliminateFoe()] # empty teams become Eliminate all foes
+
+    env = self._get_taskenv(test_tasks)
+
+    _, rewards, _, infos = env.step({})
+
+    # check the cached results of DestroyAgent, EliminateFoe
+
     pass
 
   def test_inventory_space_lt_not(self): # InventorySpaceLT
     # also test NOT InventorySpaceLT
+    target_space = 3
+    test_tasks = [ip.InventorySpaceLT(target_space),
+                  ~ip.InventorySpaceLT(target_space)]
+
+    env = self._get_taskenv(test_tasks)
+
+    _, rewards, _, infos = env.step({})
+
     pass
 
 
@@ -237,9 +260,12 @@ class TestBasePredicate(unittest.TestCase):
     # ammo level 2, quantity 3 (stackable, equipable)
     goal_level = 2
     goal_quantity = 3
-    test_tasks = [ipt.OwnItem(Item.Ration, goal_level, goal_quantity),
-                  ipt.OwnItem(Item.Scrap, goal_level, goal_quantity),
-                  ipt.EquipItem(Item.Scrap, goal_level)]
+    team_quantity = 5
+    test_tasks = [ip.OwnItem(Item.Ration, goal_level, goal_quantity),
+                  ip.OwnItem(Item.Scrap, goal_level, goal_quantity),
+                  ip.EquipItem(Item.Scrap, goal_level),
+                  ip.TeamOwnItem(Item.Ration, quantity=team_quantity),
+                  ip.TeamOwnItem(Item.Scrap, level=1, quantity=5)]
 
     env = self._get_taskenv(test_tasks)
 
@@ -266,20 +292,24 @@ class TestBasePredicate(unittest.TestCase):
     _, rewards, _, infos = env.step({})
 
     for ent_id in env.realm.players:
-      self.assertEqual(rewards[ent_id], int(ent_id in [3, 6]) + int(ent_id == 6))
-      self.assertEqual(infos[ent_id]['mission'][test_tasks[0].name],
+      self.assertEqual(rewards[ent_id], int(ent_id in [3, 6]) + int(ent_id == 6) + 1)
+      self.assertEqual(infos[ent_id]['task'][test_tasks[0].name],
                        int(ent_id == 3)) # OwnItem: Ration, level=>2, quantity=>3
-      self.assertEqual(infos[ent_id]['mission'][test_tasks[1].name],
+      self.assertEqual(infos[ent_id]['task'][test_tasks[1].name],
                        int(ent_id == 6)) # OwnItem: Scrap, level=>2, quantity>=3
-      self.assertEqual(infos[ent_id]['mission'][test_tasks[2].name],
+      self.assertEqual(infos[ent_id]['task'][test_tasks[2].name],
                        int(ent_id == 6)) # EquipItem: Scrap, level>=2
+      self.assertEqual(infos[ent_id]['task'][test_tasks[3].name],
+                       int(ent_id in [1, 3, 5])) # TeamOwnItem: Ration, any lvl, q>=5
+      self.assertEqual(infos[ent_id]['task'][test_tasks[4].name],
+                       int(ent_id in [2, 4, 6])) # TeamOwnItem: Scrap, lvl>=1, q>=5
 
     # DONE
 
   def test_team_fully_armed(self):
     goal_level = 5
     goal_agent = 2
-    test_tasks = [ipt.TeamFullyArmed(Skill.Range, goal_level, goal_agent)]
+    test_tasks = [ip.TeamFullyArmed(Skill.Range, goal_level, goal_agent)]
 
     env = self._get_taskenv(test_tasks)
 
@@ -301,7 +331,7 @@ class TestBasePredicate(unittest.TestCase):
     for ent_id in env.realm.players:
       pop_id = (ent_id-1) % 2 # agents 2, 4, 6 in the team 1 -> goal satisfied
       self.assertEqual(rewards[ent_id], int(pop_id == 1))
-      self.assertEqual(infos[ent_id]['mission'][test_tasks[0].name],
+      self.assertEqual(infos[ent_id]['task'][test_tasks[0].name],
                        int(pop_id == 1))
 
     # DONE
@@ -310,7 +340,7 @@ class TestBasePredicate(unittest.TestCase):
   def test_hoard_gold_and_team(self): # HoardGold, TeamHoardGold
     agent_gold_goal = 10
     team_gold_goal = 30
-    test_tasks = [gpt.HoardGold(agent_gold_goal), gpt.TeamHoardGold(team_gold_goal)]
+    test_tasks = [gp.HoardGold(agent_gold_goal), gp.TeamHoardGold(team_gold_goal)]
 
     env = self._get_taskenv(test_tasks)
 
@@ -324,14 +354,14 @@ class TestBasePredicate(unittest.TestCase):
 
     for ent_id in env.realm.players:
       agent_success = int(ent_id in gold_struck)
-      self.assertEqual(infos[ent_id]['mission'][test_tasks[0].name], agent_success) # HoardGold
+      self.assertEqual(infos[ent_id]['task'][test_tasks[0].name], agent_success) # HoardGold
 
       if env.realm.players[ent_id].population == 0: # team 0: team goal met 10 + 30 >= 30
         self.assertEqual(rewards[ent_id], 1 + agent_success) # team goal met
-        self.assertEqual(infos[ent_id]['mission'][test_tasks[1].name], 1) # TeamHoardGold
+        self.assertEqual(infos[ent_id]['task'][test_tasks[1].name], 1) # TeamHoardGold
 
       else: # team 1: team goal NOT met, 20 < 30
-        self.assertEqual(infos[ent_id]['mission'][test_tasks[1].name], 0) # TeamHoardGold
+        self.assertEqual(infos[ent_id]['task'][test_tasks[1].name], 0) # TeamHoardGold
 
     # DONE
 

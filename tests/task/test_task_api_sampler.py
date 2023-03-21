@@ -5,36 +5,38 @@ import unittest
 from testhelpers import ScriptedAgentTestConfig
 
 import nmmo
-from nmmo.task import task, sampler
+from nmmo.task import sampler
+from nmmo.task.task_api import TeamGameState, TeamHelper, Team, Task, TaskWrapper, Predicate
 import nmmo.task.base_predicate
 from nmmo.systems import item as Item
 from nmmo.io import action as Action
 
 
 # pylint: disable=
-class Success(task.PredicateTask):
-  def __call__(self, team_gs: task.TeamGameState, ent_id: int) -> bool:
+class Success(Predicate):
+  def __call__(self, team_gs: TeamGameState, ent_id: int) -> bool:
     """Always true"""
     return True
 
-class Failure(task.PredicateTask):
-  def __call__(self, team_gs: task.TeamGameState, ent_id: int) -> bool:
+class Failure(Predicate):
+  def __call__(self, team_gs: TeamGameState, ent_id: int) -> bool:
     """Always false"""
     return False
 
-class FakeTask(task.PredicateTask):
+class FakeTask(Predicate):
   def __init__(self, param1: int, param2: Item.Item, param3: Action.Style) -> None:
     super().__init__(param1, param2, param3)
     self._param1 = param1
     self._param2 = param2
     self._param3 = param3
 
-  def __call__(self, team_gs: task.TeamGameState, ent_id: int) -> bool:
+  def __call__(self, team_gs: TeamGameState, ent_id: int) -> bool:
     return False
 
 
-class MockGameState(task.TeamGameState):
+class MockGameState(TeamGameState):
   def __init__(self):
+    # pylint: disable=super-init-not-called
     self.cache_result = {}
 
   def is_member(self, ent_id): # pylint: disable=unused-argument
@@ -82,15 +84,15 @@ class TestTaskAPI(unittest.TestCase):
     env = nmmo.Env(config)
     env.reset()
 
-    team_helper = task.TeamHelper(list(range(1, config.PLAYER_N+1)), len(config.PLAYERS))
+    team_helper = TeamHelper(list(range(1, config.PLAYER_N+1)), len(config.PLAYERS))
 
     # agents' population should match team_helper team id
     for ent_id, ent in env.realm.players.items():
       # pylint: disable=protected-access
       self.assertEqual(team_helper._ent2team[ent_id], ent.population)
 
-  def test_task_force(self):
-    task_force =  task.TaskForce("Foo", [1, 2, 8, 9])
+  def test_team_assignment(self):
+    task_force =  Team("Foo", [1, 2, 8, 9])
 
     self.assertEqual(task_force.member(2).name, "Foo.2")
     self.assertEqual(task_force.member(2).agents, [8])
@@ -116,27 +118,27 @@ class TestTaskAPI(unittest.TestCase):
 
   def test_completed_tasks_in_info(self):
     config = ScriptedAgentTestConfig()
-    env = task.TaskWrapper(config)
+    env = TaskWrapper(config)
 
     # some team helper maybe necessary
-    team_helper = task.TeamHelper( list(range(1, config.PLAYER_N+1)), len(config.PLAYERS))
-    missions = [
-      task.Mission( Success(), team_helper.all() ),
-      task.Mission( Failure(), team_helper.team(1) ),
-      task.Mission( FakeTask(1, Item.Ration, Action.Melee), team_helper.team(2) )
+    team_helper = TeamHelper( list(range(1, config.PLAYER_N+1)), len(config.PLAYERS))
+    tasks = [
+      Task( Success(), team_helper.all() ),
+      Task( Failure(), team_helper.team(1) ),
+      Task( FakeTask(1, Item.Ration, Action.Melee), team_helper.team(2) )
     ]
 
-    env.reset(missions)
+    env.reset(tasks)
     _, _, _, infos = env.step({})
     logging.info(infos)
 
     # agent 2 should have been assigned Success() and Failure() but not FakeTask()
-    self.assertEqual(infos[2]['mission'][Success().name], 1)
-    self.assertEqual(infos[2]['mission'][Failure().name], 0)
-    self.assertTrue(FakeTask(1, Item.Ration, Action.Melee).name not in infos[2]['mission'])
+    self.assertEqual(infos[2]['task'][Success().name], 1)
+    self.assertEqual(infos[2]['task'][Failure().name], 0)
+    self.assertTrue(FakeTask(1, Item.Ration, Action.Melee).name not in infos[2]['task'])
 
     # agent 3 should have been assigned FakeTask(), which is always False (0)
-    self.assertEqual(infos[3]['mission'][FakeTask(1, Item.Ration, Action.Melee).name], 0)
+    self.assertEqual(infos[3]['task'][FakeTask(1, Item.Ration, Action.Melee).name], 0)
 
 
 if __name__ == '__main__':
