@@ -1,6 +1,6 @@
 import random
 
-from nmmo.task import task
+from nmmo.task.task_api import Predicate, AND, NOT, OR
 
 class RandomTaskSampler:
   def __init__(self) -> None:
@@ -16,7 +16,7 @@ class RandomTaskSampler:
              max_clauses: int = 1,
              min_clause_size: int = 1,
              max_clause_size: int = 1,
-             not_p: float = 0.0) -> task.PredicateTask:
+             not_p: float = 0.0) -> Predicate:
 
     clauses = []
     for _ in range(0, random.randint(min_clauses, max_clauses)):
@@ -29,18 +29,18 @@ class RandomTaskSampler:
       for task_class, task_param_space in task_specs:
         predicate = task_class(*[random.choice(tp) for tp in task_param_space])
         if random.random() < not_p:
-          predicate = task.NOT(predicate)
+          predicate = NOT(predicate)
         pred_list.append(predicate)
 
       if len(pred_list) == 1:
         clauses.append(pred_list[0])
       else:
-        clauses.append(task.AND(*pred_list))
+        clauses.append(AND(*pred_list))
 
     if len(clauses) == 1:
       return clauses[0]
 
-    return task.OR(*clauses)
+    return OR(*clauses)
 
   # @staticmethod
   # def create_default_task_sampler(team_helper: task.TeamHelper, agent_id: int):

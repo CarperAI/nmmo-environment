@@ -2,7 +2,7 @@
 # pylint: disable=unnecessary-pass
 from typing import List
 
-from nmmo.task.task import PredicateTask, TeamGameState
+from nmmo.task.task_api import Predicate, TeamGameState
 from nmmo.systems import skill as Skill
 from nmmo.lib.material import Material
 from nmmo.lib import utils
@@ -10,7 +10,7 @@ from nmmo.lib import utils
 from nmmo.entity.entity import EntityState
 
 
-class Timer(PredicateTask):
+class Timer(Predicate):
   def __init__(self, num_tick: int):
     super().__init__(num_tick)
     self.num_tick = num_tick
@@ -37,7 +37,7 @@ class LiveLong(Timer):
 
 
 # each agent is rewarded if the alive teammate is greater than min_size
-class TeamSizeGE(PredicateTask): # greater than or equal to
+class TeamSizeGE(Predicate): # greater than or equal to
   def __init__(self, num_agent: int):
     super().__init__(num_agent)
     self.num_agent = num_agent
@@ -53,7 +53,7 @@ class TeamSizeGE(PredicateTask): # greater than or equal to
     return False
 
 
-class ProtectAgent(PredicateTask):
+class ProtectAgent(Predicate):
   def __init__(self, agents: List[int]):
     #   is this right?
     super().__init__(agents)
@@ -79,7 +79,7 @@ class ProtectAgent(PredicateTask):
     return team_gs.cache_result[self.name]
 
 
-class SearchTile(PredicateTask):
+class SearchTile(Predicate):
   def __init__(self, tile_type: Material):
     super().__init__(tile_type)
     self.tile_type = tile_type.index
@@ -116,7 +116,7 @@ class TeamSearchTile(SearchTile):
     return team_gs.cache_result[self.name]
 
 
-class SearchAgent(PredicateTask):
+class SearchAgent(Predicate):
   def __init__(self, obj_agent: int):
     super().__init__(obj_agent)
     self.obj_agent = obj_agent
@@ -152,7 +152,7 @@ class TeamSearchAgent(SearchAgent):
     return team_gs.cache_result[self.name]
 
 
-class GotoTile(PredicateTask):
+class GotoTile(Predicate):
   def __init__(self, row: int, col: int):
     super().__init__(row, col)
     # CHECK ME: the specified row, col should be habitable
@@ -191,7 +191,7 @@ class TeamOccupyTile(GotoTile):
     return team_gs.cache_result[self.name]
 
 
-class GoDistance(PredicateTask):
+class GoDistance(Predicate):
   def __init__(self, dist: int):
     super().__init__(dist)
     self.dist = dist
@@ -232,7 +232,7 @@ class TeamGoDistance(GoDistance):
     return team_gs.cache_result[self.name]
 
 
-class StayCloseTo(PredicateTask):
+class StayCloseTo(Predicate):
   def __init__(self, obj_agent:int, dist: int):
     super().__init__(obj_agent, dist)
     self.obj_agent = obj_agent
@@ -259,7 +259,7 @@ class StayCloseTo(PredicateTask):
     return False
 
 
-class TeamStayClose(PredicateTask):
+class TeamStayClose(Predicate):
   def __init__(self, dist: int):
     super().__init__(dist)
     self.dist = dist
@@ -289,7 +289,7 @@ def skill2str(skill: Skill.Skill):
   #  this function turns it to 'melee'
   return str(skill)[1:-2].rsplit('.', maxsplit=1)[-1].lower()
 
-class AttainSkill(PredicateTask):
+class AttainSkill(Predicate):
   def __init__(self, skill: Skill.Skill, level: int):
     super().__init__(skill, level)
     self.skill = skill2str(skill)
@@ -308,7 +308,7 @@ class AttainSkill(PredicateTask):
     return False
 
 
-class TeamAttainSkill(PredicateTask):
+class TeamAttainSkill(Predicate):
   def __init__(self, skill: Skill.Skill, level: int, num_agent: int):
     super().__init__(skill, level)
     self.skill = skill2str(skill)
@@ -333,7 +333,7 @@ class TeamAttainSkill(PredicateTask):
     return team_gs.cache_result[self.name]
 
 
-class DestroyAgent(PredicateTask):
+class DestroyAgent(Predicate):
   def __init__(self, agents: List[int]):
     super().__init__(agents)
     self.agents = agents
@@ -357,7 +357,7 @@ class DestroyAgent(PredicateTask):
     return team_gs.cache_result[self.name]
 
 
-class EliminateFoe(PredicateTask):
+class EliminateFoe(Predicate):
   def __init__(self, teams:List[int]=None):
     super().__init__(teams)
     self.teams = teams
@@ -391,7 +391,7 @@ class EliminateFoe(PredicateTask):
 #######################################
 
 
-class ScoreHit(PredicateTask):
+class ScoreHit(Predicate):
   def __init__(self, combat_style: Skill.Skill, count: int):
     super().__init__(combat_style, count)
     self.combat_style = combat_style
@@ -405,7 +405,7 @@ class ScoreHit(PredicateTask):
     pass
 
 
-class ScoreKill(PredicateTask):
+class ScoreKill(Predicate):
   def __init__(self, teams: List[int], num_kill: int):
     super().__init__(teams, num_kill)
     self.teams = teams

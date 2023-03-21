@@ -68,22 +68,17 @@ class TeamGameState:
 class GameStateGenerator:
   def __init__(self, realm: Realm, config: Config):
     self.config = deepcopy(config)
-    self.ent2team, self.team2ent = self._map_ent_team(realm)
-
-  def _map_ent_team(self, realm: Realm):
-    ent2team: Dict[int, int] = {} # key: ent_id, val: pop_id
+    self.ent2team: Dict[int, int] = {} # key: ent_id, val: pop_id
     # key: pop_id, val: spawn_pos dict -- ent_id: (row, col)
-    team2ent: Dict[int, Dict[int, Tuple[int, int]]] = {}
+    self.team2ent: Dict[int, Dict[int, Tuple[int, int]]] = {}
 
     for ent_id, ent in realm.players.items():
-      ent2team[ent_id] = ent.population
-      # since _map_ent_team is called during init, the current pos is spawn pos
-      if ent.population in team2ent:
-        team2ent[ent.population].update({ent_id: ent.pos})
+      self.ent2team[ent_id] = ent.population
+      if ent.population in self.team2ent:
+        # since this is __init__, ent.pos is the spawn pos
+        self.team2ent[ent.population].update({ent_id: ent.pos})
       else:
-        team2ent[ent.population] = {ent_id: ent.pos}
-
-    return ent2team, team2ent
+        self.team2ent[ent.population] = {ent_id: ent.pos}
 
   def generate(self, realm: Realm, env_obs: Dict[int, Observation]) -> Dict[int, TeamGameState]:
     team_gs = {}
@@ -133,7 +128,7 @@ class GameStateGenerator:
   # in that case, we need a simple dataclass to pass remaining info
 
 
-class PredicateTask:
+class Predicate:
   def __init__(self, *args):
     self.name = self._task_name(args)
 
@@ -175,7 +170,7 @@ class PredicateTask:
     }
 
   def description(self) -> Dict:
-    return self._desc("PredicateTask")
+    return self._desc("Predicate")
 
   def __and__(self, other):
     return AND(self,other)
@@ -187,8 +182,8 @@ class PredicateTask:
     return IMPLY(self,other)
 
 
-class AND(PredicateTask):
-  def __init__(self, *tasks: PredicateTask):
+class AND(Predicate):
+  def __init__(self, *tasks: Predicate):
     super().__init__()
     assert len(tasks) > 0
     self._tasks = tasks
@@ -207,8 +202,8 @@ class AND(PredicateTask):
     desc.update({ 'desc_child': ["AND"] + [t.description() for t in self._tasks] })
     return desc
 
-class OR(PredicateTask):
-  def __init__(self, *tasks: PredicateTask):
+class OR(Predicate):
+  def __init__(self, *tasks: Predicate):
     super().__init__()
     assert len(tasks) > 0
     self._tasks = tasks
@@ -227,8 +222,8 @@ class OR(PredicateTask):
     desc.update({ 'desc_child': ["OR"] + [t.description() for t in self._tasks] })
     return desc
 
-class NOT(PredicateTask):
-  def __init__(self, task: PredicateTask):
+class NOT(Predicate):
+  def __init__(self, task: Predicate):
     super().__init__()
     self._task = task
 
@@ -246,8 +241,8 @@ class NOT(PredicateTask):
     desc.update({ 'desc_child': ["NOT", self._task.description()] })
     return desc
 
-class IMPLY(PredicateTask):
-  def __init__(self, p: PredicateTask, q: PredicateTask):
+class IMPLY(Predicate):
+  def __init__(self, p: Predicate, q: Predicate):
     super().__init__()
     self._p = p
     self._q = q
@@ -270,9 +265,9 @@ class IMPLY(PredicateTask):
     return desc
 
 
-class TaskForce:
+class Team:
   def __init__(self, name: str, agents: List[int]) -> None:
-    assert len(agents) > 0, "Task force must have at least one agent"
+    assert len(agents) > 0, "Team must have at least one agent"
     self.name = name
     self._agents = agents
 
@@ -282,7 +277,7 @@ class TaskForce:
 
   def description(self) -> Dict:
     return {
-      "type": "TaskForce",
+      "type": "Team",
       "name": self.name,
       "agents": self._agents
     }
@@ -294,7 +289,7 @@ class TaskForce:
       return self
 
     # returning a team of one
-    return TaskForce(f"{self.name}.{member}", [self._agents[member]])
+    return Team(f"{self.name}.{member}", [self._agents[member]])
 
 
 # CHECK ME: this should produce the same map as the env realm spawn
@@ -318,31 +313,31 @@ class TeamHelper:
 
     return _team2ent, _ent2team
 
-  def team(self, pop_id: int) -> TaskForce:
+  def team(self, pop_id: int) -> Team:
     assert pop_id in self._team2ent, "Wrong pop_id"
-    return TaskForce(f"Team.{pop_id}", self._team2ent[pop_id])
+    return Team(f"Team.{pop_id}", self._team2ent[pop_id])
 
-  def own_team(self, ent_id: int) -> TaskForce:
+  def own_team(self, ent_id: int) -> Team:
     assert ent_id in self._ent2team, "Wrong ent_id"
     pop_id = self._ent2team[ent_id]
-    return TaskForce(f"Team.{pop_id}", self._team2ent[pop_id])
+    return Team(f"Team.{pop_id}", self._team2ent[pop_id])
 
-  def left_team(self, ent_id: int) -> TaskForce:
+  def left_team(self, ent_id: int) -> Team:
     assert ent_id in self._ent2team, "Wrong ent_id"
     pop_id = (self._ent2team[ent_id] - 1) % len(self._team2ent)
-    return TaskForce(f"Team.{pop_id}", self._team2ent[pop_id])
+    return Team(f"Team.{pop_id}", self._team2ent[pop_id])
 
-  def right_team(self, ent_id: int) -> TaskForce:
+  def right_team(self, ent_id: int) -> Team:
     assert ent_id in self._ent2team, "Wrong ent_id"
     pop_id = (self._ent2team[ent_id] + 1) % len(self._team2ent)
-    return TaskForce(f"Team.{pop_id}", self._team2ent[pop_id])
+    return Team(f"Team.{pop_id}", self._team2ent[pop_id])
 
-  def all(self) -> TaskForce:
-    return TaskForce("All", list(self._ent2team.keys()))
+  def all(self) -> Team:
+    return Team("All", list(self._ent2team.keys()))
 
 
-class Mission:
-  def __init__(self, goal_fn, assignee: TaskForce,
+class Task:
+  def __init__(self, goal_fn, assignee: Team,
                reward = 1, name = None, **kwargs):
     assert callable(goal_fn), "Goal eval function goal_fn must be callable"
     self._goal_fn = goal_fn
@@ -356,7 +351,7 @@ class Mission:
     # then for readability, it'd be good to provide a short name
     if name:
       self.name = name
-    elif isinstance(goal_fn, PredicateTask):
+    elif isinstance(goal_fn, Predicate):
       self.name = goal_fn.name
     else:
       self.name = goal_fn.__name__
@@ -366,7 +361,7 @@ class Mission:
     """Assignee (ent_id) gets reward whenever the goal is reached.
        Whether the goal is reached is evaluated by the goal's evaluate method.
     """
-    assert ent_id in self._assignee.agents, "Agent is not on this mission"
+    assert ent_id in self._assignee.agents, "Agent is not on this task"
     if self._goal_fn(team_gs, ent_id):
       self._num_reached += 1
       return self._reward
@@ -386,8 +381,8 @@ class Mission:
 
   def description(self) -> Dict:
     return {
-      "type": "Mission",
-      "goal": self._goal_fn.description() if isinstance(self._goal_fn, PredicateTask)
+      "type": "Task",
+      "goal": self._goal_fn.description() if isinstance(self._goal_fn, Predicate)
                 else self._fn_desc(self._goal_fn),
       "assignee": self._assignee.description(),
       "reward": self.reward.__doc__,
@@ -405,32 +400,32 @@ class TaskWrapper(nmmo.Env):
 
     # CHECK ME: should every agent have a task assigned?
     # {task: [ent_id, ent_id, ...]}
-    self._missions: List[Mission] = []
-    self._ent2misn: Dict[int, List[Mission]] = {} # reverse map
+    self._tasks: List[Task] = []
+    self._ent2task: Dict[int, List[Task]] = {} # reverse map
     self._ent2team: Dict[int, int] = {}
 
     # game state generator
     self.gs_gen: GameStateGenerator = None
     self.team_gs = None
 
-  def _map_entity_mission(self, missions: List[Mission]):
-    self._missions = missions
-    self._ent2misn = {}
-    for mission in self._missions:
-      for ent_id in mission.agents:
-        if ent_id in self._ent2misn:
-          self._ent2misn[ent_id].append(mission)
+  def _map_entity_task(self, tasks: List[Task]):
+    self._tasks = tasks
+    self._ent2task = {}
+    for tsk in self._tasks:
+      for ent_id in tsk.agents:
+        if ent_id in self._ent2task:
+          self._ent2task[ent_id].append(tsk)
         else:
-          self._ent2misn[ent_id] = [mission]
+          self._ent2task[ent_id] = [tsk]
 
   # pylint: disable=arguments-renamed
-  def reset(self, missions: List[Mission],
+  def reset(self, tasks: List[Task],
             map_id=None, seed=None, options=None):
     gym_obs = super().reset(map_id, seed, options)
 
     self.gs_gen = GameStateGenerator(self.realm, self.config)
     self._ent2team = self.gs_gen.ent2team
-    self._map_entity_mission(missions)
+    self._map_entity_task(tasks)
 
     return gym_obs
 
@@ -455,13 +450,13 @@ class TaskWrapper(nmmo.Env):
       pop_id = self._ent2team[agent_id]
 
       assert agent.population == pop_id, "Inconsistent team assignment. Check TeamHelper"
-      infos[agent_id] = { 'population': agent.population, 'mission': {} }
+      infos[agent_id] = { 'population': agent.population, 'task': {} }
 
       # CHECK ME: some agents may not have a assinged task. is it ok?
-      if agent_id in self._ent2misn:
-        for mission in self._ent2misn[agent_id]:
-          rew = mission.reward(self.team_gs[pop_id], agent_id)
+      if agent_id in self._ent2task:
+        for tsk in self._ent2task[agent_id]:
+          rew = tsk.reward(self.team_gs[pop_id], agent_id)
           rewards[agent_id] += rew
-          infos[agent_id]['mission'].update({ mission.name: rew })
+          infos[agent_id]['task'].update({ tsk.name: rew })
 
     return rewards, infos
