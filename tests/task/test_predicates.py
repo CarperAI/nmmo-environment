@@ -1,6 +1,6 @@
 import unittest
 
-# pylint: disable=import-error
+# pylint: disable=import-error, invalid-name
 from tests.testhelpers import ScriptedAgentTestConfig, provide_item, change_spawn_pos
 
 from scripted import baselines
@@ -15,18 +15,18 @@ import nmmo.task.base_predicate as bp
 import nmmo.task.item_predicate as ip
 import nmmo.task.gold_predicate as gp
 
-
-# TODO: complete all tests and remove the below line
-# pylint: disable=unnecessary-pass,unused-variable
-
 class TestBasePredicate(unittest.TestCase):
-  # pylint: disable=protected-access
+  # pylint: disable=protected-access, dangerous-default-value
 
-  def _get_taskenv(self, test_tasks):
+  def _get_taskenv(self,
+                   test_tasks,
+                   agents=[baselines.Sleeper, baselines.Meander],
+                   grass = False):
+
     config = ScriptedAgentTestConfig()
 
     # make two teams: team sleeper, team meander
-    config.PLAYERS = [baselines.Sleeper, baselines.Meander]
+    config.PLAYERS = agents
     config.PLAYER_N = 6
     config.IMMORTAL = True
 
@@ -35,6 +35,16 @@ class TestBasePredicate(unittest.TestCase):
 
     env = TaskWrapper(config)
     env.reset(tasks)
+
+    if grass:
+      MS = env.config.MAP_SIZE
+      # Change entire map to grass to become habitable
+      for i in range(MS):
+        for j in range(MS):
+          tile = env.realm.map.tiles[i,j]
+          tile.material = Material.Grass
+          tile.material_id.update(2)
+          tile.state = Material.Grass(env.config)
 
     return env
 
@@ -99,35 +109,17 @@ class TestBasePredicate(unittest.TestCase):
         self.assertEqual(infos[ent_id]['task'][test_tasks[4].name], 1) # 4 -> Success
         self.assertEqual(infos[ent_id]['task'][test_tasks[5].name], 0) # Timer -> Fail
 
-    # DONEhttps://github.com/MarkHaoxiang/imc-prosperity-battlebridge.git
+    # DONE
 
   def test_search_tile_and_team(self): # SearchTile, TeamSearchTile
-    agent_target = Material.Water
-    team_target = Material.Forest
+    agent_target = Material.Forest
+    team_target = Material.Water
     test_tasks = [bp.SearchTile(agent_target), bp.TeamSearchTile(team_target)]
 
-    env = self._get_taskenv(test_tasks)
+    agents=[baselines.Sleeper, baselines.Sleeper]
+    env = self._get_taskenv(test_tasks, agents=agents)
 
-    _, rewards, _, infos = env.step({})
-
-    # The result of TeamSearchTile should be cached
-    #   the below line access the results of team 0, TeamSearchTile (<- test_tasks[1])
-    #  env.team_gs[0].cache_result[test_tasks[1].name]
-
-    pass
-
-  def test_search_agent_and_team(self): # SearchAgent, TeamSearchAgent
-    search_target = 1
-    test_tasks = [bp.SearchAgent(search_target), bp.TeamSearchAgent(search_target)]
-
-    env = self._get_taskenv(test_tasks)
-
-    # We may want to control the agent's location
-    # to place one in and out of other visual field
-    #   use change_spawn_pos to set the pos
-    #   then run env.obs = env._compute_observations()
-
-    _, rewards, _, infos = env.step({})
+    # Change entire map to grass
     MS = env.config.MAP_SIZE
 
     for i in range(MS):
@@ -135,37 +127,82 @@ class TestBasePredicate(unittest.TestCase):
         tile = env.realm.map.tiles[i,j]
         tile.material = Material.Grass
         tile.material_id.update(2)
+
+    # Two corners to the target materials
+    tile = env.realm.map.tiles[0,MS-2]
+    tile.material = Material.Forest
+    tile.material_id.update(4)
+
+    tile = env.realm.map.tiles[MS-1,0]
+    tile.material = Material.Water
+    tile.material_id.update(1)
+
+    # All agents to one corner
     for ent_id in env.realm.players:
       change_spawn_pos(env.realm,ent_id,(0,0))
 
-    change_spawn_pos(env.realm,1,(MS-1,MS-1))
-    change_spawn_pos(env.realm,2,(MS-1,MS-1))
+    # Team one to forest, team two to water
+    change_spawn_pos(env.realm,1,(0,MS-2))
+    change_spawn_pos(env.realm,2,(MS-2,0))
 
     env.obs = env._compute_observations()
-    _, rewards, _, infos = env.step({})
+    _, _, _, infos = env.step({})
 
-    self.assertEqual(infos[5]['mission'][test_tasks[1].name],1)
-    self.assertEqual(infos[3]['mission'][test_tasks[0].name],1)
-    self.assertEqual(infos[2]['mission'][test_tasks[0].name],0)
-    self.assertEqual(infos[2]['mission'][test_tasks[1].name],0)
+    self.assertEqual(infos[1]['task'][test_tasks[0].name],1)
+    self.assertEqual(infos[5]['task'][test_tasks[0].name],0)
+    self.assertEqual(infos[2]['task'][test_tasks[0].name],0)
+    self.assertEqual(infos[5]['task'][test_tasks[1].name],0)
+    self.assertEqual(infos[2]['task'][test_tasks[1].name],1)
+    self.assertEqual(infos[4]['task'][test_tasks[1].name],1)
 
-    # check the cached results of TeamSearchAgent
+    # DONE
 
-    pass
+  def test_search_agent_and_team(self): # SearchAgent, TeamSearchAgent
+    search_target = 1
+    test_tasks = [bp.SearchAgent(search_target), bp.TeamSearchAgent(search_target)]
+
+    agents=[baselines.Sleeper, baselines.Sleeper]
+    env = self._get_taskenv(test_tasks, agents=agents, grass=True)
+
+    _, _, _, infos = env.step({})
+    MS = env.config.MAP_SIZE
+
+    # Teleport to opposite corners and ensure no sight
+    for ent_id in env.realm.players:
+      change_spawn_pos(env.realm,ent_id,(0,0))
+
+    change_spawn_pos(env.realm,1,(MS-2,MS-2))
+    change_spawn_pos(env.realm,3,(MS-2,MS-2))
+
+    env.obs = env._compute_observations()
+    _, _, _, infos = env.step({})
+
+    # Check only results match agents who see the target
+    self.assertEqual(infos[5]['task'][test_tasks[1].name],1)
+    self.assertEqual(infos[3]['task'][test_tasks[0].name],1)
+    self.assertEqual(infos[2]['task'][test_tasks[0].name],0)
+    self.assertEqual(infos[2]['task'][test_tasks[1].name],0)
+
+    # DONE
 
   def test_goto_tile_and_occupy(self): # GotoTile, TeamOccupyTile
-    target_tile = (10, 10)
+    target_tile = (30, 30)
     test_tasks = [bp.GotoTile(*target_tile), bp.TeamOccupyTile(*target_tile)]
 
     env = self._get_taskenv(test_tasks)
 
-    # use change_spawn_pos to create various success/failure conditions
+    change_spawn_pos(env.realm,1,target_tile)
+    change_spawn_pos(env.realm,2,(target_tile[0],target_tile[1]-1))
 
-    _, rewards, _, infos = env.step({})
+    _, _, _, infos = env.step({})
 
-    # check the cached results of TeamOccupyTile
+    self.assertEqual(infos[1]['task'][test_tasks[0].name],1)
+    self.assertEqual(infos[2]['task'][test_tasks[0].name],0)
+    self.assertEqual(infos[3]['task'][test_tasks[1].name],1)
+    self.assertEqual(env.team_gs[0].cache_result[test_tasks[1].name],1)
+    self.assertEqual(env.team_gs[1].cache_result[test_tasks[1].name],0)
 
-    pass
+    # DONE
 
   def test_travel_and_team(self): # GoDistance, TeamGoDistance
     agent_dist = 5
@@ -174,26 +211,65 @@ class TestBasePredicate(unittest.TestCase):
 
     env = self._get_taskenv(test_tasks)
 
-    # use change_spawn_pos to create various success/failure conditions
-    _, rewards, _, infos = env.step({})
+    _, _, _, infos = env.step({})
+    self.assertEqual(infos[1]['task'][test_tasks[0].name],0)
+    self.assertEqual(infos[3]['task'][test_tasks[1].name],0)
 
-    # check the cached results of TeamGoDistance
+    # Move a bit away
+    agent_pos = (env.realm.players[1].row,env.realm.players[1].col)
+    change_spawn_pos(env.realm,1,(agent_pos[0]+5,agent_pos[1]+6))
+    _,_,_, infos = env.step({})
 
-    pass
+    self.assertEqual(infos[1]['task'][test_tasks[0].name],1)
+    self.assertEqual(infos[3]['task'][test_tasks[1].name],0)
+
+    # Move far away
+    change_spawn_pos(env.realm,1,(agent_pos[0],agent_pos[1]+10))
+    _,_,_, infos = env.step({})
+
+    self.assertEqual(infos[1]['task'][test_tasks[0].name],1)
+    self.assertEqual(infos[3]['task'][test_tasks[1].name],1)
+    self.assertEqual(infos[2]['task'][test_tasks[1].name],0)
+    self.assertEqual(env.team_gs[0].cache_result[test_tasks[1].name],1)
+    self.assertEqual(env.team_gs[1].cache_result[test_tasks[1].name],0)
+
+    # DONE
 
   def test_stay_close_and_team(self): # StayCloseTo, TeamStayClose
     goal_dist = 5
-    test_tasks = [bp.StayCloseTo(1, goal_dist), bp.TeamStayClose(goal_dist)]
+    agent_target = 1
+    test_tasks = [bp.StayCloseTo(agent_target, goal_dist), bp.TeamStayClose(goal_dist)]
 
-    env = self._get_taskenv(test_tasks)
+    agents = [baselines.Sleeper, baselines.Sleeper]
+    env = self._get_taskenv(test_tasks, agents=agents, grass=True)
 
-    # use change_spawn_pos to create various success/failure conditions
+    MS = env.config.MAP_SIZE
 
-    _, rewards, _, infos = env.step({})
+    # Team Movement
+    for ent_id in env.realm.players:
+      change_spawn_pos(env.realm,ent_id,(MS//2,MS//2))
 
-    # check the cached results of TeamStayClose
+    change_spawn_pos(env.realm, 2, (MS//2-3,MS//2))
+    change_spawn_pos(env.realm, 4, (MS//2+3,MS//2))
+    change_spawn_pos(env.realm, 1, (MS//2-2,MS//2))
+    change_spawn_pos(env.realm, 3, (MS//2+3,MS//2))
 
-    pass
+    _, _, _, _ = env.step({})
+    self.assertEqual(env.team_gs[0].cache_result[test_tasks[1].name],1)
+    self.assertEqual(env.team_gs[1].cache_result[test_tasks[1].name],0)
+
+    # One agent target
+    for ent_id in env.realm.players:
+      change_spawn_pos(env.realm,ent_id,(0,0))
+    change_spawn_pos(env.realm, agent_target, (MS//2,MS//2))
+    change_spawn_pos(env.realm, 2, (MS//2-5,MS//2))
+    change_spawn_pos(env.realm, 3, (MS//2-6,MS//2))
+    _, _, _, infos = env.step({})
+
+    self.assertEqual(infos[2]['task'][test_tasks[0].name],1)
+    self.assertEqual(infos[3]['task'][test_tasks[0].name],0)
+
+    # DONE
 
   def test_attain_skill_and_team(self): # AttainSkill, TeamAttainSkill
     goal_level = 5
@@ -210,23 +286,20 @@ class TestBasePredicate(unittest.TestCase):
     env.realm.players[1].skills.carving.level.update(5)
     env.obs = env._compute_observations()
     _, _, _, infos = env.step({})
-    self.assertEqual(infos[1]['mission'][test_tasks[0].name],0)
-    self.assertEqual(infos[1]['mission'][test_tasks[1].name],1)
-    self.assertEqual(infos[3]['mission'][test_tasks[2].name],1)
-    self.assertEqual(infos[3]['mission'][test_tasks[3].name],0)
-    self.assertEqual(infos[1]['mission'][test_tasks[3].name],0)
+    self.assertEqual(infos[1]['task'][test_tasks[0].name],0)
+    self.assertEqual(infos[1]['task'][test_tasks[1].name],1)
+    self.assertEqual(infos[3]['task'][test_tasks[2].name],1)
+    self.assertEqual(infos[3]['task'][test_tasks[3].name],0)
+    self.assertEqual(infos[1]['task'][test_tasks[3].name],0)
     env.realm.players[3].skills.carving.level.update(5)
     env.obs = env._compute_observations()
-    _, _, _, infos = env.step({})    
-    self.assertEqual(infos[3]['mission'][test_tasks[3].name],1)
-    self.assertEqual(infos[1]['mission'][test_tasks[3].name],1)
+    _, _, _, infos = env.step({})
+    self.assertEqual(infos[3]['task'][test_tasks[3].name],1)
+    self.assertEqual(infos[1]['task'][test_tasks[3].name],1)
 
     # DONE
 
-
   def test_destroy_agent_and_eliminate(self): # DestroyAgent, EliminateFoe
-    # CHECK ME: To properly test this, we may need 3 teams
-
     target_agents = [1]
     target_teams = [-3, 1] # npcs pop: -1,-2,-3
     test_tasks = [bp.DestroyAgent([]), # empty agents should always fail
@@ -234,13 +307,37 @@ class TestBasePredicate(unittest.TestCase):
                   bp.EliminateFoe(target_teams),
                   bp.EliminateFoe()] # empty teams become Eliminate all foes
 
-    env = self._get_taskenv(test_tasks)
+    agents = agents=[baselines.Sleeper,baselines.Sleeper,baselines.Sleeper]
+    env = self._get_taskenv(test_tasks,agents=agents)
 
-    _, rewards, _, infos = env.step({})
+    _, _, _, infos = env.step({})
+    self.assertEqual(infos[1]['task'][test_tasks[0].name],0) # empty
+    self.assertEqual(infos[2]['task'][test_tasks[1].name],0) # not dead
 
-    # check the cached results of DestroyAgent, EliminateFoe
+    env.realm.players[1].resources.health.update(0) # kill agent
+    _, _, _, infos = env.step({})
+    self.assertEqual(infos[2]['task'][test_tasks[1].name],1) # dead
+    self.assertEqual(infos[2]['task'][test_tasks[2].name],0) # Other members alive
 
-    pass
+    # kill entire first team and npcs
+    for ent_id in env.realm.players:
+      if ent_id % 3 == 1:
+        env.realm.players[ent_id].resources.health.update(0)
+    for ent_id in env.realm.npcs:
+      env.realm.npcs[ent_id].resources.health.update(0)
+
+    _, _, _, infos = env.step({})
+    self.assertEqual(infos[2]['task'][test_tasks[2].name],1)
+    self.assertEqual(infos[2]['task'][test_tasks[3].name],0)
+
+    for ent_id in env.realm.players:
+      if ent_id % 3 != 2:
+        env.realm.players[ent_id].resources.health.update(0)
+
+    _, _, _, infos = env.step({})
+    self.assertEqual(infos[2]['task'][test_tasks[3].name],1)
+
+    # DONE
 
   def test_inventory_space_lt_not(self): # InventorySpaceLT
     # also test NOT InventorySpaceLT
@@ -250,10 +347,20 @@ class TestBasePredicate(unittest.TestCase):
 
     env = self._get_taskenv(test_tasks)
 
-    _, rewards, _, infos = env.step({})
+    capacity = env.realm.players[1].inventory.capacity
+    provide_item(env.realm, 1, Item.Ration, level=1, quantity=capacity-target_space)
+    _, _, _, infos = env.step({})
+    assert env.realm.players[1].inventory.space >= target_space
+    self.assertEqual(infos[1]['task'][test_tasks[0].name],0)
+    self.assertEqual(infos[1]['task'][test_tasks[1].name],1)
 
-    pass
+    provide_item(env.realm, 1, Item.Ration, level=1, quantity=1)
+    _, _, _, infos = env.step({})
+    assert env.realm.players[1].inventory.space < target_space
+    self.assertEqual(infos[1]['task'][test_tasks[0].name],1)
+    self.assertEqual(infos[1]['task'][test_tasks[1].name],0)
 
+    # DONE
 
   def test_own_equip_item_team(self): # OwnItem, EquipItem, TeamOwnItem
     # ration, level 2, quantity 3 (non-stackable)
