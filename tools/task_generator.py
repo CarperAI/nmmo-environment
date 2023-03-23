@@ -1,4 +1,6 @@
 import argparse
+
+# pylint: disable=import-error
 from nmmo.task.task_api import TeamHelper
 from nmmo.task.sampler import RandomTaskSampler
 

@@ -1,8 +1,7 @@
 import unittest
 import logging
 
-# pylint: disable=import-error
-from testhelpers import ScriptedTestTemplate, provide_item, change_spawn_pos
+from tests.testhelpers import ScriptedTestTemplate, provide_item, change_spawn_pos
 
 from nmmo.io import action
 from nmmo.systems import item as Item

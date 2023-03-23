@@ -4,8 +4,7 @@ from tqdm import tqdm
 
 import numpy as np
 
-# pylint: disable=import-error
-from testhelpers import ScriptedAgentTestConfig, ScriptedAgentTestEnv
+from tests.testhelpers import ScriptedAgentTestConfig, ScriptedAgentTestEnv
 
 import nmmo
 

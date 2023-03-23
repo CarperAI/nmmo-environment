@@ -1,8 +1,7 @@
 import unittest
 import logging
 
-# pylint: disable=import-error
-from testhelpers import ScriptedTestTemplate, provide_item
+from tests.testhelpers import ScriptedTestTemplate, provide_item
 
 from nmmo.io import action
 from nmmo.systems import item as Item
@@ -30,14 +29,14 @@ class TestAmmoUse(ScriptedTestTemplate):
 
     # First tick actions: USE (equip) level-0 ammo
     env.step({ ent_id: { action.Use:
-        { action.InventoryItem: env.obs[ent_id].inventory.sig(self.ammo[ent_id], 0) }
-      } for ent_id in self.ammo })
+        { action.InventoryItem: env.obs[ent_id].inventory.sig(ent_ammo, 0) }
+      } for ent_id, ent_ammo in self.ammo.items() })
 
     # check if the agents have equipped the ammo
-    for ent_id in self.ammo:
+    for ent_id, ent_ammo in self.ammo.items():
       gym_obs = env.obs[ent_id].to_gym()
       inventory = env.obs[ent_id].inventory
-      inv_idx = inventory.sig(self.ammo[ent_id], 0)
+      inv_idx = inventory.sig(ent_ammo, 0)
       self.assertEqual(1, # True
         ItemState.parse_array(inventory.values[inv_idx]).equipped)
 
@@ -55,9 +54,9 @@ class TestAmmoUse(ScriptedTestTemplate):
 
     # check if the ammos were consumed
     ammo_ids = []
-    for ent_id in self.ammo:
+    for ent_id, ent_ammo in self.ammo.items():
       inventory = env.obs[ent_id].inventory
-      inv_idx = inventory.sig(self.ammo[ent_id], 0)
+      inv_idx = inventory.sig(ent_ammo, 0)
       item_info = ItemState.parse_array(inventory.values[inv_idx])
       if ent_id == 2:
         # only agent 2's attack is valid and consume ammo
@@ -110,15 +109,15 @@ class TestAmmoUse(ScriptedTestTemplate):
 
     # First tick actions: SELL level-0 ammo
     env.step({ ent_id: { action.Sell:
-        { action.InventoryItem: env.obs[ent_id].inventory.sig(self.ammo[ent_id], 0),
+        { action.InventoryItem: env.obs[ent_id].inventory.sig(ent_ammo, 0),
           action.Price: sell_price } }
-        for ent_id in self.ammo })
+        for ent_id, ent_ammo in self.ammo.items() })
 
     # check if the ammos were listed
-    for ent_id in self.ammo:
+    for ent_id, ent_ammo in self.ammo.items():
       gym_obs = env.obs[ent_id].to_gym()
       inventory = env.obs[ent_id].inventory
-      inv_idx = inventory.sig(self.ammo[ent_id], 0)
+      inv_idx = inventory.sig(ent_ammo, 0)
       item_info = ItemState.parse_array(inventory.values[inv_idx])
       # ItemState data
       self.assertEqual(sell_price, item_info.listed_price)
@@ -148,13 +147,13 @@ class TestAmmoUse(ScriptedTestTemplate):
 
     # Second tick actions: USE ammo, which should NOT happen
     env.step({ ent_id: { action.Use:
-        { action.InventoryItem: env.obs[ent_id].inventory.sig(self.ammo[ent_id], 0) }
-      } for ent_id in self.ammo })
+        { action.InventoryItem: env.obs[ent_id].inventory.sig(ent_ammo, 0) }
+      } for ent_id, ent_ammo in self.ammo.items() })
 
     # check if the agents have equipped the ammo
-    for ent_id in self.ammo:
+    for ent_id, ent_ammo in self.ammo.items():
       inventory = env.obs[ent_id].inventory
-      inv_idx = inventory.sig(self.ammo[ent_id], 0)
+      inv_idx = inventory.sig(ent_ammo, 0)
       self.assertEqual(0, # False
         ItemState.parse_array(inventory.values[inv_idx]).equipped)
 

@@ -1,10 +1,11 @@
 import logging
 import unittest
 
-# pylint: disable=import-error
-from testhelpers import ScriptedAgentTestConfig
+from tests.testhelpers import ScriptedAgentTestConfig
 
 import nmmo
+
+# pylint: disable=import-error
 from nmmo.task import sampler
 from nmmo.task.task_api import TeamGameState, TeamHelper, Team, Task, TaskWrapper, Predicate
 import nmmo.task.base_predicate
@@ -12,7 +13,6 @@ from nmmo.systems import item as Item
 from nmmo.io import action as Action
 
 
-# pylint: disable=
 class Success(Predicate):
   def __call__(self, team_gs: TeamGameState, ent_id: int) -> bool:
     """Always true"""

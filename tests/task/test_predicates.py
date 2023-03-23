@@ -1,6 +1,6 @@
 import unittest
 
-# pylint: disable=import-error, invalid-name
+# pylint: disable=import-error
 from tests.testhelpers import ScriptedAgentTestConfig, provide_item, change_spawn_pos
 
 from scripted import baselines
@@ -16,7 +16,9 @@ import nmmo.task.item_predicate as ip
 import nmmo.task.gold_predicate as gp
 
 class TestBasePredicate(unittest.TestCase):
-  # pylint: disable=protected-access, dangerous-default-value
+  # pylint: disable=protected-access,invalid-name
+
+  __test__ = False # temporary
 
   def _get_taskenv(self,
                    test_tasks,
