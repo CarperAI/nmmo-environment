@@ -7,7 +7,9 @@ import nmmo
 
 # pylint: disable=import-error
 from nmmo.task import sampler
-from nmmo.task.task_api import TeamGameState, TeamHelper, Team, Task, TaskWrapper, Predicate
+from nmmo.task.task_api import TeamHelper, Team, Task, TaskWrapper
+from nmmo.task.predicate import Predicate
+from nmmo.task.game_state import TeamGameState
 import nmmo.task.base_predicate
 from nmmo.systems import item as Item
 from nmmo.io import action as Action
@@ -89,7 +91,7 @@ class TestTaskAPI(unittest.TestCase):
     # agents' population should match team_helper team id
     for ent_id, ent in env.realm.players.items():
       # pylint: disable=protected-access
-      self.assertEqual(team_helper._ent2team[ent_id], ent.population)
+      self.assertEqual(team_helper._ent_to_team[ent_id], ent.population)
 
   def test_team_assignment(self):
     task_force =  Team("Foo", [1, 2, 8, 9])

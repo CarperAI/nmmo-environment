@@ -1,6 +1,6 @@
 # TODO: the below line will be gone after implementation
 # pylint: disable=unnecessary-pass
-from nmmo.task.task_api import Predicate
+from nmmo.task.predicate import Predicate
 
 class GoldPredicate(Predicate):
   def __init__(self, amount: int):

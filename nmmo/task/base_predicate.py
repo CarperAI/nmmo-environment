@@ -2,7 +2,8 @@
 # pylint: disable=unnecessary-pass
 from typing import List
 
-from nmmo.task.task_api import Predicate, TeamGameState
+from nmmo.task.predicate import Predicate
+from nmmo.task.game_state import TeamGameState
 from nmmo.systems import skill as Skill
 from nmmo.lib.material import Material
 from nmmo.lib import utils
@@ -223,9 +224,9 @@ class TeamGoDistance(GoDistance):
 
     sum_dist = 0
     for i in range(team_gs.entity_data.shape[0]):
-      entity = EntityState.parse_array(team_gs.entity_data[i])
-      curr_pos = (entity.row, entity.col)
-      sum_dist += utils.linf(curr_pos, team_gs.spawn_pos[ent_id])
+      mate = EntityState.parse_array(team_gs.entity_data[i])
+      curr_pos = (mate.row, mate.col)
+      sum_dist += utils.linf(curr_pos, team_gs.spawn_pos[mate.id])
 
     team_gs.cache_result[self.name] = sum_dist >= self.dist
 
@@ -284,7 +285,7 @@ class TeamStayClose(Predicate):
     return team_gs.cache_result[self.name]
 
 
-def skill2str(skill: Skill.Skill):
+def skill_to_str(skill: Skill.Skill):
   # str(skill) looks like "<class 'nmmo.systems.skill.Melee'>"
   #  this function turns it to 'melee'
   return str(skill)[1:-2].rsplit('.', maxsplit=1)[-1].lower()
@@ -292,7 +293,7 @@ def skill2str(skill: Skill.Skill):
 class AttainSkill(Predicate):
   def __init__(self, skill: Skill.Skill, level: int):
     super().__init__(skill, level)
-    self.skill = skill2str(skill)
+    self.skill = skill_to_str(skill)
     self.level = level
 
   def __call__(self, team_gs, ent_id):
@@ -310,8 +311,8 @@ class AttainSkill(Predicate):
 
 class TeamAttainSkill(Predicate):
   def __init__(self, skill: Skill.Skill, level: int, num_agent: int):
-    super().__init__(skill, level)
-    self.skill = skill2str(skill)
+    super().__init__(skill, level, num_agent)
+    self.skill = skill_to_str(skill)
     self.level = level
     self.num_agent = num_agent
 
@@ -368,20 +369,21 @@ class EliminateFoe(Predicate):
     """
     super().__call__(team_gs, ent_id)
 
-    if self.teams is None or len(self.teams) == 0:
-      # Make the task Eliminate all foes (without npcs)
-      foes = list(team_gs.alive_byteam.keys())
-      self.teams = [pop_id for pop_id in foes if pop_id >= 0 and
-                    pop_id != team_gs.pop_id] # exclude npcs and self
-
     # cache the result
     team_gs.cache_result[self.name] = True
 
-    for pop_id in self.teams:
-      # CHECK ME: assuming alive_byteam[pop_id] is empty, if pop_id is eliminated
-      if pop_id in team_gs.alive_byteam:
-        team_gs.cache_result[self.name] = False
-        break
+    if self.teams is None or len(self.teams) == 0:
+      teams = list(team_gs.alive_byteam.keys())
+      alive_teams = [pop_id for pop_id in teams if pop_id >= 0 and
+                     pop_id != team_gs.pop_id] # exclude npcs and self
+      team_gs.cache_result[self.name] = len(alive_teams) == 0
+
+    else:
+      for pop_id in self.teams:
+        # CHECK ME: assuming alive_byteam[pop_id] is empty, if pop_id is eliminated
+        if pop_id in team_gs.alive_byteam:
+          team_gs.cache_result[self.name] = False
+          break
 
     return team_gs.cache_result[self.name]
 

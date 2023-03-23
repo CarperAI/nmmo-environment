@@ -1,11 +1,11 @@
 # TODO: the below line will be gone after implementation
 # pylint: disable=unnecessary-pass
-from nmmo.task.task_api import Predicate
+from nmmo.task.predicate import Predicate
 from nmmo.systems import item as Item
 from nmmo.systems import skill as Skill
 
 
-class InventorySpaceLT(Predicate):
+class InventorySpaceGE(Predicate):
   def __init__(self, space: int):
     super().__init__(space)
     self.space = space
@@ -17,7 +17,9 @@ class InventorySpaceLT(Predicate):
     super().__call__(team_gs, ent_id)
     assert ent_id in team_gs.env_obs, "The agent's obs is not in team_gs.env_obs"
 
-    return team_gs.env_obs[ent_id].inventory.len <= self.space
+    max_space = team_gs.config.ITEM_INVENTORY_CAPACITY
+
+    return (max_space - team_gs.env_obs[ent_id].inventory.len) >= self.space
 
 
 class ItemPredicate(Predicate):
@@ -123,9 +125,9 @@ class TeamFullyArmed(Predicate):
     equipped_each = [set(equipped.keys()) for equipped in tmp_grpby.values()]
     equipped_all = set.intersection(*equipped_each)
 
-    team_gs.cache_result[self.__class__] = len(equipped_all) >= self.num_agent
+    team_gs.cache_result[self.name] = len(equipped_all) >= self.num_agent
 
-    return team_gs.cache_result[self.__class__]
+    return team_gs.cache_result[self.name]
 
 
 #######################################
