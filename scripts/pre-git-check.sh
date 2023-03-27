@@ -4,9 +4,9 @@ echo
 echo "Checking pylint, xcxc, pytest without touching git"
 echo
 
-# Check if there are any "xcxc" strings in the code
+# Run pylint
 echo "--------------------------------------------------------------------"
-echo "Running linter & Looking for xcxc on modified files only..."
+echo "Running linter on modified files only..."
 files=$(git ls-files -m -o --exclude-standard '*.py')
 for file in $files; do
   if test -e $file; then
@@ -15,13 +15,20 @@ for file in $files; do
       echo "Lint failed. Exiting."
       exit 1
     fi
+  fi
+done
 
-    if grep -q -F 'xcxc' $file; then
-      echo "Found xcxc in $file!" >&2
-      read -p "Do you like to stop here? (y/n) " ans
-      if [ "$ans" = "y" ]; then
-        exit 1
-      fi
+# Check if there are any "xcxc" strings in the code
+echo
+echo "--------------------------------------------------------------------"
+echo "Looking for xcxc..."
+files=$(git ls-files '*.py')
+for file in $files; do
+  if grep -q -F 'xcxc' $file; then
+    echo "Found xcxc in $file!" >&2
+    read -p "Do you like to stop here? (y/n) " ans
+    if [ "$ans" = "y" ]; then
+      exit 1
     fi
   fi
 done

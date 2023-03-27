@@ -1,33 +1,21 @@
-# TODO: the below line will be gone after implementation
-# pylint: disable=unnecessary-pass
-from nmmo.task.predicate import Predicate
+from nmmo.task.predicate import Predicate, Group
+from nmmo.task.game_state import GameState
+
 
 class GoldPredicate(Predicate):
-  def __init__(self, amount: int):
-    super().__init__(amount)
-    self.amount = amount
+  def __init__(self, subject: Group, amount: int):
+    super().__init__(subject, amount)
+    self._amount = amount
 
 
 class HoardGold(GoldPredicate):
-  def __call__(self, team_gs, ent_id):
-    """True if the gold of agent (ent_id) is greater than or equal to min_amount.
-       Otherwise false.
-    """
-    super().__call__(team_gs, ent_id)
-    agent = team_gs.entity_or_none(ent_id)
-    if agent:
-      return agent.gold >= self.amount
-
-    return False
-
-
-class TeamHoardGold(GoldPredicate):
-  def __call__(self, team_gs, ent_id):
-    """True if the summed gold of all teammate is greater than or equal to min_amount.
+  def __call__(self, gs: GameState):
+    """True if the summed gold of all teammate is greater than or equal to _amount.
        Otherwise false
     """
-    super().__call__(team_gs, ent_id)
-    return sum(team_gs.entity_data[:,team_gs.entity_cols['gold']]) >= self.amount
+    sbj_data = gs.where_in_id('entity', self.subject)
+
+    return sum(sbj_data[:, gs.entity_cols['gold']]) >= self._amount
 
 
 #######################################
@@ -35,54 +23,24 @@ class TeamHoardGold(GoldPredicate):
 #######################################
 
 class EarnGold(GoldPredicate):
-  def __call__(self, team_gs, ent_id):
+  def __call__(self, gs: GameState):
     """True if
        Otherwise false.
     """
-    super().__call__(team_gs, ent_id)
-    pass
-
-
-class TeamEarnGold(GoldPredicate):
-  def __call__(self, team_gs, ent_id):
-    """True if
-       Otherwise false.
-    """
-    super().__call__(team_gs, ent_id)
-    pass
+    raise NotImplementedError
 
 
 class SpendGold(GoldPredicate):
-  def __call__(self, team_gs, ent_id):
+  def __call__(self, gs: GameState):
     """True if
        Otherwise false.
     """
-    super().__call__(team_gs, ent_id)
-    pass
-
-
-class TeamSpendGold(GoldPredicate):
-  def __call__(self, team_gs, ent_id):
-    """True if
-       Otherwise false.
-    """
-    super().__call__(team_gs, ent_id)
-    pass
+    raise NotImplementedError
 
 
 class MakeProfit(GoldPredicate):
-  def __call__(self, team_gs, ent_id):
+  def __call__(self, gs: GameState):
     """True if
        Otherwise false.
     """
-    super().__call__(team_gs, ent_id)
-    pass
-
-
-class TeamMakeProfit(GoldPredicate):
-  def __call__(self, team_gs, ent_id):
-    """True if
-       Otherwise false.
-    """
-    super().__call__(team_gs, ent_id)
-    pass
+    raise NotImplementedError
