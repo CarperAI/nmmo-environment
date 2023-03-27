@@ -11,6 +11,7 @@ from nmmo.entity.entity import EntityState
 
 class TickGE(Predicate):
   # TickGE does not have subject
+  # pylint: disable=super-init-not-called
   def __init__(self, num_tick: int):
     self._name = self._task_name(None, [num_tick])
     self._num_tick = num_tick

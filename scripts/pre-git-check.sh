@@ -6,7 +6,7 @@ echo
 
 # Run pylint
 echo "--------------------------------------------------------------------"
-echo "Running linter on modified files only..."
+echo "Running pylint..."
 files=$(git ls-files -m -o --exclude-standard '*.py')
 for file in $files; do
   if test -e $file; then
@@ -17,6 +17,11 @@ for file in $files; do
     fi
   fi
 done
+
+if ! pylint --recursive=y nmmo tests; then
+  echo "Lint failed. Exiting."
+  exit 1
+fi
 
 # Check if there are any "xcxc" strings in the code
 echo

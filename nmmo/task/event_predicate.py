@@ -8,6 +8,7 @@ from nmmo.systems import skill as Skill
 #######################################
 
 class CountEvent(Predicate):
+  # pylint: disable=abstract-method
   def __init__(self, subject: Group, count: int):
     super().__init__(subject, count)
     self._count = count

@@ -147,6 +147,7 @@ class Predicate:
 
 class AND(Predicate):
   def __init__(self, *tasks: Predicate):
+    # pylint: disable=super-init-not-called
     assert len(tasks) > 0
     self._tasks = tasks
 
@@ -166,6 +167,7 @@ class AND(Predicate):
 
 class OR(Predicate):
   def __init__(self, *tasks: Predicate):
+    # pylint: disable=super-init-not-called
     assert len(tasks) > 0
     self._tasks = tasks
 
@@ -185,6 +187,7 @@ class OR(Predicate):
 
 class NOT(Predicate):
   def __init__(self, task: Predicate):
+    # pylint: disable=super-init-not-called
     self._task = task
 
     # the name is NOT(task)
@@ -203,6 +206,7 @@ class NOT(Predicate):
 
 class IMPLY(Predicate):
   def __init__(self, p: Predicate, q: Predicate):
+    # pylint: disable=super-init-not-called
     self._p = p
     self._q = q
 

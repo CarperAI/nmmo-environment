@@ -3,6 +3,7 @@ from nmmo.task.game_state import GameState
 
 
 class GoldPredicate(Predicate):
+  # pylint: disable=abstract-method
   def __init__(self, subject: Group, amount: int):
     super().__init__(subject, amount)
     self._amount = amount

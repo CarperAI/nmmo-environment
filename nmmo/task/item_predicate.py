@@ -28,6 +28,7 @@ class InventorySpaceGE(Predicate):
 
 
 class ItemPredicate(Predicate):
+  # pylint: disable=abstract-method
   def __init__(self, subject: Group,
                item: Item.Item, level: int, quantity: int):
     super().__init__(subject, item, level, quantity)

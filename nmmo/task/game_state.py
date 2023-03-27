@@ -48,12 +48,11 @@ class GameState:
       flt_idx = np.in1d(self.entity_data[:,self.entity_cols['id']], subject)
       return self.entity_data[flt_idx]
 
-    elif data_type == 'item':
+    if data_type == 'item':
       flt_idx = np.in1d(self.item_data[:,self.item_cols['owner_id']], subject)
       return self.item_data[flt_idx]
 
-    else:
-      return None
+    return None
 
   def group_by(self, flt_data, grpby_col, sum_col=0):
     # if sum_col = 0, this fn acts as COUNT, otherwise SUM

@@ -9,6 +9,7 @@ from nmmo.task.predicate import Predicate
 
 # TODO(kywch): how to divide the task system, into core vs. wrapper, etc.?
 #  We will address this once the task wrapper is stable
+# pylint: disable=abstract-method
 class TaskWrapper(nmmo.Env):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
