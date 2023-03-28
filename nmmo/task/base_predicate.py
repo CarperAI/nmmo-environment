@@ -83,7 +83,6 @@ class SearchAgent(Predicate):
 
     return result
 
-
 class OccupyTile(Predicate):
   def __init__(self, subject: Group, row: int, col: int):
     super().__init__(subject, row, col)

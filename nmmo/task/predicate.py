@@ -1,4 +1,5 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Iterable
+from collections import OrderedDict
 
 from nmmo.task.game_state import GameState
 
@@ -6,13 +7,16 @@ from nmmo.task.game_state import GameState
 # TODO(kywch): Revisit Team and re-evaluate if putting it here makes sense
 # NOTE: changed Team to Group, to be more general
 class Group:
-  def __init__(self, agents:List[int], name:str=None):
+  def __init__(self, agents:Iterable[int], name:str=None):
     assert len(agents) > 0, "Team must have at least one agent"
     self.name = name if name else f"Agent{str(agents).replace(' ', '')}"
-    self._agents = agents
+    # Remove duplicates
+    self._agents = tuple(OrderedDict.fromkeys(agents).keys())
+    if not isinstance(self._agents,Tuple):
+      self._agents = (self._agents,)
 
   @property
-  def agents(self) -> List[int]:
+  def agents(self) -> Tuple[int]:
     return self._agents
 
   def __contains__(self, ent_id: int):
@@ -20,6 +24,9 @@ class Group:
 
   def __len__(self):
     return len(self._agents)
+  
+  def __hash__(self):
+    return self._agents.__hash__()
 
   def description(self) -> Dict:
     return {
@@ -35,7 +42,7 @@ class Group:
       return self
 
     # returning a group of one
-    return Group([self._agents[member]], f"{self.name}.{member}")
+    return Group((self._agents[member],), f"{self.name}.{member}")
 
 
 # TODO(kywch): consider removing the tight coupling between policy - team

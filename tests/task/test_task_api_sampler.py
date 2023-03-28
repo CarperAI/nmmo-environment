@@ -99,7 +99,7 @@ class TestTaskAPI(unittest.TestCase):
 
     self.assertEqual(team.name, 'TeamFoo')
     self.assertEqual(team.member(2).name, "TeamFoo.2")
-    self.assertEqual(team.member(2).agents, [8])
+    self.assertEqual(team.member(2).agents, (8,))
 
     # don't allow member of one-member team
     self.assertEqual(team.member(2).member(0).name, team.member(2).name)

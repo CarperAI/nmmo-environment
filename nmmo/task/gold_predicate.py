@@ -14,10 +14,7 @@ class HoardGold(GoldPredicate):
     """True if the summed gold of all teammate is greater than or equal to _amount.
        Otherwise false
     """
-    sbj_data = gs.where_in_id('entity', self.subject)
-
-    return sum(sbj_data[:, gs.entity_cols['gold']]) >= self._amount
-
+    return gs.get_subject_view(self.subject).gold.sum() >= self._amount
 
 #######################################
 # Event-log based predicates

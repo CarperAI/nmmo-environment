@@ -56,7 +56,7 @@ class TaskWrapper(nmmo.Env):
       rewards[agent_id] = 0
       infos[agent_id] = { 'task': {} }
 
-      # CHECK ME: some agents may not have a assinged task. is it ok?
+      # CHECK ME: some agents may not have a assigned task. is it ok?
       if agent_id in self._task_assignment:
         for task, at_stake in self._task_assignment[agent_id]:
           assert callable(task), "Provided task is not callable"
