@@ -70,6 +70,10 @@ class Skill(abc.ABC):
     raise NotImplementedError(f"Skill {self.__class__.__name__} "\
       "does not implement 'level' property")
 
+  @classmethod
+  def description(cls):
+    return cls.__name__.lower()
+
 ### Skill Bases ###
 class CombatSkill(Skill):
   def update(self):

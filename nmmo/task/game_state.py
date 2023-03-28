@@ -36,6 +36,9 @@ class GameState:
   # add extra info that is not in the datastore (e.g., spawn pos)
   # add helper functions below
 
+  # memoization
+  memory = {}
+
   def entity_or_none(self, ent_id):
     flt_ent = self.entity_data[:,self.entity_cols['id']] == ent_id
     if np.any(flt_ent):

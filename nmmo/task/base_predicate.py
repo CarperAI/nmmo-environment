@@ -141,16 +141,10 @@ class StayClose(Predicate):
     # compare the outer most coordinates of all teammates
     return max(max(rows)-min(rows), max(cols)-min(cols)) <= self._dist
 
-
-def skill_to_str(skill: Skill.Skill):
-  # str(skill) looks like "<class 'nmmo.systems.skill.Melee'>"
-  #  this function turns it to 'melee'
-  return str(skill)[1:-2].rsplit('.', maxsplit=1)[-1].lower()
-
 class AttainSkill(Predicate):
   def __init__(self, subject: Group, skill: Skill.Skill, level: int, num_agent: int):
     super().__init__(subject, skill, level, num_agent)
-    self._skill = skill_to_str(skill)
+    self._skill = skill.description()
     self._level = level
     self._num_agent = num_agent
 
