@@ -417,15 +417,15 @@ class TestBasePredicate(unittest.TestCase):
     provide_item(env.realm, ent_id, Item.Ration, level=3, quantity=3)
     # OwnItem(Group([4,5,6]), Item.Ration, goal_level, goal_quantity) is false
 
-    equip_item = {
-      # EquipItem(Group([4]), Item.Scrap, goal_level, 1) is false
-      4: Item.Scrap(env.realm, level=1, quantity=4),
-      # EquipItem(Group([4,5]), Item.Scrap, goal_level, 1) is true
-      5: Item.Scrap(env.realm, level=4, quantity=1),
-      # EquipItem(Group([4,5,6]), Item.Scrap, goal_level, 2) is true
-      6: Item.Scrap(env.realm, level=2, quantity=4)}
-    for ent_id, scrap in equip_item.items():
-      env.realm.players[ent_id].inventory.receive(scrap)
+    # provide and equip items
+    ent_id = 4 # EquipItem(Group([4]), Item.Scrap, goal_level, 1) is false
+    provide_item(env.realm, ent_id, Item.Scrap, level=1, quantity=4)
+    ent_id = 5 # EquipItem(Group([4,5]), Item.Scrap, goal_level, 1) is true
+    provide_item(env.realm, ent_id, Item.Scrap, level=4, quantity=1)
+    ent_id = 6 # EquipItem(Group([4,5,6]), Item.Scrap, goal_level, 2) is true
+    provide_item(env.realm, ent_id, Item.Scrap, level=2, quantity=4)
+    for ent_id in [4, 5, 6]:
+      scrap = env.realm.players[ent_id].inventory.items[0]
       scrap.use(env.realm.players[ent_id])
     env.obs = env._compute_observations()
 

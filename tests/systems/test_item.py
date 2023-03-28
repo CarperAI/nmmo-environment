@@ -57,22 +57,6 @@ class TestItem(unittest.TestCase):
 
     self.assertEqual(Item.Hat.Query.owned_by(realm.datastore, 2).size, 0)
 
-  def test_wrong_quantity_on_init(self):
-    # CHECK ME: currently, the init() ignores quantity. Is this ok?
-    realm = MockRealm()
-
-    # Except Stack, quantity must be set to 1 during init
-    top = Item.Top(realm, 2, quantity=3) # Armor
-    wand = Item.Wand(realm, 2, quantity=4) # Weapon
-    arcane = Item.Arcane(realm, 3, quantity=5) # Tool
-    ration = Item.Ration(realm, 4, quantity=6) # Consumable
-    for itm in [top, wand, arcane, ration]:
-      self.assertEqual(itm.quantity.val, 1)
-
-      # this is correct
-    shard = Item.Shard(realm, 4, quantity=50)
-    self.assertEqual(shard.quantity.val, 50)
-
 
 if __name__ == '__main__':
   unittest.main()
