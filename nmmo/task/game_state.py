@@ -87,7 +87,7 @@ class GroupView:
     k = (self._subject, attr)
     if k in self._gs.cache_result:
       return self._gs.cache_result[k]
-      
+
     try:
       # Get property
       v = None

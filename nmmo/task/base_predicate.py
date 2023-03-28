@@ -96,12 +96,10 @@ class OccupyTile(Predicate):
     """True if any subject agent is on the desginated tile.
        Otherwise false.
     """
-    sbj_data = gs.where_in_id('entity', self.subject)
-    flt_row = sbj_data[:, gs.entity_cols['row']] == self._row
-    flt_col = sbj_data[:, gs.entity_cols['col']] == self._col
-
-    return np.any(flt_row & flt_col)
-
+    sbj_data = gs.get_subject_view(self.subject)
+    r = sbj_data.row == self._row
+    c = sbj_data.col == self._col
+    return np.any(r & c)
 
 class GoDistance(Predicate):
   def __init__(self, subject: Group, dist: int):
@@ -113,14 +111,11 @@ class GoDistance(Predicate):
         is greater than or equal to the specified _dist.
        Otherwise false.
     """
-    sum_dist = 0
-    sbj_data = gs.where_in_id('entity', self.subject)
-    for i in range(sbj_data.shape[0]):
-      mate = EntityState.parse_array(sbj_data[i])
-      curr_pos = (mate.row, mate.col)
-      sum_dist += utils.linf(curr_pos, gs.spawn_pos[mate.id])
-
-    return sum_dist >= self._dist
+    sbj_data = gs.get_subject_view(self.subject)
+    r = sbj_data.row
+    c = sbj_data.col
+    dists = utils.linf(list(zip(r,c)),[gs.spawn_pos[id_] for id_ in sbj_data.id])
+    return dists.sum() >= self._dist
 
 
 class StayClose(Predicate):
