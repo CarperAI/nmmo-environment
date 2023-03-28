@@ -6,9 +6,9 @@ from nmmo.task.game_state import GameState
 # TODO(kywch): Revisit Team and re-evaluate if putting it here makes sense
 # NOTE: changed Team to Group, to be more general
 class Group:
-  def __init__(self, agents:List[int], name:str=None):
+  def __init__(self, agents: List[int], name: str=None):
     assert len(agents) > 0, "Team must have at least one agent"
-    self.name = name if name else f"Agent{str(agents).replace(' ', '')}"
+    self.name = name if name else f"Agent({','.join([str(e) for e in agents])})"
     self._agents = agents
 
   @property
@@ -86,9 +86,9 @@ class TeamHelper:
 
 class Predicate:
   # Predicate: states something about the subject
-  def __init__(self, subject:Group, *args):
+  def __init__(self, subject: Group, *args):
     assert len(subject) > 0, "There must be at least one agent in subject."
-    self._name = self._task_name(subject, args)
+    self._name = self._make_name(subject, args)
     self._subject = subject.agents
 
   @property
@@ -99,7 +99,7 @@ class Predicate:
   def subject(self) -> List[int]:
     return self._subject
 
-  def _task_name(self, subject:Group, args):
+  def _make_name(self, subject: Group, args):
     tmp_list = [self.__class__.__name__]
     if subject:
       tmp_list.append(subject.name.replace('Agent','Subject'))
@@ -108,9 +108,9 @@ class Predicate:
       if isinstance(arg, type): # class
         # str(arg) gives something like:
         # "<class 'nmmo.systems.item.Ration'>", "<class 'nmmo.io.action.Melee'>"
-        tmp_list.append(str(arg)[1:-2].rsplit('.', maxsplit=1)[-1])
-      elif "object at" in str(arg):
-        tmp_list.append(str(arg).split(' object', maxsplit=1)[0].split('.')[-1])
+        tmp_list.append(arg.__name__)
+      elif "object at" in str(arg): # class instance
+        tmp_list.append(arg.__class__.__name__)
       elif arg is None:
         tmp_list.append('Any')
       else:
@@ -136,13 +136,13 @@ class Predicate:
     return self._desc("Predicate")
 
   def __and__(self, other):
-    return AND(self,other)
+    return AND(self, other)
   def __or__(self, other):
-    return OR(self,other)
+    return OR(self, other)
   def __invert__(self):
     return NOT(self)
-  def __rshift__(self,other):
-    return IMPLY(self,other)
+  def __rshift__(self, other):
+    return IMPLY(self, other)
 
 
 class AND(Predicate):

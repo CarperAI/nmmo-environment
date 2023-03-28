@@ -11,7 +11,7 @@ files=$(git ls-files -m -o --exclude-standard '*.py')
 for file in $files; do
   if test -e $file; then
     echo $file
-    if ! pylint --errors-only --fail-under=10 $file; then
+    if ! pylint --score=no --fail-under=10 $file; then
       echo "Lint failed. Exiting."
       exit 1
     fi

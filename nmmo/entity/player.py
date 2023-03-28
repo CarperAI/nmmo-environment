@@ -1,5 +1,4 @@
 from nmmo.systems.skill import Skills
-#from nmmo.systems.achievement import Diary
 from nmmo.entity import entity
 
 # pylint: disable=no-member
@@ -31,9 +30,6 @@ class Player(entity.Entity):
       self.gold.update(1)
 
     self.diary  = None
-    # tasks = realm.config.TASKS
-    # if tasks:
-    #   self.diary = Diary(self, tasks)
 
   @property
   def serial(self):

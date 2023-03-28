@@ -1,6 +1,9 @@
 from nmmo.task.predicate import Predicate, Group
 from nmmo.task.game_state import GameState
 
+from nmmo.entity.entity import EntityState
+EntityAttr = EntityState.State.attr_name_to_col
+
 
 class GoldPredicate(Predicate):
   # pylint: disable=abstract-method
@@ -16,7 +19,7 @@ class HoardGold(GoldPredicate):
     """
     sbj_data = gs.where_in_id('entity', self.subject)
 
-    return sum(sbj_data[:, gs.entity_cols['gold']]) >= self._amount
+    return sum(sbj_data[:, EntityAttr['gold']]) >= self._amount
 
 
 #######################################

@@ -3,6 +3,10 @@ from nmmo.task.game_state import GameState
 from nmmo.systems import item as Item
 from nmmo.systems import skill as Skill
 
+from nmmo.systems.item import ItemState
+
+ItemAttr = ItemState.State.attr_name_to_col
+
 
 class InventorySpaceGE(Predicate):
   def __init__(self, subject: Group, space: int):
@@ -43,10 +47,10 @@ class OwnItem(ItemPredicate):
        and has greater than or equal to quantity. Otherwise false.
     """
     sbj_item = gs.where_in_id('item', self.subject)
-    flt_idx = (sbj_item[:,gs.item_cols['type_id']] == self._item_type) & \
-              (sbj_item[:,gs.item_cols['level']] >= self._level)
+    flt_idx = (sbj_item[:, ItemAttr['type_id']] == self._item_type) & \
+              (sbj_item[:, ItemAttr['level']] >= self._level)
 
-    return sum(sbj_item[flt_idx, gs.item_cols['quantity']]) >= self._quantity
+    return sum(sbj_item[flt_idx, ItemAttr['quantity']]) >= self._quantity
 
 
 class EquipItem(Predicate): # quantity is NOT used here
@@ -63,9 +67,9 @@ class EquipItem(Predicate): # quantity is NOT used here
        is greater than or equal to _num_agent. Otherwise false.
     """
     sbj_item = gs.where_in_id('item', self.subject)
-    flt_idx = (sbj_item[:,gs.item_cols['type_id']] == self._item_type) & \
-              (sbj_item[:,gs.item_cols['level']] >= self._level) & \
-              (sbj_item[:,gs.item_cols['equipped']] > 0)
+    flt_idx = (sbj_item[:, ItemAttr['type_id']] == self._item_type) & \
+              (sbj_item[:, ItemAttr['level']] >= self._level) & \
+              (sbj_item[:, ItemAttr['equipped']] > 0)
 
     return len(sbj_item[flt_idx,0]) >= self._num_agent
 
@@ -98,15 +102,15 @@ class FullyArmed(Predicate):
        and see whether these are equipped and has level greater than or equal to _level.
     """
     sbj_item = gs.where_in_id('item', self.subject)
-    flt_idx = (sbj_item[:,gs.item_cols['level']] >= self._level) & \
-              (sbj_item[:,gs.item_cols['equipped']] > 0)
+    flt_idx = (sbj_item[:, ItemAttr['level']] >= self._level) & \
+              (sbj_item[:, ItemAttr['equipped']] > 0)
 
     # should have all hat, top, bottom (general)
     tmp_grpby = {}
     for item, type_id in self._item_ids.items():
-      flt_tmp = flt_idx & (sbj_item[:,gs.item_cols['type_id']] == type_id)
+      flt_tmp = flt_idx & (sbj_item[:, ItemAttr['type_id']] == type_id)
       tmp_grpby[item] = \
-        gs.group_by(sbj_item[flt_tmp], gs.item_cols['owner_id'])
+        gs.group_by(sbj_item[flt_tmp], ItemAttr['owner_id'])
 
     # get the intersection of all tmp_grpby keys
     equipped_each = [set(equipped.keys()) for equipped in tmp_grpby.values()]

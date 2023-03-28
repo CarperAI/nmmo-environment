@@ -1,5 +1,5 @@
 import unittest
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 from tests.testhelpers import ScriptedAgentTestConfig, provide_item
 from tests.testhelpers import change_spawn_pos as change_agent_pos
@@ -78,9 +78,9 @@ class TestBasePredicate(unittest.TestCase):
       (bp.StayAlive(Group([1, 3])), ALL_AGENT),
       (bp.StayAlive(Group([3, 4])), Group([1, 2])),
       (bp.StayAlive(Group([4])), Group([5, 6])),
-      (bp.RestInPeace(Group([1, 3])), ALL_AGENT),
-      (bp.RestInPeace(Group([3, 4])), Group([1, 2])),
-      (bp.RestInPeace(Group([4])), Group([5, 6]))]
+      (bp.AllDead(Group([1, 3])), ALL_AGENT),
+      (bp.AllDead(Group([3, 4])), Group([1, 2])),
+      (bp.AllDead(Group([4])), Group([5, 6]))]
 
     env = self._get_taskenv(test_tasks)
 
@@ -89,7 +89,7 @@ class TestBasePredicate(unittest.TestCase):
 
     # TickGE_5 is false. All agents are alive,
     # so all StayAlive (ti in [1,2,3]) tasks are true
-    # and all RestInPeace tasks (ti in [4, 5, 6]) are false
+    # and all AllDead tasks (ti in [4, 5, 6]) are false
 
     true_task = [1, 2, 3]
     self._check_result(env, test_tasks, infos, true_task)
@@ -117,21 +117,21 @@ class TestBasePredicate(unittest.TestCase):
 
     # TickGE_5 is true. Agents 1-3 are dead, so
     # StayAlive(1,3) and StayAlive(3,4) are false, StayAlive(4) is true
-    # RIP(1,3) is true, RIP(3,4) and RIP(4) are false
+    # AllDead(1,3) is true, AllDead(3,4) and AllDead(4) are false
     true_task = [0, 3, 4]
     self._check_result(env, test_tasks, infos, true_task)
 
     # DONE
 
-  def test_search_tile(self):
+  def test_can_see_tile(self):
     a1_target = Material.Forest
     a2_target = Material.Water
     test_tasks = [ # (Predicate, Team), the reward is 1 by default
-      (bp.SearchTile(Group([1]), a1_target), ALL_AGENT), # True
-      (bp.SearchTile(Group([1,3,5]), a2_target), ALL_AGENT), # False
-      (bp.SearchTile(Group([2]), a2_target), Group([1,2,3])), # True
-      (bp.SearchTile(Group([2,5,6]), a1_target), ALL_AGENT), # False
-      (bp.SearchTile(ALL_AGENT, a2_target), Group([2,3,4]))] # True
+      (bp.CanSeeTile(Group([1]), a1_target), ALL_AGENT), # True
+      (bp.CanSeeTile(Group([1,3,5]), a2_target), ALL_AGENT), # False
+      (bp.CanSeeTile(Group([2]), a2_target), Group([1,2,3])), # True
+      (bp.CanSeeTile(Group([2,5,6]), a1_target), ALL_AGENT), # False
+      (bp.CanSeeTile(ALL_AGENT, a2_target), Group([2,3,4]))] # True
 
     # setup env with all grass map
     env = self._get_taskenv(test_tasks, grass_map=True)
@@ -170,13 +170,13 @@ class TestBasePredicate(unittest.TestCase):
 
     # DONE
 
-  def test_search_agent(self):
+  def test_can_see_agent(self):
     search_target = 1
     test_tasks = [ # (Predicate, Team), the reward is 1 by default
-      (bp.SearchAgent(Group([1]), search_target), ALL_AGENT), # Always True
-      (bp.SearchAgent(Group([2]), search_target), Group([2,3,4])), # False -> True
-      (bp.SearchAgent(Group([3,4,5]), search_target), Group([1,2,3]))] # False
-    
+      (bp.CanSeeAgent(Group([1]), search_target), ALL_AGENT), # Always True
+      (bp.CanSeeAgent(Group([2]), search_target), Group([2,3,4])), # False -> True
+      (bp.CanSeeAgent(Group([3,4,5]), search_target), Group([1,2,3]))] # False
+
     env = self._get_taskenv(test_tasks, grass_map=True)
 
     # All agents to one corner
@@ -190,7 +190,7 @@ class TestBasePredicate(unittest.TestCase):
 
     _, _, _, infos = env.step({})
 
-    # Only SearchTile(Team([1]), search_target) is true, others are false
+    # Only CanSeeAgent(Group([1]), search_target) is true, others are false
     true_task = [0]
     self._check_result(env, test_tasks, infos, true_task)
 
@@ -230,7 +230,7 @@ class TestBasePredicate(unittest.TestCase):
 
     # teleport agent 1 to the target tile, agent 2 to the adjacent tile
     change_agent_pos(env.realm,1,target_tile)
-    change_agent_pos(env.realm,2,(target_tile[0],target_tile[1]-1)) 
+    change_agent_pos(env.realm,2,(target_tile[0],target_tile[1]-1))
     env.obs = env._compute_observations()
 
     _, _, _, infos = env.step({})
@@ -242,22 +242,22 @@ class TestBasePredicate(unittest.TestCase):
 
     # DONE
 
-  def test_go_distance(self):
+  def test_distance_traveled(self):
     agent_dist = 6
     team_dist = 10
     # NOTE: when evaluating predicates, to whom tasks are assigned are irrelevant
     test_tasks = [ # (Predicate, Team), the reward is 1 by default
-      (bp.GoDistance(Group([1]), agent_dist), ALL_AGENT), # False -> True
-      (bp.GoDistance(Group([2, 5]), agent_dist), ALL_AGENT), # False
-      (bp.GoDistance(Group([3, 4]), agent_dist), ALL_AGENT), # False
-      (bp.GoDistance(Group([1, 2, 3]), team_dist), ALL_AGENT), # False -> True
-      (bp.GoDistance(Group([6]), agent_dist), ALL_AGENT)] # False
+      (bp.DistanceTraveled(Group([1]), agent_dist), ALL_AGENT), # False -> True
+      (bp.DistanceTraveled(Group([2, 5]), agent_dist), ALL_AGENT), # False
+      (bp.DistanceTraveled(Group([3, 4]), agent_dist), ALL_AGENT), # False
+      (bp.DistanceTraveled(Group([1, 2, 3]), team_dist), ALL_AGENT), # False -> True
+      (bp.DistanceTraveled(Group([6]), agent_dist), ALL_AGENT)] # False
 
     # make all tiles habitable
     env = self._get_taskenv(test_tasks, grass_map=True)
 
     _, _, _, infos = env.step({})
-    
+
     # one cannot accomplish these goals in the first tick, so all false
     true_task = []
     self._check_result(env, test_tasks, infos, true_task)
@@ -279,17 +279,17 @@ class TestBasePredicate(unittest.TestCase):
 
     # DONE
 
-  def test_stay_close(self):
+  def test_all_members_within_range(self):
     dist_123 = 1
     dist_135 = 5
     test_tasks = [ # (Predicate, Team), the reward is 1 by default
-      (bp.StayClose(Group([1]), dist_123), ALL_AGENT), # Always true for group of 1
-      (bp.StayClose(Group([1,2]), dist_123), ALL_AGENT), # True
-      (bp.StayClose(Group([1,3]), dist_123), ALL_AGENT), # True
-      (bp.StayClose(Group([2,3]), dist_123), ALL_AGENT), # False
-      (bp.StayClose(Group([1,3,5]), dist_123), ALL_AGENT), # False
-      (bp.StayClose(Group([1,3,5]), dist_135), ALL_AGENT), # True
-      (bp.StayClose(Group([2,4,6]), dist_135), ALL_AGENT)] # False
+      (bp.AllMembersWithinRange(Group([1]), dist_123), ALL_AGENT), # Always true for group of 1
+      (bp.AllMembersWithinRange(Group([1,2]), dist_123), ALL_AGENT), # True
+      (bp.AllMembersWithinRange(Group([1,3]), dist_123), ALL_AGENT), # True
+      (bp.AllMembersWithinRange(Group([2,3]), dist_123), ALL_AGENT), # False
+      (bp.AllMembersWithinRange(Group([1,3,5]), dist_123), ALL_AGENT), # False
+      (bp.AllMembersWithinRange(Group([1,3,5]), dist_135), ALL_AGENT), # True
+      (bp.AllMembersWithinRange(Group([2,4,6]), dist_135), ALL_AGENT)] # False
 
     # make all tiles habitable
     env = self._get_taskenv(test_tasks, grass_map=True)
@@ -375,7 +375,7 @@ class TestBasePredicate(unittest.TestCase):
     # add one more item to agent 1
     provide_item(env.realm, 1, Item.Ration, level=1, quantity=1)
     env.obs = env._compute_observations()
-    
+
     _, _, _, infos = env.step({})
 
     self.assertTrue(env.realm.players[1].inventory.space < target_space)
@@ -411,7 +411,7 @@ class TestBasePredicate(unittest.TestCase):
     provide_item(env.realm, ent_id, Item.Ration, level=1, quantity=4)
     provide_item(env.realm, ent_id, Item.Ration, level=2, quantity=2)
     # OwnItem(Group([2]), Item.Ration, goal_level, goal_quantity) is false
-    ent_id = 2 # OwnItem(Group([1,2]), Item.Ration, goal_level, goal_quantity) is true 
+    ent_id = 2 # OwnItem(Group([1,2]), Item.Ration, goal_level, goal_quantity) is true
     provide_item(env.realm, ent_id, Item.Ration, level=4, quantity=1)
     ent_id = 3 # OwnItem(Group([3]), Item.Ration, goal_level, goal_quantity) is true
     provide_item(env.realm, ent_id, Item.Ration, level=3, quantity=3)

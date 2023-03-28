@@ -166,7 +166,7 @@ class ScriptedAgentTestEnv(nmmo.Env):
     return actions
 
 
-def change_spawn_pos(realm:Realm, ent_id:int, new_pos):
+def change_spawn_pos(realm: Realm, ent_id: int, new_pos):
   # check if the position is valid
   assert realm.map.tiles[new_pos].habitable, "Given pos is not habitable."
   assert realm.entity(ent_id), "No such entity in the realm"
@@ -181,7 +181,8 @@ def change_spawn_pos(realm:Realm, ent_id:int, new_pos):
   entity.spawn_pos = new_pos
   realm.map.tiles[new_pos].add_entity(entity)
 
-def provide_item(realm:Realm, ent_id:int, item:Item.Item, level:int, quantity:int):
+def provide_item(realm: Realm, ent_id: int,
+                 item: Item.Item, level: int, quantity: int):
   if isinstance(item, Item.Stack):
     realm.players[ent_id].inventory.receive(
       item(realm, level=level, quantity=quantity))

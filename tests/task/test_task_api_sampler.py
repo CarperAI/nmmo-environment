@@ -39,7 +39,7 @@ class FakeTask(Predicate):
 class MockGameState(GameState):
   def __init__(self):
     # pylint: disable=super-init-not-called
-    self.cache_result = {}
+    pass
 
 
 class TestTaskAPI(unittest.TestCase):
@@ -77,8 +77,8 @@ class TestTaskAPI(unittest.TestCase):
     combination = (success & ~ (failure | fake_task)) | (failure >> fake_task)
 
     self.assertEqual(combination.name,
-      "OR(AND(Success_Subject[1],NOT(OR(Failure_Subject[1,3],FakeTask_Subject[2]_1_Hat_Melee))),"
-      "IMPLY(Failure_Subject[1,3]->FakeTask_Subject[2]_1_Hat_Melee))")
+      "OR(AND(Success_Subject(1),NOT(OR(Failure_Subject(1,3),FakeTask_Subject(2)_1_Hat_Melee))),"
+      "IMPLY(Failure_Subject(1,3)->FakeTask_Subject(2)_1_Hat_Melee))")
 
   def test_team_helper(self):
     # TODO(kywch): This test is true now but may change later.

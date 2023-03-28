@@ -7,20 +7,24 @@ from nmmo.lib.material import Material
 from nmmo.lib import utils
 
 from nmmo.entity.entity import EntityState
+from nmmo.core.tile import TileState
+
+EntityAttr = EntityState.State.attr_name_to_col
+TileAttr = TileState.State.attr_name_to_col
 
 
 class TickGE(Predicate):
   # TickGE does not have subject
   # pylint: disable=super-init-not-called
   def __init__(self, num_tick: int):
-    self._name = self._task_name(None, [num_tick])
+    self._name = self._make_name(None, [num_tick])
     self._num_tick = num_tick
 
   def __call__(self, gs: GameState):
     """True if the current tick is greater than or equal to the specified num_tick.
        Otherwise false.
     """
-    return gs.tick >= self._num_tick
+    return gs.current_tick >= self._num_tick
 
 
 class StayAlive(Predicate):
@@ -34,7 +38,7 @@ class StayAlive(Predicate):
     return len(alive_subject) == len(self.subject)
 
 
-class RestInPeace(Predicate):
+class AllDead(Predicate):
   def __call__(self, gs: GameState):
     """True if all subjects (self._agents) are dead.
        Otherwise false.
@@ -43,7 +47,7 @@ class RestInPeace(Predicate):
     return len(alive_subject) == 0
 
 
-class SearchTile(Predicate):
+class CanSeeTile(Predicate):
   def __init__(self, subject: Group, tile_type: Material):
     super().__init__(subject, tile_type)
     self._tile_type = tile_type.index
@@ -56,7 +60,7 @@ class SearchTile(Predicate):
 
     for ent_id in self.subject:
       if ent_id in gs.env_obs:
-        tile_obs = gs.env_obs[ent_id].tiles[:,gs.tile_cols['material_id']]
+        tile_obs = gs.env_obs[ent_id].tiles[:, TileAttr['material_id']]
         if self._tile_type in tile_obs:
           result = True
           break
@@ -64,7 +68,7 @@ class SearchTile(Predicate):
     return result
 
 
-class SearchAgent(Predicate):
+class CanSeeAgent(Predicate):
   def __init__(self, subject: Group, target: int):
     super().__init__(subject, target)
     self._target = target # ent_id
@@ -98,13 +102,13 @@ class OccupyTile(Predicate):
        Otherwise false.
     """
     sbj_data = gs.where_in_id('entity', self.subject)
-    flt_row = sbj_data[:, gs.entity_cols['row']] == self._row
-    flt_col = sbj_data[:, gs.entity_cols['col']] == self._col
+    flt_row = sbj_data[:, EntityAttr['row']] == self._row
+    flt_col = sbj_data[:, EntityAttr['col']] == self._col
 
     return np.any(flt_row & flt_col)
 
 
-class GoDistance(Predicate):
+class DistanceTraveled(Predicate):
   def __init__(self, subject: Group, dist: int):
     super().__init__(subject, dist)
     self._dist = dist
@@ -124,7 +128,7 @@ class GoDistance(Predicate):
     return sum_dist >= self._dist
 
 
-class StayClose(Predicate):
+class AllMembersWithinRange(Predicate):
   def __init__(self, subject: Group, dist: int):
     super().__init__(subject, dist)
     self._dist = dist
@@ -135,22 +139,17 @@ class StayClose(Predicate):
        Otherwise false.
     """
     sbj_data = gs.where_in_id('entity', self.subject)
-    rows = sbj_data[:,gs.entity_cols['row']]
-    cols = sbj_data[:,gs.entity_cols['col']]
+    rows = sbj_data[:, EntityAttr['row']]
+    cols = sbj_data[:, EntityAttr['col']]
 
     # compare the outer most coordinates of all teammates
     return max(max(rows)-min(rows), max(cols)-min(cols)) <= self._dist
 
 
-def skill_to_str(skill: Skill.Skill):
-  # str(skill) looks like "<class 'nmmo.systems.skill.Melee'>"
-  #  this function turns it to 'melee'
-  return str(skill)[1:-2].rsplit('.', maxsplit=1)[-1].lower()
-
 class AttainSkill(Predicate):
   def __init__(self, subject: Group, skill: Skill.Skill, level: int, num_agent: int):
     super().__init__(subject, skill, level, num_agent)
-    self._skill = skill_to_str(skill)
+    self._skill = skill.__name__.lower()
     self._level = level
     self._num_agent = num_agent
 
@@ -161,6 +160,6 @@ class AttainSkill(Predicate):
     """
     # each row represents alive agents in the team
     sbj_data = gs.where_in_id('entity', self.subject)
-    skill_level = sbj_data[:,gs.entity_cols[self._skill + '_level']]
+    skill_level = sbj_data[:, EntityAttr[self._skill + '_level']]
 
     return sum(skill_level >= self._level) >= self._num_agent
