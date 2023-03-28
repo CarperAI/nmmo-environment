@@ -19,20 +19,24 @@ extra = {
     }
 
 extra['all'] = list(set(chain.from_iterable(extra.values())))
- 
+
+with open('nmmo/version.py', encoding='utf-8') as file:
+  version = file.read().split()[-1].strip("'")
+
 setup(
     name="nmmo",
-    description="Neural MMO is a platform for multiagent intelligence research inspired by "
-    "Massively Multiplayer Online (MMO) role-playing games. Documentation hosted at neuralmmo.github.io.",
+    description="Neural MMO is a platform for multiagent intelligence research"
+      "inspired by Massively Multiplayer Online (MMO) role-playing games. "
+      "Documentation hosted at neuralmmo.github.io.",
     long_description_content_type="text/markdown",
-    version=open('nmmo/version.py').read().split()[-1].strip("'"),
+    version=version,
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
         'pytest<7',
         'pytest-pythonpath==0.7.4',
         'pytest-benchmark==3.4.1',
-        'openskill==4.0.0',
+        #'openskill==4.0.0',
         'fire==0.4.0',
         'setproctitle==1.1.10',
         'service-identity==21.1.0',
@@ -68,4 +72,3 @@ setup(
         "Programming Language :: Python :: 3.9",
     ],
 )
-

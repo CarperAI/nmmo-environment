@@ -91,12 +91,11 @@ class TestEnv(unittest.TestCase):
     # Make sure that we see entities IFF they are in our vision radius
     row = realm.players.entities[player_id].row.val
     col = realm.players.entities[player_id].col.val
+    vision = realm.config.PLAYER_VISION_RADIUS
     visible_entities = {
       e for r, c, e in entity_locations
-      if r >= row - realm.config.PLAYER_VISION_RADIUS
-      and c >= col - realm.config.PLAYER_VISION_RADIUS
-      and r <= row + realm.config.PLAYER_VISION_RADIUS
-      and c <= col + realm.config.PLAYER_VISION_RADIUS
+      if row - vision <= r <= row + vision
+        and col - vision <= c <= col + vision
     }
     self.assertSetEqual(visible_entities, observed_entities,
       f"Mismatch between observed: {observed_entities} " \
@@ -145,7 +144,7 @@ class TestEnv(unittest.TestCase):
 
     # TODO(kywch): ItemState table is not empty after players/npcs.reset()
     #   but should be. Will fix this while debugging the item system.
-    # So for now, ItemState table is cleared manually here, just to pass this test 
+    # So for now, ItemState table is cleared manually here, just to pass this test
     ItemState.State.table(new_env.realm.datastore).reset()
 
     self.assertTrue(ItemState.State.table(new_env.realm.datastore).is_empty())

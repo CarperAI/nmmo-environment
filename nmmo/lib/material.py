@@ -18,6 +18,9 @@ class Material:
 
   def harvest(self):
     return self.__class__.table
+  
+  def deplete(self):
+    pass
 
 class Lava(Material):
   tex   = 'lava'
