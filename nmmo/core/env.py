@@ -391,13 +391,7 @@ class Env(ParallelEnv):
       assert agent is not None, f'Agent {agent_id} not found'
 
       infos[agent_id] =  {'population': agent.population}
-
-      if agent.diary is None:
-        rewards[agent_id] = 0
-        continue
-
-      rewards[agent_id] = sum(agent.diary.rewards.values())
-      infos[agent_id].update(agent.diary.rewards)
+      rewards[agent_id] = 0
 
     return rewards, infos
 
