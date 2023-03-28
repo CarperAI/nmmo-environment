@@ -1,7 +1,6 @@
 import unittest
 
-# pylint: disable=import-error
-from testhelpers import ScriptedAgentTestConfig, ScriptedAgentTestEnv
+from tests.testhelpers import ScriptedAgentTestConfig, ScriptedAgentTestEnv
 
 from nmmo.lib.event_log import EventState, EventCode, EventLogger
 from nmmo.systems.item import Scrap, Ration
@@ -58,19 +57,19 @@ class TestEventLog(unittest.TestCase):
     log_data = [list(row) for row in event_log.get_data()]
 
     self.assertListEqual(log_data, [
-      [ 1,  1, 0, 1, EventCode.EAT_FOOD, 0, 0, 0, 0, 0, 0],
-      [ 2,  2, 1, 1, EventCode.DRINK_WATER, 0, 0, 0, 0, 0, 0],
-      [ 3,  2, 1, 1, EventCode.SCORE_HIT, 1, 0, 50, 0, 0, 0],
-      [ 4,  3, 2, 1, EventCode.SCORE_KILL, 0, 5, 0, 0, 5, 4],
-      [ 5,  4, 3, 2, EventCode.CONSUME_ITEM, 16, 8, 1, 0, 0, 0],
-      [ 6,  4, 3, 2, EventCode.GIVE_ITEM, 0, 0, 0, 0, 0, 0],
-      [ 7,  5, 4, 2, EventCode.DESTROY_ITEM, 0, 0, 0, 0, 0, 0],
-      [ 8,  6, 5, 2, EventCode.PRODUCE_ITEM, 13, 3, 1, 0, 0, 0],
-      [ 9,  7, 6, 3, EventCode.GIVE_GOLD, 0, 0, 0, 0, 0, 0],
-      [10,  8, 7, 3, EventCode.LIST_ITEM, 16, 5, 1, 11, 0, 0],
-      [11,  9, 0, 3, EventCode.EARN_GOLD, 0, 0, 0, 15, 0, 0],
-      [12, 10, 1, 3, EventCode.BUY_ITEM, 13, 7, 1, 21, 0, 0],
-      [13, 11, 2, 3, EventCode.SPEND_GOLD, 0, 0, 0, 25, 0, 0]])
+      [ 1,  1, 1, EventCode.EAT_FOOD, 0, 0, 0, 0, 0],
+      [ 2,  2, 1, EventCode.DRINK_WATER, 0, 0, 0, 0, 0],
+      [ 3,  2, 1, EventCode.SCORE_HIT, 1, 0, 50, 0, 0],
+      [ 4,  3, 1, EventCode.SCORE_KILL, 0, 5, 0, 0, 5],
+      [ 5,  4, 2, EventCode.CONSUME_ITEM, 16, 8, 1, 0, 0],
+      [ 6,  4, 2, EventCode.GIVE_ITEM, 0, 0, 0, 0, 0],
+      [ 7,  5, 2, EventCode.DESTROY_ITEM, 0, 0, 0, 0, 0],
+      [ 8,  6, 2, EventCode.PRODUCE_ITEM, 13, 3, 1, 0, 0],
+      [ 9,  7, 3, EventCode.GIVE_GOLD, 0, 0, 0, 0, 0],
+      [10,  8, 3, EventCode.LIST_ITEM, 16, 5, 1, 11, 0],
+      [11,  9, 3, EventCode.EARN_GOLD, 0, 0, 0, 15, 0],
+      [12, 10, 3, EventCode.BUY_ITEM, 13, 7, 1, 21, 0],
+      [13, 11, 3, EventCode.SPEND_GOLD, 0, 0, 0, 25, 0]])
 
 
 if __name__ == '__main__':

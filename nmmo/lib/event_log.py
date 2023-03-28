@@ -1,8 +1,8 @@
 from types import SimpleNamespace
+from typing import List
 from copy import deepcopy
 
 import numpy as np
-import numpy_indexed as npi
 
 from nmmo.datastore.serialized import SerializedState
 from nmmo.core.realm import Realm
@@ -12,9 +12,8 @@ from nmmo.systems import skill as Skill
 
 # pylint: disable=no-member
 EventState = SerializedState.subclass("Event", [
-  "id",
+  "id", # unique event id
   "ent_id",
-  "population_id",
   "tick",
 
   "event",
@@ -23,16 +22,16 @@ EventState = SerializedState.subclass("Event", [
   "level",
   "number",
   "gold",
-  "target_eid",
-  "target_pop"
+  "target_ent",
 ])
 
+EventAttr = EventState.State.attr_name_to_col
+
 EventState.Query = SimpleNamespace(
-  table=lambda ds: ds.table("Event").where_neq(
-    EventState.State.attr_name_to_col["id"], 0),
+  table=lambda ds: ds.table("Event").where_neq(EventAttr["id"], 0),
 
   by_event=lambda ds, event_code: ds.table("Event").where_eq(
-    EventState.State.attr_name_to_col["event"], event_code),
+    EventAttr["event"], event_code),
 )
 
 # matching the names to base predicates
@@ -44,10 +43,10 @@ class EventCode:
   # Attack
   SCORE_HIT = 11
   SCORE_KILL = 12
-  style2int = { Skill.Melee: 1, Skill.Range:2, Skill.Mage:3 }
+  style_to_int = { Skill.Melee: 1, Skill.Range:2, Skill.Mage:3 }
   attack_col_map = {
-    'combat_style': EventState.State.attr_name_to_col['type'],
-    'damage': EventState.State.attr_name_to_col['number'] }
+    'combat_style': EventAttr['type'],
+    'damage': EventAttr['number'] }
 
   # Item
   CONSUME_ITEM = 21
@@ -55,9 +54,9 @@ class EventCode:
   DESTROY_ITEM = 23
   PRODUCE_ITEM = 24
   item_col_map = {
-    'item_type': EventState.State.attr_name_to_col['type'],
-    'quantity': EventState.State.attr_name_to_col['number'],
-    'price': EventState.State.attr_name_to_col['gold'] }
+    'item_type': EventAttr['type'],
+    'quantity': EventAttr['number'],
+    'price': EventAttr['gold'] }
 
   # Exchange
   GIVE_GOLD = 31
@@ -77,9 +76,9 @@ class EventLogger(EventCode):
                            if isinstance(val, int) }
 
     # create a custom attr-col mapping
-    self.attr2col = deepcopy(EventState.State.attr_name_to_col)
-    self.attr2col.update(EventCode.attack_col_map)
-    self.attr2col.update(EventCode.item_col_map)
+    self.attr_to_col = deepcopy(EventAttr)
+    self.attr_to_col.update(EventCode.attack_col_map)
+    self.attr_to_col.update(EventCode.item_col_map)
 
   def reset(self):
     EventState.State.table(self.datastore).reset()
@@ -89,7 +88,6 @@ class EventLogger(EventCode):
     log = EventState(self.datastore)
     log.id.update(log.datastore_record.id)
     log.ent_id.update(entity.ent_id)
-    log.population_id.update(entity.population)
     log.tick.update(self.realm.tick)
     log.event.update(event_code)
 
@@ -104,10 +102,10 @@ class EventLogger(EventCode):
       return
 
     if event_code == EventCode.SCORE_HIT:
-      if ('combat_style' in kwargs and kwargs['combat_style'] in EventCode.style2int) & \
+      if ('combat_style' in kwargs and kwargs['combat_style'] in EventCode.style_to_int) & \
          ('damage' in kwargs and kwargs['damage'] >= 0):
         log = self._create_event(entity, event_code)
-        log.type.update(EventCode.style2int[kwargs['combat_style']])
+        log.type.update(EventCode.style_to_int[kwargs['combat_style']])
         log.number.update(kwargs['damage'])
         return
 
@@ -115,8 +113,7 @@ class EventLogger(EventCode):
       if ('target' in kwargs and isinstance(kwargs['target'], Entity)):
         target = kwargs['target']
         log = self._create_event(entity, event_code)
-        log.target_eid.update(target.ent_id)
-        log.target_pop.update(target.population)
+        log.target_ent.update(target.ent_id)
 
         # CHECK ME: attack_level or "general" level?? need to clarify
         log.level.update(target.attack_level)
@@ -155,24 +152,16 @@ class EventLogger(EventCode):
     # CHECK ME: The below should be commented out after debugging
     raise ValueError(f"Event code: {event_code}", kwargs)
 
-  def get_data(self, event_code=None):
+  def get_data(self, event_code=None, agents: List[int]=None):
     if event_code is None:
-      return EventState.Query.table(self.datastore).astype(np.int16)
+      event_data = EventState.Query.table(self.datastore).astype(np.int16)
+    elif event_code in self.valid_events:
+      event_data = EventState.Query.by_event(self.datastore, event_code).astype(np.int16)
+    else:
+      return None
 
-    if event_code in self.valid_events:
-      return EventState.Query.by_event(self.datastore, event_code).astype(np.int16)
+    if agents:
+      flt_idx = np.in1d(event_data[:, EventAttr['ent_id']], agents)
+      return event_data[flt_idx]
 
-    return None
-
-  def _group_by(self, flt_data, grpby_attr, sum_attr='id'):
-    assert grpby_attr in ['ent_id', 'population_id'], "Invalid group-by attr"
-    assert sum_attr in ['id', 'number', 'gold', 'damage', 'quantity', 'price'], \
-      "Invalid sum_attr"
-    g = npi.group_by(flt_data[:, self.attr2col[grpby_attr]])
-    result = {}
-    for k, v in zip(*g(flt_data[:,self.attr2col[sum_attr]])):
-      if sum_attr == 'id':
-        result[k] = sum(v) # SUM
-      else:
-        result[k] = len(v) # COUNT
-    return result
+    return event_data
