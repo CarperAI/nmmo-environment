@@ -1,3 +1,5 @@
+import numpy as np
+
 from nmmo.task.predicate import Predicate, Group
 from nmmo.task.game_state import GameState
 from nmmo.systems import item as Item
@@ -42,11 +44,11 @@ class OwnItem(ItemPredicate):
     """True if the team as whole owns the item (_item_type, >=_level) 
        and has greater than or equal to quantity. Otherwise false.
     """
-    sbj_item = gs.where_in_id('item', self.subject)
-    flt_idx = (sbj_item[:,gs.item_cols['type_id']] == self._item_type) & \
-              (sbj_item[:,gs.item_cols['level']] >= self._level)
+    sd = gs.get_subject_view(self.subject)
+    flt_idx = (sd.type_id == self._item_type) & \
+              (sd.level >= self._level)
 
-    return sum(sbj_item[flt_idx, gs.item_cols['quantity']]) >= self._quantity
+    return sum(sd.quantity[flt_idx]) >= self._quantity
 
 
 class EquipItem(Predicate): # quantity is NOT used here
@@ -62,12 +64,12 @@ class EquipItem(Predicate): # quantity is NOT used here
     """True if the number of agents that equip the item (_item_type, >=_level)
        is greater than or equal to _num_agent. Otherwise false.
     """
-    sbj_item = gs.where_in_id('item', self.subject)
-    flt_idx = (sbj_item[:,gs.item_cols['type_id']] == self._item_type) & \
-              (sbj_item[:,gs.item_cols['level']] >= self._level) & \
-              (sbj_item[:,gs.item_cols['equipped']] > 0)
+    sd = gs.get_subject_view(self.subject)
+    flt_idx = (sd.type_id == self._item_type) & \
+              (sd.level >= self._level) & \
+              (sd.equipped > 0)
 
-    return len(sbj_item[flt_idx,0]) >= self._num_agent
+    return flt_idx.sum() >= self._num_agent
 
 
 class FullyArmed(Predicate):
@@ -97,23 +99,13 @@ class FullyArmed(Predicate):
        To determine fully equipped, we look at hat, top, bottom, weapon, ammo, respectively,
        and see whether these are equipped and has level greater than or equal to _level.
     """
-    sbj_item = gs.where_in_id('item', self.subject)
-    flt_idx = (sbj_item[:,gs.item_cols['level']] >= self._level) & \
-              (sbj_item[:,gs.item_cols['equipped']] > 0)
+    sd = gs.get_subject_view(self.subject)
+    lvl_flt = (sd.level >= self._level) & \
+              (sd.equipped > 0)
+    type_flt = np.isin(sd.type_id,list(self._item_ids.values()))
+    _, equipment_numbers = np.unique(sd.owner_id[lvl_flt & type_flt],return_counts=True)
 
-    # should have all hat, top, bottom (general)
-    tmp_grpby = {}
-    for item, type_id in self._item_ids.items():
-      flt_tmp = flt_idx & (sbj_item[:,gs.item_cols['type_id']] == type_id)
-      tmp_grpby[item] = \
-        gs.group_by(sbj_item[flt_tmp], gs.item_cols['owner_id'])
-
-    # get the intersection of all tmp_grpby keys
-    equipped_each = [set(equipped.keys()) for equipped in tmp_grpby.values()]
-    equipped_all = set.intersection(*equipped_each)
-
-    return len(equipped_all) >= self._num_agent
-
+    return (equipment_numbers >= len(self._item_ids.items())).sum() >= self._num_agent
 
 #######################################
 # Event-log based predicates

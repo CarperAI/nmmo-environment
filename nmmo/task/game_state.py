@@ -68,7 +68,7 @@ class GameState:
       else:
         result[k] = len(v)
     return result
-  
+
   def get_subject_view(self, subject: Group):
     return GroupView(self, subject)
 
@@ -78,7 +78,7 @@ class GroupView:
     self._subject = subject
     self._sbj_ent = gs.where_in_id('entity', subject)
     self._sbj_item = gs.where_in_id('item', subject)
-  
+
   def __getattribute__(self, attr):
     if attr in ['_gs','_subject','_sbj_ent','_sbj_item']:
       return object.__getattribute__(self,attr)
@@ -94,14 +94,14 @@ class GroupView:
       if attr in self._gs.entity_cols.keys():
         v = self._sbj_ent[:, self._gs.entity_cols[attr]]
       elif attr in self._gs.item_cols.keys():
-        v = self._sbj_ent[:, self._gs.item_cols[attr]]
+        v = self._sbj_item[:, self._gs.item_cols[attr]]
       else:
         v = object.__getattribute__(self, attr)
       self._gs.cache_result[k] = v
       return v
     except AttributeError:
       # View behavior
-      return object.__getattr__(self._gs,attr)
+      return object.__getattribute__(self._gs,attr)
 
   @property
   def item_id(self):

@@ -6,9 +6,6 @@ from nmmo.systems import skill as Skill
 from nmmo.lib.material import Material
 from nmmo.lib import utils
 
-from nmmo.entity.entity import EntityState
-
-
 class TickGE(Predicate):
   # TickGE does not have subject
   # pylint: disable=super-init-not-called

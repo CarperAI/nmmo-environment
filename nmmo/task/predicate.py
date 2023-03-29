@@ -24,7 +24,7 @@ class Group:
 
   def __len__(self):
     return len(self._agents)
-  
+
   def __hash__(self):
     return self._agents.__hash__()
 
