@@ -96,9 +96,9 @@ class OccupyTile(Predicate):
     """True if any subject agent is on the desginated tile.
        Otherwise false.
     """
-    sbj_data = gs.get_subject_view(self.subject)
-    r = sbj_data.row == self._row
-    c = sbj_data.col == self._col
+    sd = gs.get_subject_view(self.subject)
+    r = sd.row == self._row
+    c = sd.col == self._col
     return np.any(r & c)
 
 class GoDistance(Predicate):
@@ -111,10 +111,10 @@ class GoDistance(Predicate):
         is greater than or equal to the specified _dist.
        Otherwise false.
     """
-    sbj_data = gs.get_subject_view(self.subject)
-    r = sbj_data.row
-    c = sbj_data.col
-    dists = utils.linf(list(zip(r,c)),[gs.spawn_pos[id_] for id_ in sbj_data.id])
+    sd = gs.get_subject_view(self.subject)
+    r = sd.row
+    c = sd.col
+    dists = utils.linf(list(zip(r,c)),[gs.spawn_pos[id_] for id_ in sd.id])
     return dists.sum() >= self._dist
 
 
@@ -128,12 +128,10 @@ class StayClose(Predicate):
          less than or equal to self.dist
        Otherwise false.
     """
-    sbj_data = gs.where_in_id('entity', self.subject)
-    rows = sbj_data[:,gs.entity_cols['row']]
-    cols = sbj_data[:,gs.entity_cols['col']]
+    sd = gs.get_subject_view(self.subject)
 
     # compare the outer most coordinates of all teammates
-    return max(max(rows)-min(rows), max(cols)-min(cols)) <= self._dist
+    return max(sd.row.max()-sd.row.min(), sd.col.max()-sd.col.min()) <= self._dist
 
 class AttainSkill(Predicate):
   def __init__(self, subject: Group, skill: Skill.Skill, level: int, num_agent: int):
@@ -148,7 +146,7 @@ class AttainSkill(Predicate):
        Otherwise false.
     """
     # each row represents alive agents in the team
-    sbj_data = gs.where_in_id('entity', self.subject)
-    skill_level = sbj_data[:,gs.entity_cols[self._skill + '_level']]
+    sd = gs.get_subject_view(self.subject)
+    skill_level = sd.__getattribute__(self._skill + '_level')
 
     return sum(skill_level >= self._level) >= self._num_agent
