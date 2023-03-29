@@ -38,7 +38,7 @@ class GameState:
   def entity_or_none(self, ent_id):
     flt_ent = self.entity_data[:, EntityAttr['id']] == ent_id
     if np.any(flt_ent):
-      return ..parse_array(self.entity_data[flt_ent][0])
+      return EntityAttr.parse_array(self.entity_data[flt_ent][0])
 
     return None
 
@@ -86,10 +86,10 @@ class GroupView:
     try:
       # Get property
       v = None
-      if attr in self._gs.entity_cols.keys():
-        v = self._sbj_ent[:, self._gs.entity_cols[attr]]
-      elif attr in self._gs.item_cols.keys():
-        v = self._sbj_item[:, self._gs.item_cols[attr]]
+      if attr in EntityAttr.keys():
+        v = self._sbj_ent[:, EntityAttr[attr]]
+      elif attr in ItemAttr.keys():
+        v = self._sbj_item[:, ItemAttr[attr]]
       else:
         v = object.__getattribute__(self, attr)
       self._gs.cache_result[k] = v

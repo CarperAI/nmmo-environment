@@ -1,7 +1,7 @@
 import numpy as np
 
 from nmmo.task.predicate import Predicate, Group
-from nmmo.task.game_state import GameState
+from nmmo.task.game_state import GameState, TileAttr
 from nmmo.systems import skill as Skill
 from nmmo.lib.material import Material
 from nmmo.lib import utils
