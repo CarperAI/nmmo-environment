@@ -80,7 +80,7 @@ class Item(ItemState):
     return Item._item_type_id_to_class[type_id]
 
   def __init__(self, realm, level,
-              capacity=0, quantity=1,
+              capacity=0,
               melee_attack=0, range_attack=0, mage_attack=0,
               melee_defense=0, range_defense=0, mage_defense=0,
               health_restore=0, resource_restore=0):
@@ -95,7 +95,8 @@ class Item(ItemState):
     self.type_id.update(self.ITEM_TYPE_ID)
     self.level.update(level)
     self.capacity.update(capacity)
-    self.quantity.update(quantity)
+    # every item instance is created individually, i.e., quantity=1
+    self.quantity.update(1)
     self.melee_attack.update(melee_attack)
     self.range_attack.update(range_attack)
     self.mage_attack.update(mage_attack)
@@ -210,9 +211,6 @@ class Armor(Equipment, ABC):
   def __init__(self, realm, level, **kwargs):
     defense = realm.config.EQUIPMENT_ARMOR_BASE_DEFENSE + \
               level*realm.config.EQUIPMENT_ARMOR_LEVEL_DEFENSE
-    # ignore quantity for Armor, so that the default quantity of 1 is used
-    if 'quantity' in kwargs:
-      del kwargs['quantity']
     super().__init__(realm, level,
                      melee_defense=defense,
                      range_defense=defense,
@@ -234,9 +232,6 @@ class Bottom(Armor):
 
 class Weapon(Equipment):
   def __init__(self, realm, level, **kwargs):
-    # ignore quantity for Weapon, so that the default quantity of 1 is used
-    if 'quantity' in kwargs:
-      del kwargs['quantity']
     super().__init__(realm, level, **kwargs)
     self.attack = (
       realm.config.EQUIPMENT_WEAPON_BASE_DAMAGE +
@@ -278,9 +273,6 @@ class Tool(Equipment):
   def __init__(self, realm, level, **kwargs):
     defense = realm.config.EQUIPMENT_TOOL_BASE_DEFENSE + \
         level*realm.config.EQUIPMENT_TOOL_LEVEL_DEFENSE
-    # ignore quantity for Tool, so that the default quantity of 1 is used
-    if 'quantity' in kwargs:
-      del kwargs['quantity']
     super().__init__(realm, level,
                       melee_defense=defense,
                       range_defense=defense,
@@ -382,9 +374,6 @@ class Shard(Ammunition):
 class Consumable(Item):
 
   def __init__(self, realm, level, **kwargs):
-    # ignore quantity for Consumable, so that the default quantity of 1 is used
-    if 'quantity' in kwargs:
-      del kwargs['quantity']
     super().__init__(realm, level, **kwargs)
 
   def use(self, entity) -> bool:

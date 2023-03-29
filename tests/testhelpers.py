@@ -183,13 +183,9 @@ def change_spawn_pos(realm: Realm, ent_id: int, new_pos):
 
 def provide_item(realm: Realm, ent_id: int,
                  item: Item.Item, level: int, quantity: int):
-  if isinstance(item, Item.Stack):
+  for _ in range(quantity):
     realm.players[ent_id].inventory.receive(
-      item(realm, level=level, quantity=quantity))
-  else:
-    for _ in range(quantity):
-      realm.players[ent_id].inventory.receive(
-        item(realm, level=level))
+      item(realm, level=level))
 
 
 # pylint: disable=invalid-name,protected-access
