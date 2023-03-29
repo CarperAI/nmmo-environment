@@ -29,8 +29,6 @@ class Player(entity.Entity):
     if realm.config.EXCHANGE_SYSTEM_ENABLED:
       self.gold.update(1)
 
-    self.diary  = None
-
   @property
   def serial(self):
     return self.population_id, self.ent_id
@@ -128,6 +126,3 @@ class Player(entity.Entity):
 
     self.resources.update()
     self.skills.update()
-
-    if self.diary:
-      self.diary.update(realm)

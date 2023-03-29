@@ -1,4 +1,5 @@
-from typing import Dict, List, Tuple, MutableMapping
+from __future__ import annotations
+from typing import Dict, List, Tuple, MutableMapping, TYPE_CHECKING
 from dataclasses import dataclass
 from copy import deepcopy
 
@@ -13,10 +14,12 @@ from nmmo.entity.entity import EntityState
 from nmmo.systems.item import ItemState
 from nmmo.core.tile import TileState
 
+if TYPE_CHECKING:
+  from nmmo.task.predicate import Group
+
 EntityAttr = EntityState.State.attr_name_to_col
 ItemAttr = ItemState.State.attr_name_to_col
 TileAttr = TileState.State.attr_name_to_col
-
 
 @dataclass(frozen=True) # make gs read-only, except cache_result
 class GameState:
@@ -30,13 +33,12 @@ class GameState:
   entity_data: np.ndarray # a copied, whole Entity ds table
   item_data: np.ndarray # a copied, whole Item ds table
 
-  cache_result: MutableMapping # cache for Predicate results
-
+  cache_result: MutableMapping # cache for general memoization
   # add helper functions below
   def entity_or_none(self, ent_id):
     flt_ent = self.entity_data[:, EntityAttr['id']] == ent_id
     if np.any(flt_ent):
-      return EntityState.parse_array(self.entity_data[flt_ent][0])
+      return ..parse_array(self.entity_data[flt_ent][0])
 
     return None
 
@@ -62,6 +64,48 @@ class GameState:
         result[k] = len(v)
     return result
 
+  def get_subject_view(self, subject: Group):
+    return GroupView(self, subject)
+
+class GroupView:
+  def __init__(self, gs: GameState, subject: Group):
+    self._gs = gs
+    self._subject = subject
+    self._sbj_ent = gs.where_in_id('entity', subject)
+    self._sbj_item = gs.where_in_id('item', subject)
+
+  def __getattribute__(self, attr):
+    if attr in ['_gs','_subject','_sbj_ent','_sbj_item']:
+      return object.__getattribute__(self,attr)
+
+    # Cached optimization
+    k = (self._subject, attr)
+    if k in self._gs.cache_result:
+      return self._gs.cache_result[k]
+
+    try:
+      # Get property
+      v = None
+      if attr in self._gs.entity_cols.keys():
+        v = self._sbj_ent[:, self._gs.entity_cols[attr]]
+      elif attr in self._gs.item_cols.keys():
+        v = self._sbj_item[:, self._gs.item_cols[attr]]
+      else:
+        v = object.__getattribute__(self, attr)
+      self._gs.cache_result[k] = v
+      return v
+    except AttributeError:
+      # View behavior
+      return object.__getattribute__(self._gs,attr)
+
+  @property
+  def item_id(self):
+    # id is a namespace clash between item and entity
+    return self._sbj_ent[:, self._gs.item_cols['id']]
+
+  # TODO(mark)
+    # We can use this to lazily compute computationally intensive
+    # Properties such as grouping information etc
 
 class GameStateGenerator:
   def __init__(self, realm: Realm, config: Config):
