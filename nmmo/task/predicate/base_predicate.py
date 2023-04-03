@@ -1,4 +1,4 @@
-#pylint: disable=invalid-name
+#pylint: disable=invalid-name, unused-argument
 import numpy as np
 from numpy import count_nonzero as count
 
@@ -6,22 +6,16 @@ from nmmo.task.predicate import Predicate
 from nmmo.task.predicate.core import predicate
 from nmmo.task.group import Group
 from nmmo.task.game_state import GameState, TileAttr
-from nmmo.systems import skill as Skill
+from nmmo.systems.skill import Skill
 from nmmo.lib.material import Material
 from nmmo.lib import utils
 
-class TickGE(Predicate):
-  # TickGE does not have subject
-  # pylint: disable=super-init-not-called
-  def __init__(self, num_tick: int):
-    super().__init__(num_tick)
-    self._num_tick = num_tick
-
-  def __call__(self, gs: GameState):
-    """True if the current tick is greater than or equal to the specified num_tick.
-       Otherwise false.
-    """
-    return gs.current_tick >= self._num_tick
+@predicate
+def TickGE(gs: GameState,
+           num_tick: int):
+  """True if the current tick is greater than or equal to the specified num_tick.
+  """
+  return gs.current_tick >= num_tick
 
 class CanSeeTile(Predicate):
   def __init__(self, subject: Group, tile_type: Material):
@@ -45,19 +39,22 @@ class CanSeeTile(Predicate):
     return result
 
 @predicate
-def StayAlive(subject: Group):
+def StayAlive(gs: GameState,
+              subject: Group):
   """True iff all subjects are alive.
   """
   return count(subject.health > 0) == len(subject)
 
 @predicate
-def AllDead(subject: Group):
+def AllDead(gs: GameState,
+            subject: Group):
   """True iff all subjects are dead.
   """
   return count(subject.health) == 0
 
 @predicate
-def OccupyTile(subject: Group,
+def OccupyTile(gs: GameState,
+               subject: Group,
                row: int,
                col: int):
   """True if any subject agent is on the desginated tile.
@@ -65,7 +62,8 @@ def OccupyTile(subject: Group,
   return np.any((subject.row == row) & (subject.col == col))
 
 @predicate
-def AllMembersWithinRange(subject: Group,
+def AllMembersWithinRange(gs: GameState,
+                          subject: Group,
                           dist: int):
   """True if the max l-inf distance of teammates is 
          less than or equal to self.dist
@@ -93,39 +91,26 @@ class CanSeeAgent(Predicate):
 
     return result
 
-
-class DistanceTraveled(Predicate):
-  def __init__(self, subject: Group, dist: int):
-    super().__init__(subject, dist)
-    self.subject = subject
-    self._dist = dist
-
-  def __call__(self, gs: GameState):
-    """True if the summed l-inf distance between each agent's current pos and spawn pos
+@predicate
+def DistanceTraveled(gs: GameState,
+                     subject: Group,
+                     dist: int):
+  """True if the summed l-inf distance between each agent's current pos and spawn pos
         is greater than or equal to the specified _dist.
-       Otherwise false.
-    """
-    sd = gs.get_subject_view(self.subject)
-    r = sd.row
-    c = sd.col
-    dists = utils.linf(list(zip(r,c)),[gs.spawn_pos[id_] for id_ in sd.id])
-    return dists.sum() >= self._dist
+  """
+  r = subject.row
+  c = subject.col
+  dists = utils.linf(list(zip(r,c)),[gs.spawn_pos[id_] for id_ in subject.agents])
+  return dists.sum() >= dist
 
-class AttainSkill(Predicate):
-  def __init__(self, subject: Group, skill: Skill.Skill, level: int, num_agent: int):
-    super().__init__(subject, skill, level, num_agent)
-    self.subject = subject
-    self._skill = skill.__name__.lower()
-    self._level = level
-    self._num_agent = num_agent
-
-  def __call__(self, gs: GameState):
-    """True if the number of agents having self._skill level GE self._level
+@predicate
+def AttainSkill(gs: GameState,
+                subject: Group,
+                skill: Skill,
+                level: int,
+                num_agent: int):
+  """True if the number of agents having self._skill level GE self._level
         is greather than or equal to self._num_agent
-       Otherwise false.
-    """
-    # each row represents alive agents in the team
-    sd = gs.get_subject_view(self.subject)
-    skill_level = sd.__getattribute__(self._skill + '_level')
-
-    return sum(skill_level >= self._level) >= self._num_agent
+  """
+  skill_level = getattr(subject,skill.__name__.lower() + '_level')
+  return sum(skill_level >= level) >= num_agent

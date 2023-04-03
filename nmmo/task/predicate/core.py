@@ -82,7 +82,7 @@ def predicate(fn) -> Predicate:
       # pylint: disable=redefined-builtin, unused-variable
       __doc__ = fn.__doc__
       super().__call__(gs)
-      return fn(*self._args, **self._kwargs)
+      return fn(gs, *self._args, **self._kwargs)
 
   return FunctionPredicate
 

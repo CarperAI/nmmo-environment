@@ -1,4 +1,4 @@
-#pylint: disable=invalid-name
+#pylint: disable=invalid-name, unused-argument
 from nmmo.task.predicate import Predicate
 from nmmo.task.predicate.core import predicate
 from nmmo.task.group import Group
@@ -11,7 +11,8 @@ class GoldPredicate(Predicate):
     self._amount = amount
 
 @predicate
-def HoardGold(subject:Group,
+def HoardGold(gs: GameState,
+              subject:Group,
               amount: int):
   """True iff the summed gold of all teammate is greater than or equal to amount.
   """

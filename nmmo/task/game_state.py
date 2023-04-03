@@ -77,6 +77,8 @@ class GroupView:
   def __getattribute__(self, attr):
     if attr in ['_gs','_subject','_sbj_ent','_sbj_item']:
       return object.__getattribute__(self,attr)
+    if attr == 'item':
+      return self._sbj_item[:, ItemAttr[attr]]
 
     # Cached optimization
     k = (self._subject, attr)
@@ -97,11 +99,6 @@ class GroupView:
     except AttributeError:
       # View behavior
       return object.__getattribute__(self._gs,attr)
-
-  @property
-  def item_id(self):
-    # id is a namespace clash between item and entity
-    return self._sbj_ent[:, self._gs.item_cols['id']]
 
   # TODO(mark)
     # We can use this to lazily compute computationally intensive
