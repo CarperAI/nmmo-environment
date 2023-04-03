@@ -1,4 +1,5 @@
-from nmmo.task.predicate import Predicate, Group
+from nmmo.task.predicate import Predicate
+from nmmo.task.group import Group
 from nmmo.task.game_state import GameState
 
 class GoldPredicate(Predicate):

@@ -8,7 +8,9 @@ import nmmo
 # pylint: disable=import-error
 from nmmo.task import sampler
 from nmmo.task.task_api import TaskWrapper
-from nmmo.task.predicate import Group, TeamHelper, Predicate
+from nmmo.task.predicate import Predicate
+from nmmo.task.group import Group
+from nmmo.task.utils import TeamHelper
 from nmmo.task.game_state import GameState
 
 from nmmo.systems import item as Item
@@ -76,9 +78,10 @@ class TestTaskAPI(unittest.TestCase):
     fake_task = FakeTask(Group([2]), 1, Item.Hat, Action.Melee)
     combination = (success & ~ (failure | fake_task)) | (failure >> fake_task)
 
+    print(combination.name)
     self.assertEqual(combination.name,
-      "OR(AND(Success_Subject(1),NOT(OR(Failure_Subject(1,3),FakeTask_Subject(2)_1_Hat_Melee))),"
-      "IMPLY(Failure_Subject(1,3)->FakeTask_Subject(2)_1_Hat_Melee))")
+      "OR(AND(Success_(1,),NOT(OR(Failure_(1,3),FakeTask_(2,)_1_Hat_Melee))),"
+      "IMPLY(Failure_(1,3)->FakeTask_(2,)_1_Hat_Melee))")
 
   def test_team_helper(self):
     # TODO(kywch): This test is true now but may change later.
@@ -98,11 +101,11 @@ class TestTaskAPI(unittest.TestCase):
     team =  Group([1, 2, 8, 9], "TeamFoo")
 
     self.assertEqual(team.name, 'TeamFoo')
-    self.assertEqual(team.member(2).name, "TeamFoo.2")
-    self.assertEqual(team.member(2).agents, (8,))
+    self.assertEqual(team[2].name, "TeamFoo.2")
+    self.assertEqual(team[2], (8,))
 
     # don't allow member of one-member team
-    self.assertEqual(team.member(2).member(0).name, team.member(2).name)
+    self.assertEqual(team[2][0].name, team[2].name)
 
   def test_random_task_sampler(self):
     rand_sampler = sampler.RandomTaskSampler()

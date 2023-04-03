@@ -1,6 +1,9 @@
 import numpy as np
+from numpy import count_nonzero as count
 
-from nmmo.task.predicate import Predicate, Group
+from nmmo.task.predicate import Predicate
+from nmmo.task.predicate.core import predicate
+from nmmo.task.group import Group
 from nmmo.task.game_state import GameState, TileAttr
 from nmmo.systems import skill as Skill
 from nmmo.lib.material import Material
@@ -10,7 +13,7 @@ class TickGE(Predicate):
   # TickGE does not have subject
   # pylint: disable=super-init-not-called
   def __init__(self, num_tick: int):
-    self._name = self._make_name(None, [num_tick])
+    super().__init__(num_tick)
     self._num_tick = num_tick
 
   def __call__(self, gs: GameState):
@@ -18,28 +21,7 @@ class TickGE(Predicate):
        Otherwise false.
     """
     return gs.current_tick >= self._num_tick
-
-
-class StayAlive(Predicate):
-  def __call__(self, gs: GameState):
-    """True if all subjects (self._agents) are alive.
-       Otherwise false.
-    """
-    alive_subject = set(self.subject).intersection(gs.alive_agents)
-
-    # if all specified agents are alive, the len(intersection) should be the same
-    return len(alive_subject) == len(self.subject)
-
-
-class AllDead(Predicate):
-  def __call__(self, gs: GameState):
-    """True if all subjects (self._agents) are dead.
-       Otherwise false.
-    """
-    alive_subject = set(self.subject).intersection(gs.alive_agents)
-    return len(alive_subject) == 0
-
-
+  
 class CanSeeTile(Predicate):
   def __init__(self, subject: Group, tile_type: Material):
     super().__init__(subject, tile_type)
@@ -59,7 +41,35 @@ class CanSeeTile(Predicate):
           break
 
     return result
+  
+@predicate
+def StayAlive(subject: Group):
+  """True iff all subjects (self._agents) are alive.
+  """
+  return count(subject.health > 0) == len(subject)
 
+@predicate
+def AllDead(subject: Group):
+  """True iff all subjects (self._agents) are dead.
+  """
+  return count(subject.health == 0) == len(subject)
+
+@predicate
+def OccupyTile(subject: Group,
+               row: int,
+               col: int):
+  """True if any subject agent is on the desginated tile.
+  """
+  return np.any((subject.row == row) & (subject.col == col))
+
+@predicate
+def AllMembersWithinRange(subject: Group,
+                          dist: int):
+  """True if the max l-inf distance of teammates is 
+         less than or equal to self.dist
+  """
+  max(subject.row.max()-subject.row.min(),
+      subject.col.max()-subject.col.min()) <= dist
 
 class CanSeeAgent(Predicate):
   def __init__(self, subject: Group, target: int):
@@ -80,23 +90,6 @@ class CanSeeAgent(Predicate):
 
     return result
 
-class OccupyTile(Predicate):
-  def __init__(self, subject: Group, row: int, col: int):
-    super().__init__(subject, row, col)
-    self._row = row
-    self._col = col
-
-    # TODO(kywch): this may need a count-down timer to support
-    #   a game like: Hold the center for 100 ticks
-
-  def __call__(self, gs: GameState):
-    """True if any subject agent is on the desginated tile.
-       Otherwise false.
-    """
-    sd = gs.get_subject_view(self.subject)
-    r = sd.row == self._row
-    c = sd.col == self._col
-    return np.any(r & c)
 
 class DistanceTraveled(Predicate):
   def __init__(self, subject: Group, dist: int):

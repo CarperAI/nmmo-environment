@@ -1,10 +1,9 @@
 import numpy as np
-
-from nmmo.task.predicate import Predicate, Group
+from nmmo.task.predicate import Predicate
+from nmmo.task.group import Group
 from nmmo.task.game_state import GameState
 from nmmo.systems import item as Item
 from nmmo.systems import skill as Skill
-
 from nmmo.systems.item import ItemState
 
 ItemAttr = ItemState.State.attr_name_to_col

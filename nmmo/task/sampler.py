@@ -1,6 +1,7 @@
 import random
 
-from nmmo.task.predicate import Predicate, AND, NOT, OR
+from nmmo.task.predicate import Predicate
+from nmmo.task.predicate.core import AND, NOT, OR
 
 class RandomTaskSampler:
   def __init__(self) -> None:

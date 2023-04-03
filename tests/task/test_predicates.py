@@ -13,17 +13,18 @@ from nmmo.lib import material as Material
 
 # pylint: disable=import-error
 from nmmo.task.task_api import TaskWrapper
-from nmmo.task.predicate import Predicate, Group, TaskManager
-import nmmo.task.base_predicate as bp
-import nmmo.task.item_predicate as ip
-import nmmo.task.gold_predicate as gp
+from nmmo.task.predicate import Predicate
+from nmmo.task.group import Group
+from nmmo.task.utils import TaskManager
+import nmmo.task.predicate.base_predicate as bp
+import nmmo.task.predicate.item_predicate as ip
+import nmmo.task.predicate.gold_predicate as gp
 
 
 # use the constant reward of 1 for testing predicates
 REWARD = 1
 NUM_AGENT = 6
 ALL_AGENT = Group(list(range(1, NUM_AGENT+1)), 'All')
-
 
 class TestBasePredicate(unittest.TestCase):
   # pylint: disable=protected-access,invalid-name
@@ -59,11 +60,11 @@ class TestBasePredicate(unittest.TestCase):
   def _check_result(self, env, test_tasks, infos, true_task):
     for tid, (task, assignee) in enumerate(test_tasks):
       # result is cached when at least one assignee is alive so that the task is evaled
-      if set(assignee.agents).intersection(infos):
+      if set(assignee).intersection(infos):
         self.assertEqual(env.game_state.cache_result[task.name], tid in true_task)
 
       for ent_id in infos:
-        if ent_id in assignee.agents:
+        if ent_id in assignee:
           # the agents that are assigned the task get evaluated for reward
           self.assertEqual(infos[ent_id]['task'][task.name], int(tid in true_task))
         else:
