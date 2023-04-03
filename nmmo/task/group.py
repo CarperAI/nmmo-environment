@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import Dict,  Iterable, Tuple, TYPE_CHECKING
-from collections import OrderedDict, Set, Sequence
+from typing import Dict,  Iterable, TYPE_CHECKING
+from collections import OrderedDict
+from collections.abc import Set, Sequence
 
 if TYPE_CHECKING:
   from nmmo.task.game_state import GameState, GroupView
@@ -8,8 +9,8 @@ if TYPE_CHECKING:
 class Group(Sequence, Set):
   ''' An immutable, ordered, unique group of agents involved in a task
   '''
-  def __init__(self, 
-               agents: Iterable[int], 
+  def __init__(self,
+               agents: Iterable[int],
                name: str=None):
 
     assert len(agents) > 0, "Team must have at least one agent"
@@ -21,7 +22,17 @@ class Group(Sequence, Set):
 
     self._sd: GroupView = None
     self._gs: GameState = None
-  
+
+  @property
+  def agents(self):
+    return self._agents
+
+  def union(self, o: Group):
+    return Group(self._agents + o.agents)
+
+  def intersection(self, o: Group):
+    return Group(set(self._agents).intersection(set(o.agents)))
+
   def __eq__(self, o):
     return self._agents == o
 
@@ -32,20 +43,29 @@ class Group(Sequence, Set):
     return hash(self._agents)
 
   def __getitem__(self, key):
-      if len(self) == 1 and key == 0:
-        return self
-      return Group((self._agents[key],), f"{self.name}.{key}")
-  
+    if len(self) == 1 and key == 0:
+      return self
+    return Group((self._agents[key],), f"{self.name}.{key}")
+
+  def __contains__(self, key):
+    if isinstance(key, int):
+      return key in self.agents
+    return Sequence.__contains__(self, key)
+
   def __str__(self) -> str:
     return str(self._agents)
-  
+
+  def __int__(self) -> int:
+    assert len(self._agents) == 1, "Group is not a singleton"
+    return int(self._agents[0])
+
   def description(self) -> Dict:
     return {
       "type": "Group",
       "name": self.name,
       "agents": self._agents
     }
-  
+
   def update(self, gs: GameState) -> None:
     self._gs = gs
     self._sd = gs.get_subject_view(self)

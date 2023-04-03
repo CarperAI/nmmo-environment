@@ -1,3 +1,4 @@
+#pylint: disable=invalid-name
 import numpy as np
 from nmmo.task.predicate import Predicate
 from nmmo.task.group import Group
@@ -12,6 +13,7 @@ ItemAttr = ItemState.State.attr_name_to_col
 class InventorySpaceGE(Predicate):
   def __init__(self, subject: Group, space: int):
     super().__init__(subject, space)
+    self.subject = subject
     self._space = space
 
   def __call__(self, gs: GameState):
@@ -21,7 +23,7 @@ class InventorySpaceGE(Predicate):
     result = True
 
     max_space = gs.config.ITEM_INVENTORY_CAPACITY
-    for ent_id in self.subject:
+    for ent_id in self.subject.agents:
       if ent_id in gs.env_obs:
         space = max_space - gs.env_obs[ent_id].inventory.len
         if space < self._space:
@@ -37,10 +39,10 @@ class ItemPredicate(Predicate):
   def __init__(self, subject: Group,
                item: Item.Item, level: int, quantity: int):
     super().__init__(subject, item, level, quantity)
+    self.subject = subject
     self._item_type = item.ITEM_TYPE_ID
     self._level = level
     self._quantity = quantity
-
 
 class OwnItem(ItemPredicate):
   def __call__(self, gs: GameState):
@@ -58,6 +60,7 @@ class EquipItem(Predicate): # quantity is NOT used here
   def __init__(self, subject: Group,
                item: Item.Item, level: int, num_agent: int):
     super().__init__(subject, item, level, num_agent)
+    self.subject = subject
     self._item_type = item.ITEM_TYPE_ID
     self._level = level
     self._num_agent = num_agent
@@ -88,6 +91,7 @@ class FullyArmed(Predicate):
                combat_style, level: int, num_agent: int):
     assert combat_style in [Skill.Melee, Skill.Range, Skill.Melee], "Wrong style input"
     super().__init__(subject, combat_style, level, num_agent)
+    self.subject = subject
     self._combat_style = combat_style
     self._level = level
     self._num_agent = num_agent

@@ -1,3 +1,4 @@
+#pylint: disable=invalid-name
 import numpy as np
 from numpy import count_nonzero as count
 
@@ -21,10 +22,11 @@ class TickGE(Predicate):
        Otherwise false.
     """
     return gs.current_tick >= self._num_tick
-  
+
 class CanSeeTile(Predicate):
   def __init__(self, subject: Group, tile_type: Material):
     super().__init__(subject, tile_type)
+    self.subject = subject
     self._tile_type = tile_type.index
 
   def __call__(self, gs: GameState):
@@ -33,7 +35,7 @@ class CanSeeTile(Predicate):
     """
     result = False
 
-    for ent_id in self.subject:
+    for ent_id in self.subject.agents:
       if ent_id in gs.env_obs:
         tile_obs = gs.env_obs[ent_id].tiles[:, TileAttr['material_id']]
         if self._tile_type in tile_obs:
@@ -41,18 +43,18 @@ class CanSeeTile(Predicate):
           break
 
     return result
-  
+
 @predicate
 def StayAlive(subject: Group):
-  """True iff all subjects (self._agents) are alive.
+  """True iff all subjects are alive.
   """
   return count(subject.health > 0) == len(subject)
 
 @predicate
 def AllDead(subject: Group):
-  """True iff all subjects (self._agents) are dead.
+  """True iff all subjects are dead.
   """
-  return count(subject.health == 0) == len(subject)
+  return count(subject.health) == 0
 
 @predicate
 def OccupyTile(subject: Group,
@@ -68,12 +70,13 @@ def AllMembersWithinRange(subject: Group,
   """True if the max l-inf distance of teammates is 
          less than or equal to self.dist
   """
-  max(subject.row.max()-subject.row.min(),
+  return max(subject.row.max()-subject.row.min(),
       subject.col.max()-subject.col.min()) <= dist
 
 class CanSeeAgent(Predicate):
   def __init__(self, subject: Group, target: int):
     super().__init__(subject, target)
+    self.subject = subject
     self._target = target # ent_id
 
   def __call__(self, gs: GameState):
@@ -82,7 +85,7 @@ class CanSeeAgent(Predicate):
     """
     result = False
 
-    for ent_id in self.subject:
+    for ent_id in self.subject.agents:
       if ent_id in gs.env_obs:
         if self._target in gs.env_obs[ent_id].entities.ids:
           result = True
@@ -94,6 +97,7 @@ class CanSeeAgent(Predicate):
 class DistanceTraveled(Predicate):
   def __init__(self, subject: Group, dist: int):
     super().__init__(subject, dist)
+    self.subject = subject
     self._dist = dist
 
   def __call__(self, gs: GameState):
@@ -107,25 +111,10 @@ class DistanceTraveled(Predicate):
     dists = utils.linf(list(zip(r,c)),[gs.spawn_pos[id_] for id_ in sd.id])
     return dists.sum() >= self._dist
 
-
-class AllMembersWithinRange(Predicate):
-  def __init__(self, subject: Group, dist: int):
-    super().__init__(subject, dist)
-    self._dist = dist
-
-  def __call__(self, gs: GameState):
-    """True if the max l-inf distance of teammates is 
-         less than or equal to self.dist
-       Otherwise false.
-    """
-    sd = gs.get_subject_view(self.subject)
-
-    # compare the outer most coordinates of all teammates
-    return max(sd.row.max()-sd.row.min(), sd.col.max()-sd.col.min()) <= self._dist
-
 class AttainSkill(Predicate):
   def __init__(self, subject: Group, skill: Skill.Skill, level: int, num_agent: int):
     super().__init__(subject, skill, level, num_agent)
+    self.subject = subject
     self._skill = skill.__name__.lower()
     self._level = level
     self._num_agent = num_agent

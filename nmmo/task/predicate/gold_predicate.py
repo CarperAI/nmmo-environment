@@ -1,4 +1,6 @@
+#pylint: disable=invalid-name
 from nmmo.task.predicate import Predicate
+from nmmo.task.predicate.core import predicate
 from nmmo.task.group import Group
 from nmmo.task.game_state import GameState
 
@@ -8,13 +10,12 @@ class GoldPredicate(Predicate):
     super().__init__(subject, amount)
     self._amount = amount
 
-
-class HoardGold(GoldPredicate):
-  def __call__(self, gs: GameState):
-    """True if the summed gold of all teammate is greater than or equal to _amount.
-       Otherwise false
-    """
-    return gs.get_subject_view(self.subject).gold.sum() >= self._amount
+@predicate
+def HoardGold(subject:Group,
+              amount: int):
+  """True iff the summed gold of all teammate is greater than or equal to amount.
+  """
+  return subject.gold.sum() >= amount
 
 #######################################
 # Event-log based predicates

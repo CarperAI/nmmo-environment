@@ -1,81 +1,146 @@
-from typing import Dict, List, Tuple
-
+from __future__ import annotations
+from typing import Dict, List, Tuple, TYPE_CHECKING
+from functools import reduce
+from abc import ABC, abstractmethod
 from pettingzoo.utils.env import AgentID
 
 import nmmo
 from nmmo.task.game_state import GameStateGenerator
 from nmmo.task.predicate import Predicate
+from nmmo.task.group import Group
 
+if TYPE_CHECKING:
+  from nmmo.task.game_state import GameState
 
-# TODO(kywch): how to divide the task system, into core vs. wrapper, etc.?
-#  We will address this once the task wrapper is stable
+class Task(ABC):
+  def __init__(self, assignee: Group):
+    self._assignee = assignee
+
+  @property
+  def assignee(self):
+    return self._assignee
+
+  @abstractmethod
+  def rewards(self, gs: GameState) -> Tuple[Dict[int, float], Dict[int, Dict]]:
+    """ Returns a mapping from ent_id to rewards and infos for all 
+    entities in assignee
+    """
+    raise NotImplementedError
+
+class PredicateTask(Task, ABC):
+  def __init__(self,
+               assignee: Group,
+               predicate: Predicate):
+    super().__init__(assignee)
+    self._predicate = predicate
+
+  def evaluate(self, gs: GameState) -> float:
+    name = self._predicate.name
+    cache = gs.cache_result
+    if name not in cache:
+      cache[name] = self._predicate(gs)
+    return cache[name]
+
+class Once(PredicateTask):
+  def __init__(self,
+               assignee: Group,
+               predicate: Predicate,
+               reward = 1):
+    super().__init__(assignee, predicate)
+    self._reward = reward
+    self._completed = False
+
+  def rewards(self, gs: GameState):
+    rewards = {int(ent_id): 0 for ent_id in self._assignee}
+    infos = {int(ent_id): {self._predicate.name: self.evaluate(gs)}
+             for ent_id in self._assignee}
+    if not self._completed and self.evaluate(gs):
+      self._completed = True
+      rewards = {int(ent_id): self._reward for ent_id in self._assignee}
+    return rewards, infos
+
+class Repeat(PredicateTask):
+  def __init__(self,
+               assignee: Group,
+               predicate: Predicate,
+               reward = 1):
+    super().__init__(assignee, predicate)
+    self._reward = reward
+
+  def rewards(self, gs: GameState):
+    rewards = {int(ent_id): 0 for ent_id in self._assignee}
+    infos = {int(ent_id): {self._predicate.name: self.evaluate(gs)}
+             for ent_id in self._assignee}
+    if self.evaluate(gs):
+      rewards = {int(ent_id): self._reward for ent_id in self._assignee}
+    return rewards, infos
+
+class MultiTask(Task):
+  def __init__(self, *tasks: Task):
+    assert len(tasks) > 0
+    super().__init__(reduce(lambda a,b: a.union(b),
+                            [task.assignee for task in tasks]))
+    self._tasks = tasks
+
+  def rewards(self, gs: GameState) -> Dict[int, float]:
+    rewards = {}
+    infos = {}
+    for task in self._tasks:
+      task_reward, task_infos = task.rewards(gs)
+      for ent_id, reward in task_reward.items():
+        rewards[ent_id] = rewards.get(ent_id,0) + reward
+      for ent_id, info in task_infos.items():
+        if not ent_id in infos:
+          infos[ent_id] = {}
+        infos[ent_id] = {**infos[ent_id], **info}
+
+    return rewards, infos
+
+################################################
+# Environment Wrapper
+# Eventually should replace env.py once stable
+# TODO(mark) Syllabus
+
 # pylint: disable=abstract-method
-class TaskWrapper(nmmo.Env):
+class TaskEnv(nmmo.Env):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
-
-    # CHECK ME: should every agent have a task assigned?
-
-    # TODO(kywch): make "task_assignment" Dict more flexible, perhaps programmable by ELM
-    # task_assignment = {
-    #   agent1: [(task1, 1), (task2, -1)],
-    #   agent2: [(task1, -1), (task3, 2)] }
-    self._task_assignment: Dict[int, List[Tuple[Predicate, int]]] = None
-
-    # game state generator
+    self.task: Task = None
     self.gs_gen: GameStateGenerator = None
-    self.game_state = None
+
+    self.reset()
+
+  def change_task(self, new_task: Task):
+    self.task = new_task
+    self.reset()
 
   # pylint: disable=arguments-renamed
-  def reset(self, task_assignment: Dict[int, List[Tuple[Predicate, int]]],
-            map_id=None, seed=None, options=None):
+  def reset(self,
+            map_id=None,
+            seed=None,
+            options=None):
     gym_obs = super().reset(map_id, seed, options)
-
     self.gs_gen = GameStateGenerator(self.realm, self.config)
-    self._task_assignment = task_assignment
-
     return gym_obs
 
+  def _encode_goal(self):
+    raise NotImplementedError
+
   def _compute_rewards(self, agents: List[AgentID], dones: Dict[AgentID, bool]):
-    '''Computes the reward for the specified agent'''
     infos = {}
-    rewards = { eid: -1 for eid in dones }
+    game_state = self.gs_gen.generate(self.realm, self.obs)
 
-    self.game_state = self.gs_gen.generate(self.realm, self.obs)
+    rewards = {eid: 0 for eid in agents}
+    task_rewards, task_infos = self.task.rewards(game_state)
+    for eid, reward in task_rewards.items():
+      rewards[eid] = reward
+    for eid in dones:
+      rewards[eid] = -1 #TODO(mark) should this be 0 instead
 
-    for agent_id in agents:
-      infos[agent_id] = {}
-      agent = self.realm.players.get(agent_id)
-
-      # if agent is None, we assume that it's dead
-      if agent is None:
-        # assert agent is not None, f'Agent {agent_id} not found'
-        rewards[agent_id] = -1
-        continue
-
-      rewards[agent_id] = 0
-      infos[agent_id] = { 'task': {} }
-
-      # CHECK ME: some agents may not have a assigned task. is it ok?
-      if agent_id in self._task_assignment:
-        for task, at_stake in self._task_assignment[agent_id]:
-          assert callable(task), "Provided task is not callable"
-          if isinstance(task, Predicate):
-            task_name = task.name
-          else:
-            # CHECK ME: for a callable function, would this be enough?
-            task_name = task.__name__
-
-          # cache the results if not already
-          if task_name not in self.game_state.cache_result:
-            # CHECK ME: if task name happens to be the same, it will have the same results
-            #   This won't be a problem for the predicates and their propositional combination
-            #   However, if there are different task fns with the same name, it'd be a problem
-            self.game_state.cache_result[task_name] = task(self.game_state)
-
-          rew = self.game_state.cache_result[task_name] * at_stake
-          rewards[agent_id] += rew
-
-          infos[agent_id]['task'].update({ task_name: rew })
+    for eid in agents:
+      infos[eid] = {}
+      infos[eid]['task'] = {}
+      if eid in task_infos:
+        infos[eid]['task'] = task_infos[eid]
 
     return rewards, infos

@@ -7,8 +7,9 @@ import nmmo
 
 # pylint: disable=import-error
 from nmmo.task import sampler
-from nmmo.task.task_api import TaskWrapper
+from nmmo.task.task_api import Repeat, MultiTask, TaskEnv
 from nmmo.task.predicate import Predicate
+from nmmo.task.predicate.core import predicate
 from nmmo.task.group import Group
 from nmmo.task.utils import TeamHelper
 from nmmo.task.game_state import GameState
@@ -16,16 +17,13 @@ from nmmo.task.game_state import GameState
 from nmmo.systems import item as Item
 from nmmo.io import action as Action
 
+@predicate
+def Success():
+  return True
 
-class Success(Predicate):
-  def __call__(self, gs: GameState) -> bool:
-    """Always true"""
-    return True
-
-class Failure(Predicate):
-  def __call__(self, gs: GameState) -> bool:
-    """Always false"""
-    return False
+@predicate
+def Failure():
+  return False
 
 class FakeTask(Predicate):
   def __init__(self, subject:Group, param1: int, param2: Item.Item, param3: Action.Style) -> None:
@@ -43,45 +41,42 @@ class MockGameState(GameState):
     # pylint: disable=super-init-not-called
     pass
 
-
 class TestTaskAPI(unittest.TestCase):
 
   def test_operators(self):
     # pylint: disable=unsupported-binary-operation,invalid-unary-operand-type
 
     mock_gs = MockGameState()
-    subject = Group([1])
 
     # AND (&), OR (|), NOT (~), IMPLY (>>)
-    task1 = Success(subject) & Failure(subject) & Success(subject)
+    task1 = Success() & Failure() & Success()
     self.assertFalse(task1(mock_gs))
 
-    task2 = Success(subject) | Failure(subject) | Success(subject)
+    task2 = Success() | Failure() | Success()
     self.assertTrue(task2(mock_gs))
 
-    task3 = Success(subject) &  ~ Failure(subject) & Success(subject)
+    task3 = Success() &  ~ Failure() & Success()
     self.assertTrue(task3(mock_gs))
 
-    task4 = Success(subject) >> Success(subject)
+    task4 = Success() >> Success()
     self.assertTrue(task4(mock_gs))
 
-    task5 = Success(subject) >> ~ Success(subject)
+    task5 = Success() >> ~ Success()
     self.assertFalse(task5(mock_gs))
 
-    task6 = (Failure(subject) >> Failure(subject)) & Success(subject)
+    task6 = (Failure() >> Failure()) & Success()
     self.assertTrue(task6(mock_gs))
 
-  def test_task_name(self):
+  def test_predicate_name(self):
 
-    success = Success(Group([1]))
-    failure = Failure(Group([1,3]))
+    success = Success()
+    failure = Failure()
     fake_task = FakeTask(Group([2]), 1, Item.Hat, Action.Melee)
     combination = (success & ~ (failure | fake_task)) | (failure >> fake_task)
 
-    print(combination.name)
     self.assertEqual(combination.name,
-      "OR(AND(Success_(1,),NOT(OR(Failure_(1,3),FakeTask_(2,)_1_Hat_Melee))),"
-      "IMPLY(Failure_(1,3)->FakeTask_(2,)_1_Hat_Melee))")
+      "OR(AND(Success,NOT(OR(Failure,FakeTask_(2,)_1_Hat_Melee))),"
+      "IMPLY(Failure->FakeTask_(2,)_1_Hat_Melee))")
 
   def test_team_helper(self):
     # TODO(kywch): This test is true now but may change later.
@@ -126,43 +121,40 @@ class TestTaskAPI(unittest.TestCase):
 
   def test_completed_tasks_in_info(self):
     config = ScriptedAgentTestConfig()
-    env = TaskWrapper(config)
+    env = TaskEnv(config)
 
     # some team helper maybe necessary
-    team_helper = TeamHelper( list(range(1, config.PLAYER_N+1)), len(config.PLAYERS))
+    team_helper = TeamHelper(range(1, config.PLAYER_N+1), len(config.PLAYERS))
 
-    # TODO(kywch): It's very cumbersome to define task_assignment for each agent manually
-    #   We probably need a function here...
-    task1 = Success(Group([1]))
-    task1_dup = Success(Group([1]))
-    reward1 = 1
     fake_task = FakeTask(team_helper.left_team(3), Item.Hat, 1, 0.1)
-    task_assignment = {
-      1: [ (task1, reward1), (Failure(Group([2])), 2), (Success(Group([2])), -1) ],
-      2: [ (Success(team_helper.own_team(2)), 1), (Failure(team_helper.own_team(1)), 2),
-           (Success(team_helper.team(0)), -1) ],
-      3: [ (fake_task, 2), (task1_dup, 2) ] # Success(Group([1])) is defined twice
-    }
-
-    env.reset(task_assignment)
+    task_assignment = MultiTask(
+      Repeat(assignee=Group([1]), predicate=Success(), reward=2),
+      Repeat(assignee=Group([1]), predicate=Failure(), reward=1),
+      Repeat(assignee=Group([1]), predicate=Success(), reward=-1),
+      Repeat(assignee=team_helper.own_team(2), predicate=Success(), reward=1),
+      Repeat(assignee=Group([3]), predicate=fake_task, reward=2)
+    )
+    env.change_task(task_assignment)
     _, _, _, infos = env.step({})
     logging.info(infos)
 
-    # agent 1: task1 is always True, so it should be rewarded too
-    self.assertEqual(infos[1]['task'][task1.name], reward1)
+    # agent 1: task1 is always True
+    self.assertEqual(infos[1]['task'][Success().name], 1)
 
-    # agent 2 should have been assigned Success() and Failure() but not FakeTask()
-    self.assertEqual(infos[2]['task'][Success(team_helper.own_team(2)).name], 1)
-    self.assertEqual(infos[2]['task'][Failure(team_helper.own_team(1)).name], 0)
+    # agent 2 should have been assigned Success() but not FakeTask()
+    self.assertEqual(infos[2]['task'][Success().name], 1)
     self.assertTrue(fake_task.name not in infos[2]['task'])
 
     # agent 3 should have been assigned FakeTask(), which is always False (0)
     self.assertEqual(infos[3]['task'][fake_task.name], 0)
 
+    # all agents in the same team with agent 2 have Success()
     # other agents don't have any tasks assigned
     for ent_id in range(4, config.PLAYER_N+1):
-      self.assertEqual(infos[ent_id]['task'], {})
-
+      if Group([ent_id]) in team_helper.own_team(2):
+        self.assertEqual(infos[ent_id]['task'][Success().name], 1)
+      else:
+        self.assertEqual(infos[ent_id]['task'], {})
 
 if __name__ == '__main__':
   unittest.main()

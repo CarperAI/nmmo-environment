@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
-import inspect
-from typing import Dict, MutableSet
+from typing import Dict, List
 
 from nmmo.task.game_state import GameState
 from nmmo.task.group import Group
@@ -15,10 +14,11 @@ class Predicate(ABC):
     else:
       self._name = Predicate._make_name(name, args, kwargs)
 
-    is_group = lambda x: isinstance(x, Group)
-    self._groups: MutableSet[Group] = set()
-    self._groups = set(filter(is_group, args))
-    self._groups = self._groups.union(set(filter(is_group, kwargs.items())))
+    def is_group(x):
+      return isinstance(x, Group)
+
+    self._groups: List[Group] = list(filter(is_group, args))
+    self._groups = self._groups + list(filter(is_group, kwargs.items()))
 
   @abstractmethod
   def __call__(self, gs: GameState) -> bool:
@@ -48,7 +48,7 @@ class Predicate(ABC):
   @property
   def name(self) -> str:
     return self._name
-  
+
   def _desc(self, class_type):
     return {
       "type": class_type,
@@ -68,64 +68,65 @@ class Predicate(ABC):
     return NOT(self)
   def __rshift__(self, other):
     return IMPLY(self, other)
-  
+
 ################################################
 # Sweet syntactic sugar
 def predicate(fn) -> Predicate:
   class FunctionPredicate(Predicate):
     def __init__(self, *args, **kwargs) -> None:
-      super().__init__(fn.__name__, *args, **kwargs)
+      super().__init__(*args, name=fn.__name__, **kwargs)
       self._args = args
       self._kwargs = kwargs
 
     def __call__(self, gs: GameState) -> bool:
+      # pylint: disable=redefined-builtin, unused-variable
       __doc__ = fn.__doc__
       super().__call__(gs)
       return fn(*self._args, **self._kwargs)
-  
+
   return FunctionPredicate
 
 ################################################
 # Connectives
 
 class AND(Predicate):
-  def __init__(self, *tasks: Predicate):
+  def __init__(self, *predicates: Predicate):
     # pylint: disable=super-init-not-called
-    assert len(tasks) > 0
-    self._tasks = tasks
+    assert len(predicates) > 0
+    self._predicates = predicates
 
     # the name is AND(task1,task2,task3)
-    self._name = 'AND(' + ','.join([t.name for t in self._tasks]) + ')'
+    self._name = 'AND(' + ','.join([t.name for t in self._predicates]) + ')'
 
   def __call__(self, gs: GameState) -> bool:
-    """True if all _tasks are evaluated to be True.
+    """True if all _predicates are evaluated to be True.
        Otherwise false."""
-    return all(t(gs) for t in self._tasks)
+    return all(t(gs) for t in self._predicates)
 
   @property
   def description(self) -> Dict:
     desc = self._desc("Conjunction")
-    desc.update({ 'desc_child': ["AND"] + [t.description for t in self._tasks] })
+    desc.update({ 'desc_child': ["AND"] + [t.description for t in self._predicates] })
     return desc
 
 class OR(Predicate):
-  def __init__(self, *tasks: Predicate):
+  def __init__(self, *predicates: Predicate):
     # pylint: disable=super-init-not-called
-    assert len(tasks) > 0
-    self._tasks = tasks
+    assert len(predicates) > 0
+    self._predicates = predicates
 
     # the name is OR(task1,task2,task3,...)
-    self._name = 'OR(' + ','.join([t.name for t in self._tasks]) + ')'
+    self._name = 'OR(' + ','.join([t.name for t in self._predicates]) + ')'
 
   def __call__(self, gs: GameState) -> bool:
-    """True if any of _tasks is evaluated to be True.
+    """True if any of _predicates is evaluated to be True.
        Otherwise false."""
-    return any(t(gs) for t in self._tasks)
+    return any(t(gs) for t in self._predicates)
 
   @property
   def description(self) -> Dict:
     desc = self._desc("Disjunction")
-    desc.update({ 'desc_child': ["OR"] + [t.description for t in self._tasks] })
+    desc.update({ 'desc_child': ["OR"] + [t.description for t in self._predicates] })
     return desc
 
 class NOT(Predicate):

@@ -12,10 +12,9 @@ from nmmo.systems import skill as Skill
 from nmmo.lib import material as Material
 
 # pylint: disable=import-error
-from nmmo.task.task_api import TaskWrapper
+from nmmo.task.task_api import Repeat, MultiTask, TaskEnv
 from nmmo.task.predicate import Predicate
 from nmmo.task.group import Group
-from nmmo.task.utils import TaskManager
 import nmmo.task.predicate.base_predicate as bp
 import nmmo.task.predicate.item_predicate as ip
 import nmmo.task.predicate.gold_predicate as gp
@@ -27,7 +26,7 @@ NUM_AGENT = 6
 ALL_AGENT = Group(list(range(1, NUM_AGENT+1)), 'All')
 
 class TestBasePredicate(unittest.TestCase):
-  # pylint: disable=protected-access,invalid-name
+  # pylint: disable=protec  print(count(subject.health > 0))ted-access,invalid-name
 
   def _get_taskenv(self,
                    test_tasks: List[Tuple[Predicate, int]],
@@ -38,12 +37,12 @@ class TestBasePredicate(unittest.TestCase):
     config.PLAYER_N = NUM_AGENT
     config.IMMORTAL = True
 
-    tasks = TaskManager()
-    for tsk, team in test_tasks:
-      tasks.assign(tsk, team, REWARD)
+    tasks = MultiTask(
+      *(Repeat(team, tsk, REWARD) for tsk, team in test_tasks)
+    )
 
-    env = TaskWrapper(config)
-    env.reset(tasks.assigned)
+    env = TaskEnv(config)
+    env.change_task(tasks)
 
     if grass_map:
       MS = env.config.MAP_SIZE
@@ -62,7 +61,6 @@ class TestBasePredicate(unittest.TestCase):
       # result is cached when at least one assignee is alive so that the task is evaled
       if set(assignee).intersection(infos):
         self.assertEqual(env.game_state.cache_result[task.name], tid in true_task)
-
       for ent_id in infos:
         if ent_id in assignee:
           # the agents that are assigned the task get evaluated for reward

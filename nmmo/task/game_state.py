@@ -71,8 +71,8 @@ class GroupView:
   def __init__(self, gs: GameState, subject: Group):
     self._gs = gs
     self._subject = subject
-    self._sbj_ent = gs.where_in_id('entity', subject)
-    self._sbj_item = gs.where_in_id('item', subject)
+    self._sbj_ent = gs.where_in_id('entity', subject.agents)
+    self._sbj_item = gs.where_in_id('item', subject.agents)
 
   def __getattribute__(self, attr):
     if attr in ['_gs','_subject','_sbj_ent','_sbj_item']:

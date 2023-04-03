@@ -1,6 +1,5 @@
-from typing import Dict, Tuple, List
+from typing import List
 from nmmo.task.group import Group
-from nmmo.task.predicate import Predicate
 
 class TeamHelper:
   ''' Provides a mapping from ent_id to group as equivalent to the grouping
@@ -47,30 +46,3 @@ class TeamHelper:
 
   def all(self) -> Group:
     return Group(list(self._ent_to_team.keys()), "All")
-
-class TaskManager:
-  def __init__(self):
-    # task_assignment = {
-    #   agent1: [(task1, 1), (task2, -1)],
-    #   agent2: [(task1, -1), (task3, 2)] }
-    self._task_assignment: Dict[int, List[Tuple[Predicate, int]]] = {}
-
-  @property
-  def assigned(self):
-    return self._task_assignment
-
-  def update(self, ent_id: int, tasks: List[Tuple[Predicate, int]]):
-    self._task_assignment[ent_id] = tasks
-
-  def append(self, ent_id: int, task: Tuple[Predicate, int]):
-    if ent_id in self._task_assignment:
-      self._task_assignment[ent_id].append(task)
-    else:
-      self._task_assignment[ent_id] = [task]
-
-  # assign task to assignees with the reward
-  # NOTE: the same reward is assigned to all assignee. If one wants different reward,
-  #   one should use 'update' or 'append' for individual assignee
-  def assign(self, task: Predicate, assignee: Group, reward: int):
-    for ent_id in assignee:
-      self.append(ent_id, (task, reward))
