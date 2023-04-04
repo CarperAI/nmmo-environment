@@ -17,6 +17,14 @@ def TickGE(gs: GameState,
   """
   return gs.current_tick >= num_tick
 
+'''(mark) WIP
+@predicate
+def CanSeeTile(gs: GameState,
+               subject: Group,
+               tile_type: Material):
+  return tile_type in subject.obs.tile.material_id
+'''
+
 class CanSeeTile(Predicate):
   def __init__(self, subject: Group, tile_type: Material):
     super().__init__(subject, tile_type)
@@ -37,6 +45,7 @@ class CanSeeTile(Predicate):
           break
 
     return result
+
 
 @predicate
 def StayAlive(gs: GameState,

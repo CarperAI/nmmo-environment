@@ -9,7 +9,6 @@ import nmmo.systems.item as item_system
 from nmmo.io import action
 from nmmo.lib import material, utils
 
-
 class BasicObs:
   def __init__(self, values, id_col):
     self.values = values
