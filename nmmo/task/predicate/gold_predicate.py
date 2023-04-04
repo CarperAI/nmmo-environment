@@ -23,7 +23,7 @@ def HoardGold(gs: GameState,
 #######################################
 
 class EarnGold(GoldPredicate):
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if
        Otherwise false.
     """
@@ -31,7 +31,7 @@ class EarnGold(GoldPredicate):
 
 
 class SpendGold(GoldPredicate):
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if
        Otherwise false.
     """
@@ -39,7 +39,7 @@ class SpendGold(GoldPredicate):
 
 
 class MakeProfit(GoldPredicate):
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if
        Otherwise false.
     """

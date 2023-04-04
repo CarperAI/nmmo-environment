@@ -16,7 +16,7 @@ class InventorySpaceGE(Predicate):
     self.subject = subject
     self._space = space
 
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if the inventory space of every subjects is greater than or equal to
        the self._space. Otherwise false.
     """
@@ -45,7 +45,7 @@ class ItemPredicate(Predicate):
     self._quantity = quantity
 
 class OwnItem(ItemPredicate):
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if the team as whole owns the item (_item_type, >=_level) 
        and has greater than or equal to quantity. Otherwise false.
     """
@@ -66,7 +66,7 @@ class EquipItem(Predicate): # quantity is NOT used here
     self._num_agent = num_agent
 
   '''Equip an item of a certain type and level (equal or higher)'''
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if the number of agents that equip the item (_item_type, >=_level)
        is greater than or equal to _num_agent. Otherwise false.
     """
@@ -99,7 +99,7 @@ class FullyArmed(Predicate):
     self._item_ids = { 'hat':2, 'top':3, 'bottom':4 }
     self._item_ids.update(self._WEAPON_IDS[combat_style])
 
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if the number of fully equipped agents is greater than or equal to _num_agent
        Otherwise false.
 
@@ -119,7 +119,7 @@ class FullyArmed(Predicate):
 #######################################
 
 class ConsumeItem(ItemPredicate):
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if
        Otherwise false.
     """
@@ -127,7 +127,7 @@ class ConsumeItem(ItemPredicate):
 
 
 class ProduceItem(ItemPredicate):
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if
        Otherwise false.
     """
@@ -135,7 +135,7 @@ class ProduceItem(ItemPredicate):
 
 
 class ListItem(ItemPredicate):
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if
        Otherwise false.
     """
@@ -143,7 +143,7 @@ class ListItem(ItemPredicate):
 
 
 class BuyItem(ItemPredicate):
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if
        Otherwise false.
     """

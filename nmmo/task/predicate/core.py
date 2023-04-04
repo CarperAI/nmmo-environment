@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from nmmo.task.game_state import GameState
 from nmmo.task.group import Group
@@ -20,14 +20,18 @@ class Predicate(ABC):
     self._groups: List[Group] = list(filter(is_group, args))
     self._groups = self._groups + list(filter(is_group, kwargs.items()))
 
+  def __call__(self, gs: GameState) -> float:
+    for group in self._groups:
+      group.update(gs)
+    return max(min(self._evaluate(gs)*1,1.0),0)
+
   @abstractmethod
-  def __call__(self, gs: GameState) -> bool:
+  def _evaluate(self, gs: GameState) -> Union[float, bool]:
     """One should describe the code how evaluation is done.
        LLM might use it to produce goal embedding, which will be
        used by the RL agent to produce action.
     """
-    for group in self._groups:
-      group.update(gs)
+    raise NotImplementedError
 
   @staticmethod
   def _make_name(class_name, args, kwargs):
@@ -53,7 +57,7 @@ class Predicate(ABC):
     return {
       "type": class_type,
       "name": self.name,
-      "evaluate": self.__call__.__doc__
+      "evaluate": self._evaluate.__doc__
     }
 
   @property
@@ -78,10 +82,9 @@ def predicate(fn) -> Predicate:
       self._args = args
       self._kwargs = kwargs
 
-    def __call__(self, gs: GameState) -> bool:
+    def _evaluate(self, gs: GameState):
       # pylint: disable=redefined-builtin, unused-variable
       __doc__ = fn.__doc__
-      super().__call__(gs)
       return fn(gs, *self._args, **self._kwargs)
 
   return FunctionPredicate
@@ -91,17 +94,17 @@ def predicate(fn) -> Predicate:
 
 class AND(Predicate):
   def __init__(self, *predicates: Predicate):
-    # pylint: disable=super-init-not-called
+    super().__init__()
     assert len(predicates) > 0
     self._predicates = predicates
 
     # the name is AND(task1,task2,task3)
     self._name = 'AND(' + ','.join([t.name for t in self._predicates]) + ')'
 
-  def __call__(self, gs: GameState) -> bool:
+  def _evaluate(self, gs: GameState):
     """True if all _predicates are evaluated to be True.
-       Otherwise false."""
-    return all(t(gs) for t in self._predicates)
+    """
+    return min(t(gs) for t in self._predicates)
 
   @property
   def description(self) -> Dict:
@@ -111,17 +114,17 @@ class AND(Predicate):
 
 class OR(Predicate):
   def __init__(self, *predicates: Predicate):
-    # pylint: disable=super-init-not-called
+    super().__init__()
     assert len(predicates) > 0
     self._predicates = predicates
 
     # the name is OR(task1,task2,task3,...)
     self._name = 'OR(' + ','.join([t.name for t in self._predicates]) + ')'
 
-  def __call__(self, gs: GameState) -> bool:
+  def _evaluate(self, gs: GameState):
     """True if any of _predicates is evaluated to be True.
-       Otherwise false."""
-    return any(t(gs) for t in self._predicates)
+    """
+    return max(t(gs) for t in self._predicates)
 
   @property
   def description(self) -> Dict:
@@ -131,16 +134,17 @@ class OR(Predicate):
 
 class NOT(Predicate):
   def __init__(self, task: Predicate):
+    super().__init__()
     # pylint: disable=super-init-not-called
     self._task = task
 
     # the name is NOT(task)
     self._name = f'NOT({self._task.name})'
 
-  def __call__(self, gs: GameState) -> bool:
+  def _evaluate(self, gs: GameState):
     """True if _task is evaluated to be False.
-       Otherwise true."""
-    return not self._task(gs)
+    """
+    return 1- self._task(gs)
 
   @property
   def description(self) -> Dict:
@@ -150,20 +154,19 @@ class NOT(Predicate):
 
 class IMPLY(Predicate):
   def __init__(self, p: Predicate, q: Predicate):
-    # pylint: disable=super-init-not-called
+    super().__init__()
     self._p = p
     self._q = q
 
     # the name is IMPLY(p->q)
     self._name = f'IMPLY({self._p.name}->{self._q.name})'
 
-  def __call__(self, gs: GameState) -> bool:
+  def _evaluate(self, gs: GameState):
     """False if _p is true and _q is false.
        Otherwise true."""
-    if self._p(gs):
+    if self._p(gs) == 1.0:
       return self._q(gs)
-
-    return True
+    return 1.0
 
   @property
   def description(self) -> Dict:

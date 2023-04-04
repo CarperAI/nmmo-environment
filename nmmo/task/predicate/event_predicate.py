@@ -16,7 +16,7 @@ class CountEvent(Predicate):
 
 
 class EatFood(CountEvent):
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if
        Otherwise false.
     """
@@ -24,7 +24,7 @@ class EatFood(CountEvent):
 
 
 class DrinkWater(CountEvent):
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if
        Otherwise false.
     """
@@ -32,7 +32,7 @@ class DrinkWater(CountEvent):
 
 
 class GiveItem(CountEvent):
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if
        Otherwise false.
     """
@@ -40,7 +40,7 @@ class GiveItem(CountEvent):
 
 
 class DestroyItem(CountEvent):
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if
        Otherwise false.
     """
@@ -48,7 +48,7 @@ class DestroyItem(CountEvent):
 
 
 class GiveGold(CountEvent):
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if
        Otherwise false.
     """
@@ -61,7 +61,7 @@ class ScoreHit(Predicate):
     self._combat_style = combat_style
     self._count = count
 
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if
        Otherwise false.
     """
@@ -73,7 +73,7 @@ class ScoreKill(Predicate):
     super().__init__(subject, num_kill)
     self._num_kill = num_kill
 
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if
        Otherwise false.
     """

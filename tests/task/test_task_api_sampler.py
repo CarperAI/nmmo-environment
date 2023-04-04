@@ -5,7 +5,7 @@ from tests.testhelpers import ScriptedAgentTestConfig
 
 import nmmo
 
-# pylint: disable=import-error
+# pylint: disable=import-error, unused-argument
 from nmmo.task import sampler
 from nmmo.task.task_api import Repeat, MultiTask, TaskEnv
 from nmmo.task.predicate import Predicate
@@ -18,11 +18,11 @@ from nmmo.systems import item as Item
 from nmmo.io import action as Action
 
 @predicate
-def Success():
+def Success(gs):
   return True
 
 @predicate
-def Failure():
+def Failure(gs):
   return False
 
 class FakeTask(Predicate):
@@ -32,7 +32,7 @@ class FakeTask(Predicate):
     self._param2 = param2
     self._param3 = param3
 
-  def __call__(self, gs: GameState) -> bool:
+  def _evaluate(self, gs: GameState) -> bool:
     return False
 
 

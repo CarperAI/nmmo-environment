@@ -23,7 +23,7 @@ class CanSeeTile(Predicate):
     self.subject = subject
     self._tile_type = tile_type.index
 
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if the self.tile_type is within the subjects' tile obs.
        Otherwise false.
     """
@@ -77,7 +77,7 @@ class CanSeeAgent(Predicate):
     self.subject = subject
     self._target = target # ent_id
 
-  def __call__(self, gs: GameState):
+  def _evaluate(self, gs: GameState):
     """True if self.obj_agent is present in the subjects' entities obs.
        Otherwise false.
     """
