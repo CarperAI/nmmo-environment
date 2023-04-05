@@ -25,7 +25,7 @@ def Success(gs):
 def Failure(gs):
   return False
 
-class FakeTask(Predicate):
+class FakePredicate(Predicate):
   def __init__(self, subject:Group, param1: int, param2: Item.Item, param3: Action.Style) -> None:
     super().__init__(subject, param1, param2, param3)
     self._param1 = param1
@@ -34,7 +34,6 @@ class FakeTask(Predicate):
 
   def _evaluate(self, gs: GameState) -> bool:
     return False
-
 
 class MockGameState(GameState):
   def __init__(self):
@@ -71,12 +70,12 @@ class TestTaskAPI(unittest.TestCase):
 
     success = Success()
     failure = Failure()
-    fake_task = FakeTask(Group([2]), 1, Item.Hat, Action.Melee)
+    fake_task = FakePredicate(Group([2]), 1, Item.Hat, Action.Melee)
     combination = (success & ~ (failure | fake_task)) | (failure >> fake_task)
 
     self.assertEqual(combination.name,
-      "OR(AND(Success,NOT(OR(Failure,FakeTask_(2,)_1_Hat_Melee))),"
-      "IMPLY(Failure->FakeTask_(2,)_1_Hat_Melee))")
+      "OR(AND(Success,NOT(OR(Failure,FakePredicate_(2,)_1_Hat_Melee))),"
+      "IMPLY(Failure->FakePredicate_(2,)_1_Hat_Melee))")
 
   def test_team_helper(self):
     # TODO(kywch): This test is true now but may change later.
@@ -107,7 +106,7 @@ class TestTaskAPI(unittest.TestCase):
 
     rand_sampler.add_task_spec(Success, [[Group([1]), Group([3])]])
     rand_sampler.add_task_spec(Failure, [[Group([2]), Group([1,3])]])
-    rand_sampler.add_task_spec(FakeTask, [
+    rand_sampler.add_task_spec(FakePredicate, [
       [Group([1]), Group([2]), Group([1,2]), Group([3]), Group([1,3])],
       [Item.Hat, Item.Top, Item.Bottom],
       [1, 5, 10],
@@ -126,9 +125,9 @@ class TestTaskAPI(unittest.TestCase):
     # some team helper maybe necessary
     team_helper = TeamHelper(range(1, config.PLAYER_N+1), len(config.PLAYERS))
 
-    fake_task = FakeTask(team_helper.left_team(3), Item.Hat, 1, 0.1)
+    fake_task = FakePredicate(team_helper.left_team(3), Item.Hat, 1, 0.1)
     task_assignment = MultiTask(
-      Repeat(assignee=Group([1]), predicate=Success(), reward=2),
+      (Repeat(assignee=Group([1]), predicate=Success(), reward=1),2),
       Repeat(assignee=Group([1]), predicate=Failure(), reward=1),
       Repeat(assignee=Group([1]), predicate=Success(), reward=-1),
       Repeat(assignee=team_helper.own_team(2), predicate=Success(), reward=1),
@@ -141,11 +140,11 @@ class TestTaskAPI(unittest.TestCase):
     # agent 1: task1 is always True
     self.assertEqual(infos[1]['task'][Success().name], 1)
 
-    # agent 2 should have been assigned Success() but not FakeTask()
+    # agent 2 should have been assigned Success() but not FakePredicate()
     self.assertEqual(infos[2]['task'][Success().name], 1)
     self.assertTrue(fake_task.name not in infos[2]['task'])
 
-    # agent 3 should have been assigned FakeTask(), which is always False (0)
+    # agent 3 should have been assigned FakePredicate(), which is always False (0)
     self.assertEqual(infos[3]['task'][fake_task.name], 0)
 
     # all agents in the same team with agent 2 have Success()

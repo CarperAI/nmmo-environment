@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, List, Tuple, TYPE_CHECKING
+from typing import Dict, List, Union, Tuple
 from functools import reduce
 from abc import ABC, abstractmethod
 from pettingzoo.utils.env import AgentID
@@ -8,9 +8,7 @@ import nmmo
 from nmmo.task.game_state import GameStateGenerator
 from nmmo.task.predicate import Predicate
 from nmmo.task.group import Group
-
-if TYPE_CHECKING:
-  from nmmo.task.game_state import GameState
+from nmmo.task.game_state import GameState
 
 class Task(ABC):
   def __init__(self, assignee: Group):
@@ -76,19 +74,20 @@ class Repeat(PredicateTask):
     return rewards, infos
 
 class MultiTask(Task):
-  def __init__(self, *tasks: Task):
+  def __init__(self,
+               *tasks: Union[Tuple[Task, float], Task]):
     assert len(tasks) > 0
+    self._tasks = [t if isinstance(t, Tuple) else (t,1) for t in tasks]
     super().__init__(reduce(lambda a,b: a.union(b),
-                            [task.assignee for task in tasks]))
-    self._tasks = tasks
+                            [task[0].assignee for task in self._tasks]))
 
   def rewards(self, gs: GameState) -> Dict[int, float]:
     rewards = {}
     infos = {}
-    for task in self._tasks:
+    for task, weight in self._tasks:
       task_reward, task_infos = task.rewards(gs)
       for ent_id, reward in task_reward.items():
-        rewards[ent_id] = rewards.get(ent_id,0) + reward
+        rewards[ent_id] = rewards.get(ent_id,0) + reward * weight
       for ent_id, info in task_infos.items():
         if not ent_id in infos:
           infos[ent_id] = {}
