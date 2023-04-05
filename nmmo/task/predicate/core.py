@@ -5,7 +5,8 @@ from nmmo.task.game_state import GameState
 from nmmo.task.group import Group
 
 class Predicate(ABC):
-  ''' A mapping from the state of an episode to a boolean
+  ''' A mapping from the state of an episode to a float in the range [0,1]
+  where 1 stands for True and 0 for False
   '''
 
   def __init__(self, *args,name: str=None, **kwargs) -> None:

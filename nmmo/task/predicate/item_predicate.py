@@ -1,45 +1,21 @@
 #pylint: disable=invalid-name, unused-argument
 import numpy as np
 from numpy import count_nonzero as count
-from nmmo.task.predicate import Predicate
 from nmmo.task.predicate.core import predicate
 from nmmo.task.group import Group
 from nmmo.task.game_state import GameState
 from nmmo.systems.item import Item
 from nmmo.systems import skill as Skill
 
-class InventorySpaceGE(Predicate):
-  def __init__(self, subject: Group, space: int):
-    super().__init__(subject, space)
-    self.subject = subject
-    self._space = space
-
-  def _evaluate(self, gs: GameState):
-    """True if the inventory space of every subjects is greater than or equal to
-       the self._space. Otherwise false.
-    """
-    result = True
-
-    max_space = gs.config.ITEM_INVENTORY_CAPACITY
-    for ent_id in self.subject.agents:
-      if ent_id in gs.env_obs:
-        space = max_space - gs.env_obs[ent_id].inventory.len
-        if space < self._space:
-          # an agent with inventory space less than _space is found -> False
-          result = False
-          break
-
-    return result
-
-class ItemPredicate(Predicate):
-  # pylint: disable=abstract-method
-  def __init__(self, subject: Group,
-               item: Item, level: int, quantity: int):
-    super().__init__(subject, item, level, quantity)
-    self.subject = subject
-    self._item_type = item.ITEM_TYPE_ID
-    self._level = level
-    self._quantity = quantity
+@predicate
+def InventorySpaceGE(gs: GameState,
+                     subject: Group,
+                     space: int):
+  """True if the inventory space of every subjects is greater than or equal to
+       the space. Otherwise false.
+  """
+  max_space = gs.config.ITEM_INVENTORY_CAPACITY
+  return all(max_space - inv.len >= space for inv in subject.obs.inventory)
 
 @predicate
 def OwnItem(gs: GameState,
@@ -100,6 +76,7 @@ def FullyArmed(gs: GameState,
 # Event-log based predicates
 #######################################
 
+'''
 class ConsumeItem(ItemPredicate):
   def _evaluate(self, gs: GameState):
     """True if
@@ -129,3 +106,4 @@ class BuyItem(ItemPredicate):
        Otherwise false.
     """
     raise NotImplementedError
+'''

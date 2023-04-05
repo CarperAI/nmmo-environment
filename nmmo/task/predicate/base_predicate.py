@@ -21,6 +21,8 @@ def TickGE(gs: GameState,
 def CanSeeTile(gs: GameState,
                subject: Group,
                tile_type: Material):
+  """ True if any agent in subject can see a tile of tile_type
+  """
   return any(tile_type.index in t for t in subject.obs.tile.material_id)
 
 @predicate

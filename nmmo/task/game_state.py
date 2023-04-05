@@ -89,6 +89,9 @@ class GroupObsView:
 
     self.tile = ArrayView('tile', gs, subject, [o.tiles for o in self._obs])
 
+  def __getattr__(self, attr):
+    return [getattr(o, attr) for o in self._obs]
+
 class GroupView:
   def __init__(self, gs: GameState, subject: Group):
     self._gs = gs
