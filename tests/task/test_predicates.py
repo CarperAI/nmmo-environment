@@ -18,7 +18,7 @@ from nmmo.task.group import Group
 import nmmo.task.predicate.base_predicate as bp
 import nmmo.task.predicate.item_predicate as ip
 import nmmo.task.predicate.gold_predicate as gp
-
+import nmmo.task.predicate.composite_predicate as cp
 
 # use the constant reward of 1 for testing predicates
 REWARD = 1
@@ -173,8 +173,9 @@ class TestBasePredicate(unittest.TestCase):
     search_target = 1
     test_tasks = [ # (Predicate, Team), the reward is 1 by default
       (bp.CanSeeAgent(Group([1]), search_target), ALL_AGENT), # Always True
-      (bp.CanSeeAgent(Group([2]), search_target), Group([2,3,4])), # False -> True
-      (bp.CanSeeAgent(Group([3,4,5]), search_target), Group([1,2,3]))] # False
+      (bp.CanSeeAgent(Group([2]), search_target), Group([2,3,4])), # False -> True -> True
+      (bp.CanSeeAgent(Group([3,4,5]), search_target), Group([1,2,3])), # False -> False -> True
+      (cp.CanSeeGroup(Group([1]), Group([3,4])), ALL_AGENT)] # False -> False -> True
 
     env = self._get_taskenv(test_tasks, grass_map=True)
 
@@ -201,6 +202,14 @@ class TestBasePredicate(unittest.TestCase):
 
     # SearchAgent(Team([2]), search_target) is also true
     true_task = [0,1]
+    self._check_result(env, test_tasks, infos, true_task)
+
+    # Teleport agent 3 to agent 1s position
+    change_agent_pos(env.realm,3,(MS-2,MS-2))
+    env.obs = env._compute_observations()
+
+    _, _, _, infos = env.step({})
+    true_task = [0,1,2,3]
     self._check_result(env, test_tasks, infos, true_task)
 
     # DONE
