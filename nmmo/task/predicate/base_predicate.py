@@ -5,7 +5,7 @@ from numpy import count_nonzero as count
 from nmmo.task.predicate import Predicate
 from nmmo.task.predicate.core import predicate
 from nmmo.task.group import Group
-from nmmo.task.game_state import GameState, TileAttr
+from nmmo.task.game_state import GameState
 from nmmo.systems.skill import Skill
 from nmmo.lib.material import Material
 from nmmo.lib import utils
@@ -17,35 +17,11 @@ def TickGE(gs: GameState,
   """
   return gs.current_tick >= num_tick
 
-'''(mark) WIP
 @predicate
 def CanSeeTile(gs: GameState,
                subject: Group,
                tile_type: Material):
-  return tile_type in subject.obs.tile.material_id
-'''
-
-class CanSeeTile(Predicate):
-  def __init__(self, subject: Group, tile_type: Material):
-    super().__init__(subject, tile_type)
-    self.subject = subject
-    self._tile_type = tile_type.index
-
-  def _evaluate(self, gs: GameState):
-    """True if the self.tile_type is within the subjects' tile obs.
-       Otherwise false.
-    """
-    result = False
-
-    for ent_id in self.subject.agents:
-      if ent_id in gs.env_obs:
-        tile_obs = gs.env_obs[ent_id].tiles[:, TileAttr['material_id']]
-        if self._tile_type in tile_obs:
-          result = True
-          break
-
-    return result
-
+  return any(tile_type.index in t for t in subject.obs.tile.material_id)
 
 @predicate
 def StayAlive(gs: GameState,

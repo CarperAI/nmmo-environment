@@ -73,7 +73,10 @@ class ArrayView:
   def __getattr__(self, attr) -> np.ndarray:
     k = (self._subject, self._name+'_'+attr)
     if not k in self._gs.cache_result:
-      self._gs.cache_result[k] = self._arr[:, self._mapping[attr]]
+      if isinstance(self._arr, np.ndarray):
+        self._gs.cache_result[k] = self._arr[:, self._mapping[attr]]
+      elif isinstance(self._arr, list):
+        self._gs.cache_result[k] = [o[:, self._mapping[attr]]for o in self._arr]
     return self._gs.cache_result[k]
 
 class GroupObsView:
@@ -84,11 +87,7 @@ class GroupObsView:
     self._obs = [gs.env_obs[ent_id] for ent_id in valid_agents]
     self._subject = subject
 
-    #tiles = np.array([])
-    #if len(self._obs) > 0:
-    #  print([o.tiles.shape for o in self._obs])
-    #  tiles = np.stack([o.tiles for o in self._obs])
-    #self.tile = ArrayView('tile', gs, subject, tiles)
+    self.tile = ArrayView('tile', gs, subject, [o.tiles for o in self._obs])
 
 class GroupView:
   def __init__(self, gs: GameState, subject: Group):
