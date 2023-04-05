@@ -2,7 +2,6 @@
 import numpy as np
 from numpy import count_nonzero as count
 
-from nmmo.task.predicate import Predicate
 from nmmo.task.predicate.core import predicate
 from nmmo.task.group import Group
 from nmmo.task.game_state import GameState
@@ -58,25 +57,13 @@ def AllMembersWithinRange(gs: GameState,
   return max(subject.row.max()-subject.row.min(),
       subject.col.max()-subject.col.min()) <= dist
 
-class CanSeeAgent(Predicate):
-  def __init__(self, subject: Group, target: int):
-    super().__init__(subject, target)
-    self.subject = subject
-    self._target = target # ent_id
-
-  def _evaluate(self, gs: GameState):
-    """True if self.obj_agent is present in the subjects' entities obs.
-       Otherwise false.
-    """
-    result = False
-
-    for ent_id in self.subject.agents:
-      if ent_id in gs.env_obs:
-        if self._target in gs.env_obs[ent_id].entities.ids:
-          result = True
-          break
-
-    return result
+@predicate
+def CanSeeAgent(gs: GameState,
+                subject: Group,
+                target: int):
+  """True if self.obj_agent is present in the subjects' entities obs.
+  """
+  return any(target in e.ids for e in subject.obs.entities)
 
 @predicate
 def DistanceTraveled(gs: GameState,

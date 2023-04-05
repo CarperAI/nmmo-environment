@@ -86,7 +86,10 @@ def predicate(fn) -> Predicate:
     def _evaluate(self, gs: GameState):
       # pylint: disable=redefined-builtin, unused-variable
       __doc__ = fn.__doc__
-      return fn(gs, *self._args, **self._kwargs)
+      result = fn(gs, *self._args, **self._kwargs)
+      if isinstance(result, Predicate):
+        return result(gs)
+      return result
 
   return FunctionPredicate
 
