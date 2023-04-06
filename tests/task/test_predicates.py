@@ -10,6 +10,7 @@ from nmmo.entity.entity import EntityState
 from nmmo.systems import item as Item
 from nmmo.systems import skill as Skill
 from nmmo.lib import material as Material
+from nmmo.lib.log import EventCode
 
 # pylint: disable=import-error
 from nmmo.task.task_api import Repeat, MultiTask, TaskEnv
@@ -18,7 +19,6 @@ from nmmo.task.group import Group
 import nmmo.task.predicate.base_predicate as bp
 import nmmo.task.predicate.item_predicate as ip
 import nmmo.task.predicate.gold_predicate as gp
-import nmmo.task.predicate.composite_predicate as cp
 
 # use the constant reward of 1 for testing predicates
 REWARD = 1
@@ -64,10 +64,18 @@ class TestBasePredicate(unittest.TestCase):
       for ent_id in infos:
         if ent_id in assignee:
           # the agents that are assigned the task get evaluated for reward
-          self.assertEqual(infos[ent_id]['task'][task.name], int(tid in true_task))
+          self.assertEqual(int(infos[ent_id]['task'][task.name]), int(tid in true_task))
         else:
           # the agents that are not assigned the task are not evaluated
           self.assertTrue(task.name not in infos[ent_id]['task'])
+
+  def _check_progress(self, task, infos, value):
+    """ Some predicates return a float in the range 0-1 indicating completion progress.
+    """
+    predicate, assignee = task[0], task[1]
+    for ent_id in infos:
+      if ent_id in assignee:
+        self.assertAlmostEqual(infos[ent_id]['task'][predicate.name],value)
 
   def test_tickge_stay_alive_rip(self):
     tick_true = 5
@@ -92,6 +100,7 @@ class TestBasePredicate(unittest.TestCase):
 
     true_task = [1, 2, 3]
     self._check_result(env, test_tasks, infos, true_task)
+    self._check_progress(test_tasks[0], infos, (tick_true-1) / tick_true)
 
     # kill agents 1-3
     for ent_id in death_note:
@@ -119,6 +128,9 @@ class TestBasePredicate(unittest.TestCase):
     # AllDead(1,3) is true, AllDead(3,4) and AllDead(4) are false
     true_task = [0, 3, 4]
     self._check_result(env, test_tasks, infos, true_task)
+
+    # 3 is dead but 4 is alive. Half of agents killed, 50% completion.
+    self._check_progress(test_tasks[5], infos, 0.5)
 
     # DONE
 
@@ -175,7 +187,7 @@ class TestBasePredicate(unittest.TestCase):
       (bp.CanSeeAgent(Group([1]), search_target), ALL_AGENT), # Always True
       (bp.CanSeeAgent(Group([2]), search_target), Group([2,3,4])), # False -> True -> True
       (bp.CanSeeAgent(Group([3,4,5]), search_target), Group([1,2,3])), # False -> False -> True
-      (cp.CanSeeGroup(Group([1]), Group([3,4])), ALL_AGENT)] # False -> False -> True
+      (bp.CanSeeGroup(Group([1]), Group([3,4])), ALL_AGENT)] # False -> False -> True
 
     env = self._get_taskenv(test_tasks, grass_map=True)
 
@@ -495,6 +507,46 @@ class TestBasePredicate(unittest.TestCase):
     _, _, _, infos = env.step({})
 
     true_task = [0, 2]
+    self._check_result(env, test_tasks, infos, true_task)
+    g = sum(env.realm.players[eid].gold.val for eid in Group([2,4,6]).agents)
+    self._check_progress(test_tasks[3], infos, g / team_gold_goal)
+
+    # DONE
+
+  def test_exchange_gold_predicates(self): # Earn Gold, Spend Gold, Make Profit
+    gold_goal = 10
+    test_tasks = [
+      (gp.EarnGold(Group([1,2]), gold_goal), ALL_AGENT), # True
+      (gp.EarnGold(Group([2,4]), gold_goal), ALL_AGENT), # False
+      (gp.SpendGold(Group([1]), 5), ALL_AGENT), # False -> True
+      (gp.SpendGold(Group([1]), 6), ALL_AGENT), # False,
+      (gp.MakeProfit(Group([1,2]), 5), ALL_AGENT), # True,
+      (gp.MakeProfit(Group([1]), 5), ALL_AGENT) # True -> False
+    ]
+
+    env = self._get_taskenv(test_tasks)
+    players = env.realm.players
+
+    # 8 gold earned for agent 1
+    # 2 for agent 2
+    env.realm.event_log.record(EventCode.EARN_GOLD, players[1], amount = 5)
+    env.realm.event_log.record(EventCode.EARN_GOLD, players[1], amount = 3)
+    env.realm.event_log.record(EventCode.EARN_GOLD, players[2], amount = 2)
+
+    env.obs = env._compute_observations()
+    _, _, _, infos = env.step({})
+
+    true_task = [0,4,5]
+    self._check_result(env, test_tasks, infos, true_task)
+    self._check_progress(test_tasks[1], infos, 2 / gold_goal)
+
+    env.realm.event_log.record(EventCode.BUY_ITEM, players[1],
+                               item=Item.Ration(env.realm,1),
+                               price=5)
+    env.obs = env._compute_observations()
+    _, _, _, infos = env.step({})
+
+    true_task = [0,2,4]
     self._check_result(env, test_tasks, infos, true_task)
 
     # DONE

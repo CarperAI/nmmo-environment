@@ -11,12 +11,15 @@ from nmmo.core.observation import Observation
 from nmmo.task.group import Group
 
 from nmmo.entity.entity import EntityState
+from nmmo.lib.event_log import EventState
+from nmmo.lib.log import EventCode
 from nmmo.systems.item import ItemState
 from nmmo.core.tile import TileState
 
 EntityAttr = EntityState.State.attr_name_to_col
+EventAttr = EventState.State.attr_name_to_col
 ItemAttr = ItemState.State.attr_name_to_col
-TileAttr = TileState.State.attr_name_to_col
+TileAttr = TileState.State.attr_name_to_col 
 
 @dataclass(frozen=True) # make gs read-only, except cache_result
 class GameState:
@@ -24,11 +27,12 @@ class GameState:
   config: Config
   spawn_pos: Dict[int, Tuple[int, int]] # ent_id: (row, col) of all spawned agents
 
-  alive_agents: List # of alive agents' ent_id (for convenience)
+  alive_agents: List[int] # of alive agents' ent_id (for convenience)
   env_obs: Dict[int, Observation] # env passes the obs of only alive agents
 
   entity_data: np.ndarray # a copied, whole Entity ds table
   item_data: np.ndarray # a copied, whole Item ds table
+  event_data: np.ndarray # a copied, whole Event log table
 
   cache_result: MutableMapping # cache for general memoization
   # add helper functions below
@@ -48,6 +52,10 @@ class GameState:
       flt_idx = np.in1d(self.item_data[:, ItemAttr['owner_id']], subject)
       return self.item_data[flt_idx]
 
+    if data_type == 'event':
+      flt_idx = np.in1d(self.event_data[:, EventAttr['ent_id']], subject)
+      return self.event_data[flt_idx]
+
     return None
 
   def get_subject_view(self, subject: Group):
@@ -59,13 +67,15 @@ class ArrayView:
                gs: GameState,
                subject: Group,
                arr: np.ndarray):
-    assert name in ['item','tile']
+    assert name in ['item','tile', 'event'] + list(vars(EventCode).keys()), f"Invalid name {name}"
     self._name = name
     self._mapping = None
     if name == 'item':
       self._mapping = ItemAttr
     elif name == 'tile':
       self._mapping = TileAttr
+    else: # One of the event mappings
+      self._mapping = EventAttr
     self._gs = gs
     self._subject = subject
     self._arr = arr
@@ -74,7 +84,15 @@ class ArrayView:
     k = (self._subject, self._name+'_'+attr)
     if not k in self._gs.cache_result:
       if isinstance(self._arr, np.ndarray):
-        self._gs.cache_result[k] = self._arr[:, self._mapping[attr]]
+        if self._name == 'event' and hasattr(EventCode, attr):
+          tmp = self._arr[np.in1d(self._arr[:, EventAttr['event']],
+                                  getattr(EventCode, attr))]
+          self._gs.cache_result[k] = ArrayView(attr, 
+                                               self._gs, 
+                                               self._subject,
+                                               tmp)
+        else:
+          self._gs.cache_result[k] = self._arr[:, self._mapping[attr]]
       elif isinstance(self._arr, list):
         self._gs.cache_result[k] = [o[:, self._mapping[attr]]for o in self._arr]
     return self._gs.cache_result[k]
@@ -98,8 +116,10 @@ class GroupView:
     self._subject = subject
     self._sbj_ent = gs.where_in_id('entity', subject.agents)
     self._sbj_item = gs.where_in_id('item', subject.agents)
+    self._sbj_event = gs.where_in_id('event', subject.agents)
 
     self.item = ArrayView('item', gs, subject, self._sbj_item)
+    self.event = ArrayView('event', gs, subject, self._sbj_event)
     self.obs = GroupObsView(gs, subject)
 
   def __getattribute__(self, attr):
@@ -149,5 +169,6 @@ class GameStateGenerator:
       env_obs = env_obs,
       entity_data = entity_all,
       item_data = ItemState.Query.table(realm.datastore).astype(np.int16),
+      event_data = EventState.Query.table(realm.datastore).astype(np.int16),
       cache_result = {}
     )

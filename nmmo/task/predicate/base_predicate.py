@@ -2,7 +2,7 @@
 import numpy as np
 from numpy import count_nonzero as count
 
-from nmmo.task.predicate.core import predicate
+from nmmo.task.predicate.core import predicate, OR
 from nmmo.task.group import Group
 from nmmo.task.game_state import GameState
 from nmmo.systems.skill import Skill
@@ -13,8 +13,9 @@ from nmmo.lib import utils
 def TickGE(gs: GameState,
            num_tick: int):
   """True if the current tick is greater than or equal to the specified num_tick.
+  Is progress counter.
   """
-  return gs.current_tick >= num_tick
+  return gs.current_tick / num_tick
 
 @predicate
 def CanSeeTile(gs: GameState,
@@ -27,16 +28,16 @@ def CanSeeTile(gs: GameState,
 @predicate
 def StayAlive(gs: GameState,
               subject: Group):
-  """True iff all subjects are alive.
+  """True if all subjects are alive.
   """
   return count(subject.health > 0) == len(subject)
 
 @predicate
 def AllDead(gs: GameState,
             subject: Group):
-  """True iff all subjects are dead.
+  """True if all subjects are dead.
   """
-  return count(subject.health) == 0
+  return 1.0 - count(subject.health) / len(subject)
 
 @predicate
 def OccupyTile(gs: GameState,
@@ -51,19 +52,30 @@ def OccupyTile(gs: GameState,
 def AllMembersWithinRange(gs: GameState,
                           subject: Group,
                           dist: int):
-  """True if the max l-inf distance of teammates is 
-         less than or equal to self.dist
+  """True if the max l-inf distance of teammates is
+         less than or equal to dist
   """
-  return max(subject.row.max()-subject.row.min(),
-      subject.col.max()-subject.col.min()) <= dist
+  current_dist = max(subject.row.max()-subject.row.min(),
+      subject.col.max()-subject.col.min())
+  if current_dist <= 0:
+    return 1.0
+  return dist / current_dist
 
 @predicate
 def CanSeeAgent(gs: GameState,
                 subject: Group,
                 target: int):
-  """True if self.obj_agent is present in the subjects' entities obs.
+  """True if obj_agent is present in the subjects' entities obs.
   """
   return any(target in e.ids for e in subject.obs.entities)
+
+@predicate
+def CanSeeGroup(gs: GameState,
+                subject: Group,
+                target: Group):
+  """ Returns True if subject can see any of target
+  """
+  return OR(*(CanSeeAgent(subject, agent) for agent in target.agents))
 
 @predicate
 def DistanceTraveled(gs: GameState,
@@ -75,7 +87,7 @@ def DistanceTraveled(gs: GameState,
   r = subject.row
   c = subject.col
   dists = utils.linf(list(zip(r,c)),[gs.spawn_pos[id_] for id_ in subject.agents])
-  return dists.sum() >= dist
+  return dists.sum() / dist
 
 @predicate
 def AttainSkill(gs: GameState,
@@ -83,8 +95,8 @@ def AttainSkill(gs: GameState,
                 skill: Skill,
                 level: int,
                 num_agent: int):
-  """True if the number of agents having self._skill level GE self._level
-        is greather than or equal to self._num_agent
+  """True if the number of agents having skill level GE level
+        is greather than or equal to num_agent
   """
   skill_level = getattr(subject,skill.__name__.lower() + '_level')
-  return sum(skill_level >= level) >= num_agent
+  return sum(skill_level >= level) / num_agent

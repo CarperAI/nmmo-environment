@@ -45,7 +45,6 @@ ITEM_COL_MAP = {
 
 LEVEL_COL_MAP = { 'skill': EventAttr['type'] }
 
-
 class EventLogger(EventCode):
   def __init__(self, realm):
     self.realm = realm

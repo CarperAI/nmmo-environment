@@ -1,46 +1,42 @@
 #pylint: disable=invalid-name, unused-argument
-from nmmo.task.predicate import Predicate
 from nmmo.task.predicate.core import predicate
 from nmmo.task.group import Group
 from nmmo.task.game_state import GameState
 
-class GoldPredicate(Predicate):
-  # pylint: disable=abstract-method
-  def __init__(self, subject: Group, amount: int):
-    super().__init__(subject, amount)
-    self._amount = amount
-
 @predicate
 def HoardGold(gs: GameState,
-              subject:Group,
+              subject: Group,
               amount: int):
   """True iff the summed gold of all teammate is greater than or equal to amount.
   """
-  return subject.gold.sum() >= amount
+  return subject.gold.sum() / amount
 
 #######################################
 # Event-log based predicates
 #######################################
 
-class EarnGold(GoldPredicate):
-  def _evaluate(self, gs: GameState):
-    """True if
-       Otherwise false.
-    """
-    raise NotImplementedError
+@predicate
+def EarnGold(gs: GameState,
+             subject: Group,
+             amount: int):
+  """ True if the total amount of gold earned is greater than or equal to amount.
+  """
+  return subject.event.EARN_GOLD.gold.sum() / amount
 
+@predicate
+def SpendGold(gs: GameState,
+              subject: Group,
+              amount: int):
+  """ True if the total amount of gold spent is greater than or equal to amount.
+  """
+  return subject.event.BUY_ITEM.gold.sum() / amount
 
-class SpendGold(GoldPredicate):
-  def _evaluate(self, gs: GameState):
-    """True if
-       Otherwise false.
-    """
-    raise NotImplementedError
-
-
-class MakeProfit(GoldPredicate):
-  def _evaluate(self, gs: GameState):
-    """True if
-       Otherwise false.
-    """
-    raise NotImplementedError
+@predicate 
+def MakeProfit(gs: GameState,
+               subject: Group,
+               amount: int):
+  """ True if the total amount of gold earned-spent is greater than or equal to amount.
+  """
+  profits = subject.event.EARN_GOLD.gold.sum()
+  costs = subject.event.BUY_ITEM.gold.sum()
+  return  (profits-costs) / amount
