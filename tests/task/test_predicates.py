@@ -1,5 +1,6 @@
 import unittest
 from typing import List, Tuple
+import random
 
 from tests.testhelpers import ScriptedAgentTestConfig, provide_item
 from tests.testhelpers import change_spawn_pos as change_agent_pos
@@ -551,6 +552,122 @@ class TestBasePredicate(unittest.TestCase):
 
     # DONE
 
+  def test_count_event(self): # CountEvent
+    test_tasks = [
+      (bp.CountEvent(Group([1]),"EAT_FOOD",1), ALL_AGENT), # True
+      (bp.CountEvent(Group([1]),"EAT_FOOD",2), ALL_AGENT), # False
+      (bp.CountEvent(Group([1]),"DRINK_WATER",1), ALL_AGENT), # False
+      (bp.CountEvent(Group([1,2]),"GIVE_GOLD",1), ALL_AGENT) # True
+    ]
 
+    # 1 Drinks water once
+    # 2 Gives gold once
+    env = self._get_taskenv(test_tasks)
+    players = env.realm.players
+    env.realm.event_log.record(EventCode.EAT_FOOD, players[1])
+    env.realm.event_log.record(EventCode.GIVE_GOLD, players[2])
+    env.obs = env._compute_observations()
+    _, _, _, infos = env.step({})
+
+    true_task = [0,3]
+    self._check_result(env, test_tasks, infos, true_task)
+
+    # DONE
+
+  def test_score_hit(self): # ScoreHit
+    test_tasks = [
+      (bp.ScoreHit(Group([1]), Skill.Mage, 2), ALL_AGENT), # False -> True
+      (bp.ScoreHit(Group([1]), Skill.Melee, 1), ALL_AGENT) # True
+    ]
+    env = self._get_taskenv(test_tasks)
+    players = env.realm.players
+
+    env.realm.event_log.record(EventCode.SCORE_HIT,
+                               players[1],
+                               combat_style = Skill.Mage,
+                               damage=1)
+    env.realm.event_log.record(EventCode.SCORE_HIT,
+                               players[1],
+                               combat_style = Skill.Melee,
+                               damage=1)
+
+    env.obs = env._compute_observations()
+    _, _, _, infos = env.step({})
+
+    true_task = [1]
+    self._check_result(env, test_tasks, infos, true_task)
+    self._check_progress(test_tasks[0], infos, 0.5)
+
+    env.realm.event_log.record(EventCode.SCORE_HIT,
+                               players[1],
+                               combat_style = Skill.Mage,
+                               damage=1)
+    env.realm.event_log.record(EventCode.SCORE_HIT,
+                               players[1],
+                               combat_style = Skill.Melee,
+                               damage=1)
+
+    env.obs = env._compute_observations()
+    _, _, _, infos = env.step({})
+
+    true_task = [0,1]
+    self._check_result(env, test_tasks, infos, true_task)
+
+    # DONE
+  
+  def test_item_event_predicates(self): # Consume, Harvest, List, Buy
+    for predicate, event_type in [(ip.ConsumeItem, 'CONSUME_ITEM'),
+                                  (ip.HarvestItem, 'HARVEST_ITEM'),
+                                  (ip.ListItem, 'LIST_ITEM'),
+                                  (ip.BuyItem, 'BUY_ITEM')]:
+      id_ = getattr(EventCode, event_type)
+      lvl = random.randint(5,10)
+      quantity = random.randint(5,10)
+      true_item = Item.Ration
+      false_item = Item.Poultice
+      test_tasks = [
+        (predicate(Group([1,3,5]), true_item, lvl, quantity), ALL_AGENT), # True
+        (predicate(Group([2]), true_item, lvl, quantity), ALL_AGENT), # False
+        (predicate(Group([4]), true_item, lvl, quantity), ALL_AGENT), # False
+        (predicate(Group([6]), true_item, lvl, quantity), ALL_AGENT) # False
+      ]
+
+      env = self._get_taskenv(test_tasks)
+      players = env.realm.players
+      # True case: split the required items between 3 and 5
+      for player in (1,3):
+        for _ in range(quantity // 2 + 1):
+          env.realm.event_log.record(id_,
+                                players[player],
+                                price=1,
+                                item=true_item(env.realm,
+                                               lvl+random.randint(0,3)))
+
+      # False case 1: Quantity
+      for _ in range(quantity-1):
+          env.realm.event_log.record(id_,
+                                players[2],
+                                price=1,
+                                item=true_item(env.realm, lvl))
+
+      # False case 2: Type
+      for _ in range(quantity+1):
+          env.realm.event_log.record(id_,
+                                players[4],
+                                price=1,
+                                item=false_item(env.realm, lvl))
+      # False case 3: Level
+      for _ in range(quantity+1):
+          env.realm.event_log.record(id_,
+                                players[4],
+                                price=1,
+                                item=true_item(env.realm,
+                                               random.randint(0,lvl-1)))
+      env.obs = env._compute_observations()
+      _, _, _, infos = env.step({})
+      true_task = [0]
+      self._check_result(env, test_tasks, infos, true_task)
+
+    # DONE
 if __name__ == '__main__':
   unittest.main()

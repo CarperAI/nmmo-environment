@@ -86,7 +86,7 @@ def ConsumeItem(gs: GameState,
   """
   type_flt = subject.event.CONSUME_ITEM.type == item.ITEM_TYPE_ID
   lvl_flt = subject.event.CONSUME_ITEM.level >= level
-  return subject.event.CONSUME_ITEM[type_flt & lvl_flt].number.sum() / quantity
+  return subject.event.CONSUME_ITEM.number[type_flt & lvl_flt].sum() / quantity
 
 @predicate
 def HarvestItem(gs: GameState,
@@ -98,28 +98,28 @@ def HarvestItem(gs: GameState,
   """
   type_flt = subject.event.HARVEST_ITEM.type == item.ITEM_TYPE_ID
   lvl_flt = subject.event.HARVEST_ITEM.level >= level
-  return subject.event.HARVEST_ITEM[type_flt & lvl_flt].number.sum() / quantity
+  return subject.event.HARVEST_ITEM.number[type_flt & lvl_flt].sum() / quantity
 
 @predicate
 def ListItem(gs: GameState,
-                subject: Group,
-                item: Item,
-                level: int,
-                quantity: int):
+             subject: Group,
+             item: Item,
+             level: int,
+             quantity: int):
   """True if total quantity listed of item type above level is >= quantity
   """
   type_flt = subject.event.LIST_ITEM.type == item.ITEM_TYPE_ID
   lvl_flt = subject.event.LIST_ITEM.level >= level
-  return subject.event.LIST_ITEM[type_flt & lvl_flt].number.sum() / quantity
+  return subject.event.LIST_ITEM.number[type_flt & lvl_flt].sum() / quantity
 
 @predicate
 def BuyItem(gs: GameState,
-                subject: Group,
-                item: Item,
-                level: int,
-                quantity: int):
+            subject: Group,
+            item: Item,
+            level: int,
+            quantity: int):
   """True if total quantity purchased of item type above level is >= quantity
   """
   type_flt = subject.event.BUY_ITEM.type == item.ITEM_TYPE_ID
   lvl_flt = subject.event.BUY_ITEM.level >= level
-  return subject.event.BUY_ITEM[type_flt & lvl_flt].number.sum() / quantity
+  return subject.event.BUY_ITEM.number[type_flt & lvl_flt].sum() / quantity

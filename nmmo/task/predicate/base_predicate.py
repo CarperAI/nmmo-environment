@@ -125,4 +125,4 @@ def ScoreHit(gs: GameState,
   combat_style >= count
   """
   hits = subject.event.SCORE_HIT.combat_style == combat_style.SKILL_ID
-  return len(hits) / N
+  return count(hits) / N

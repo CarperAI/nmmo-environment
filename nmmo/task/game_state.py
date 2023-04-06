@@ -11,7 +11,7 @@ from nmmo.core.observation import Observation
 from nmmo.task.group import Group
 
 from nmmo.entity.entity import EntityState
-from nmmo.lib.event_log import EventState
+from nmmo.lib.event_log import EventState, ATTACK_COL_MAP, ITEM_COL_MAP, LEVEL_COL_MAP
 from nmmo.lib.log import EventCode
 from nmmo.systems.item import ItemState
 from nmmo.core.tile import TileState
@@ -20,6 +20,9 @@ EntityAttr = EntityState.State.attr_name_to_col
 EventAttr = EventState.State.attr_name_to_col
 ItemAttr = ItemState.State.attr_name_to_col
 TileAttr = TileState.State.attr_name_to_col
+EventAttr.update(ITEM_COL_MAP)
+EventAttr.update(ATTACK_COL_MAP)
+EventAttr.update(LEVEL_COL_MAP)
 
 @dataclass(frozen=True) # make gs read-only, except cache_result
 class GameState:
@@ -79,6 +82,9 @@ class ArrayView:
     self._gs = gs
     self._subject = subject
     self._arr = arr
+
+  def __len__(self):
+    return len(self._arr)
 
   def __getattr__(self, attr) -> np.ndarray:
     k = (self._subject, self._name+'_'+attr)
