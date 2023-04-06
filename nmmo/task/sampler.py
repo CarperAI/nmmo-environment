@@ -42,15 +42,3 @@ class RandomTaskSampler:
       return clauses[0]
 
     return OR(*clauses)
-
-  # @staticmethod
-  # def create_default_task_sampler(team_helper: task.TeamHelper, agent_id: int):
-  #   neighbors = [team_helper.left_team(agent_id), team_helper.right_team(agent_id)]
-  #   own_team = team_helper.own_team(agent_id)
-  #   team_mates = [own_team.member(m) for m in range(team_helper.team_size)]
-  #   sampler = TaskSampler()
-
-  #   sampler.add_task_spec(InflictDamage, [neighbors + [own_team], [0, 1, 2], [0, 100, 1000]])
-  #   sampler.add_task_spec(Defend, [team_mates, [512, 1024]])
-
-  #   return sampler

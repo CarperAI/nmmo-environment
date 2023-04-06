@@ -7,6 +7,7 @@ from pettingzoo.utils.env import AgentID
 import nmmo
 from nmmo.task.game_state import GameStateGenerator
 from nmmo.task.predicate import Predicate
+from nmmo.task.predicate.base_predicate import StayAlive
 from nmmo.task.group import Group
 from nmmo.task.game_state import GameState
 
@@ -103,14 +104,18 @@ class MultiTask(Task):
 # Eventually should replace env.py once stable
 # TODO(mark) Syllabus
 
-# pylint: disable=abstract-method
+# pylint: disable=abstract-method, no-value-for-parameter
 class TaskEnv(nmmo.Env):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
-    self.task: Task = None
     self.gs_gen: GameStateGenerator = None
-
     self.reset()
+    # Default task: rewards 1 each turn agent is alive
+    self.task: Task = MultiTask(
+      *(Repeat(Group([agent]),
+               StayAlive(Group([agent])),
+               1) for agent in self.realm.players.keys())
+    )
 
   def change_task(self, new_task: Task):
     self.task = new_task

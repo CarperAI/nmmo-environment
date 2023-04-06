@@ -27,7 +27,7 @@ NUM_AGENT = 6
 ALL_AGENT = Group(list(range(1, NUM_AGENT+1)), 'All')
 
 class TestBasePredicate(unittest.TestCase):
-  # pylint: disable=protec  print(count(subject.health > 0))ted-access,invalid-name
+  # pylint: disable=protected-access,invalid-name
 
   def _get_taskenv(self,
                    test_tasks: List[Tuple[Predicate, int]],
