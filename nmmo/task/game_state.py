@@ -19,7 +19,7 @@ from nmmo.core.tile import TileState
 EntityAttr = EntityState.State.attr_name_to_col
 EventAttr = EventState.State.attr_name_to_col
 ItemAttr = ItemState.State.attr_name_to_col
-TileAttr = TileState.State.attr_name_to_col 
+TileAttr = TileState.State.attr_name_to_col
 
 @dataclass(frozen=True) # make gs read-only, except cache_result
 class GameState:
@@ -87,8 +87,8 @@ class ArrayView:
         if self._name == 'event' and hasattr(EventCode, attr):
           tmp = self._arr[np.in1d(self._arr[:, EventAttr['event']],
                                   getattr(EventCode, attr))]
-          self._gs.cache_result[k] = ArrayView(attr, 
-                                               self._gs, 
+          self._gs.cache_result[k] = ArrayView(attr,
+                                               self._gs,
                                                self._subject,
                                                tmp)
         else:

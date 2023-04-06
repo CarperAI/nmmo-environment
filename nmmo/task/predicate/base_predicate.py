@@ -1,10 +1,11 @@
-#pylint: disable=invalid-name, unused-argument
+#pylint: disable=invalid-name, unused-argument, no-value-for-parameter
 import numpy as np
 from numpy import count_nonzero as count
 
 from nmmo.task.predicate.core import predicate, OR
 from nmmo.task.group import Group
 from nmmo.task.game_state import GameState
+from nmmo.systems import skill as nmmo_skill
 from nmmo.systems.skill import Skill
 from nmmo.lib.material import Material
 from nmmo.lib import utils
@@ -100,3 +101,28 @@ def AttainSkill(gs: GameState,
   """
   skill_level = getattr(subject,skill.__name__.lower() + '_level')
   return sum(skill_level >= level) / num_agent
+
+#######################################
+# Event-log based predicates
+#######################################
+
+@predicate
+def CountEvent(gs: GameState,
+               subject: Group,
+               event: str,
+               N: int):
+  """True if the number of events occured in subject corresponding
+      to event >= N
+  """
+  return len(getattr(subject.event, event)) / N
+
+@predicate
+def ScoreHit(gs: GameState,
+             subject: Group,
+             combat_style: nmmo_skill.CombatSkill,
+             N: int):
+  """True if the number of hits scored in style
+  combat_style >= count
+  """
+  hits = subject.event.SCORE_HIT.combat_style == combat_style.SKILL_ID
+  return len(hits) / N

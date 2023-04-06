@@ -28,7 +28,7 @@ def OwnItem(gs: GameState,
   """
   owned = (subject.item.type_id == item.ITEM_TYPE_ID) & \
           (subject.item.level >= level)
-  return sum(subject.item.quantity[owned]) >= quantity
+  return sum(subject.item.quantity[owned]) / quantity
 
 @predicate
 def EquipItem(gs: GameState,
@@ -76,34 +76,50 @@ def FullyArmed(gs: GameState,
 # Event-log based predicates
 #######################################
 
-'''
-class ConsumeItem(ItemPredicate):
-  def _evaluate(self, gs: GameState):
-    """True if
-       Otherwise false.
-    """
-    raise NotImplementedError
+@predicate
+def ConsumeItem(gs: GameState,
+                subject: Group,
+                item: Item,
+                level: int,
+                quantity: int):
+  """True if total quantity consumed of item type above level is >= quantity
+  """
+  type_flt = subject.event.CONSUME_ITEM.type == item.ITEM_TYPE_ID
+  lvl_flt = subject.event.CONSUME_ITEM.level >= level
+  return subject.event.CONSUME_ITEM[type_flt & lvl_flt].number.sum() / quantity
 
+@predicate
+def HarvestItem(gs: GameState,
+                subject: Group,
+                item: Item,
+                level: int,
+                quantity: int):
+  """True if total quantity harvested of item type above level is >= quantity
+  """
+  type_flt = subject.event.HARVEST_ITEM.type == item.ITEM_TYPE_ID
+  lvl_flt = subject.event.HARVEST_ITEM.level >= level
+  return subject.event.HARVEST_ITEM[type_flt & lvl_flt].number.sum() / quantity
 
-class ProduceItem(ItemPredicate):
-  def _evaluate(self, gs: GameState):
-    """True if
-       Otherwise false.
-    """
-    raise NotImplementedError
+@predicate
+def ListItem(gs: GameState,
+                subject: Group,
+                item: Item,
+                level: int,
+                quantity: int):
+  """True if total quantity listed of item type above level is >= quantity
+  """
+  type_flt = subject.event.LIST_ITEM.type == item.ITEM_TYPE_ID
+  lvl_flt = subject.event.LIST_ITEM.level >= level
+  return subject.event.LIST_ITEM[type_flt & lvl_flt].number.sum() / quantity
 
-
-class ListItem(ItemPredicate):
-  def _evaluate(self, gs: GameState):
-    """True if
-       Otherwise false.
-    """
-    raise NotImplementedError
-
-class BuyItem(ItemPredicate):
-  def _evaluate(self, gs: GameState):
-    """True if
-       Otherwise false.
-    """
-    raise NotImplementedError
-'''
+@predicate
+def BuyItem(gs: GameState,
+                subject: Group,
+                item: Item,
+                level: int,
+                quantity: int):
+  """True if total quantity purchased of item type above level is >= quantity
+  """
+  type_flt = subject.event.BUY_ITEM.type == item.ITEM_TYPE_ID
+  lvl_flt = subject.event.BUY_ITEM.level >= level
+  return subject.event.BUY_ITEM[type_flt & lvl_flt].number.sum() / quantity

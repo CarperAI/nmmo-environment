@@ -31,7 +31,7 @@ def SpendGold(gs: GameState,
   """
   return subject.event.BUY_ITEM.gold.sum() / amount
 
-@predicate 
+@predicate
 def MakeProfit(gs: GameState,
                subject: Group,
                amount: int):
