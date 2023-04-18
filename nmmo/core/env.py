@@ -129,6 +129,7 @@ class Env(ParallelEnv):
         but finite horizon: ~1000 timesteps for small maps and
         5000+ timesteps for large maps
     '''
+    print("xcxc ---- Reset -----", self.realm.tick)
 
     self._init_random(seed)
     self.realm.reset(map_id)
@@ -259,6 +260,9 @@ class Env(ParallelEnv):
     gym_obs = {a: o.to_gym() for a,o in self.obs.items()}
 
     rewards, infos = self._compute_rewards(self.obs.keys(), dones)
+
+    if len(dones) or self.realm.tick % 10 == 0:
+      print("xcxc", self.realm.tick, len(self._dead_agents), len(self.realm.players))
 
     return gym_obs, rewards, dones, infos
 
