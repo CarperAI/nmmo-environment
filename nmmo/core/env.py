@@ -18,11 +18,7 @@ from scripted.baselines import Scripted
 
 
 class Env(ParallelEnv):
-  '''Environment wrapper for Neural MMO using the Parallel PettingZoo API
-
-  Neural MMO provides complex environments featuring structured observations/actions,
-  variably sized agent populations, and long time horizons. Usage in conjunction
-  with RLlib as demonstrated in the /projekt wrapper is highly recommended.'''
+  # Environment wrapper for Neural MMO using the Parallel PettingZoo API
 
   def __init__(self,
     config: Default = nmmo.config.Default(), seed=None):
@@ -389,8 +385,6 @@ class Env(ParallelEnv):
       infos[agent_id] = {}
       agent = self.realm.players.get(agent_id)
       assert agent is not None, f'Agent {agent_id} not found'
-
-      infos[agent_id] =  {'population': agent.population}
 
       if agent.diary is None:
         rewards[agent_id] = 0
