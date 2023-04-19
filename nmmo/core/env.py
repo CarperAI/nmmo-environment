@@ -261,9 +261,6 @@ class Env(ParallelEnv):
 
     rewards, infos = self._compute_rewards(self.obs.keys(), dones)
 
-    if len(dones) or self.realm.tick % 10 == 0:
-      print("xcxc", self.realm.tick, len(self._dead_agents), len(self.realm.players))
-
     return gym_obs, rewards, dones, infos
 
   def _validate_actions(self, actions: Dict[int, Dict[str, Dict[str, Any]]]):
