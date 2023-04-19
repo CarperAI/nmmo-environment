@@ -390,12 +390,14 @@ class Env(ParallelEnv):
       agent = self.realm.players.get(agent_id)
       assert agent is not None, f'Agent {agent_id} not found'
 
-      if agent.diary is None:
-        rewards[agent_id] = 0
-        continue
 
-      rewards[agent_id] = sum(agent.diary.rewards.values())
-      infos[agent_id].update(agent.diary.rewards)
+      rewards[agent_id] = 0
+      rewards[agent_id] += (agent.food.val > 30) * 0.01
+      rewards[agent_id] += (agent.water.val > 30) * 0.01
+
+      if agent.diary is not None:
+        rewards[agent_id] = sum(agent.diary.rewards.values())
+        infos[agent_id].update(agent.diary.rewards)
 
     return rewards, infos
 
