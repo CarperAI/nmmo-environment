@@ -245,6 +245,7 @@ class MapGenerator:
         map_file = path_maps + '/map' + str(idx+1) + '/map.npy'
         if not os.path.exists(map_file):
           # override MAP_FORCE_GENERATION = FALSE and generate maps
+          print("missing map: " + map_file + ", generating maps")
           all_maps_exist = False
           break
 
