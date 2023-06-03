@@ -9,7 +9,6 @@ import nmmo.systems.item as item_system
 from nmmo.core import action
 from nmmo.lib import material, utils
 
-
 class BasicObs:
   def __init__(self, values, id_col):
     self.values = values
@@ -193,8 +192,9 @@ class Observation:
 
   def _make_move_mask(self):
     # pylint: disable=not-an-iterable
+    habitable_material = set(material.Habitable)
     return np.array(
-      [self.tile(*d.delta).material_id in material.Habitable
+      [self.tile(*d.delta).material_id in habitable_material
        for d in action.Direction.edges], dtype=np.int8)
 
   def _make_attack_mask(self):
