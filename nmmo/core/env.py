@@ -321,9 +321,10 @@ class Env(ParallelEnv):
     # When the episode ends, add the episode stats to the info of one of
     # the last dagents
     if len(self._dead_agents) == len(self.possible_agents):
-      next(iter(self._dead_agents.values()))["episode_stats"] = {
-        "death_tick": self._dead_agents
-      }
+      for eid, es in self._dead_agents.items():
+        if eid not in infos:
+          infos[eid] = {}
+        infos[eid]["episode_stats"] = es
 
     return gym_obs, rewards, dones, infos
 
@@ -453,10 +454,12 @@ class Env(ParallelEnv):
     # Initialization
     self.game_state = self._gamestate_generator.generate(self.realm, self.obs)
     infos = {}
-    for eid in agents:
+    rewards = {}
+
+    for eid in self.possible_agents:
       infos[eid] = {}
       infos[eid]['task'] = {}
-    rewards = {eid: 0 for eid in agents}
+      rewards[eid] = 0
 
     # Compute Rewards and infos
     for task, weight in self.tasks:
@@ -468,10 +471,6 @@ class Env(ParallelEnv):
         for eid, info in task_infos.items():
           if eid in infos:
             infos[eid]['task'] = {**infos[eid]['task'], **info}
-
-    # Remove rewards for dead agents (?)
-    for eid in dones:
-      rewards[eid] = 0
 
     return rewards, infos
 
