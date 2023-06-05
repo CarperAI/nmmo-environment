@@ -1,7 +1,7 @@
 import functools
 import random
 import copy
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, OrderedDict, Union, Tuple
 from ordered_set import OrderedSet
 
 import gym
@@ -36,7 +36,7 @@ class Env(ParallelEnv):
     self.obs = None
 
     self.possible_agents = list(range(1, config.PLAYER_N + 1))
-    self._dead_agents = OrderedSet()
+    self._dead_agents = OrderedDict()
     self.scripted_agents = OrderedSet()
 
     self._gamestate_generator = GameStateGenerator(self.realm, self.config)
@@ -179,7 +179,7 @@ class Env(ParallelEnv):
 
     self._init_random(seed)
     self.realm.reset(map_id)
-    self._dead_agents = OrderedSet()
+    self._dead_agents = OrderedDict()
 
     # check if there are scripted agents
     for eid, ent in self.realm.players.items():
@@ -303,7 +303,9 @@ class Env(ParallelEnv):
     for eid in self.possible_agents:
       if eid not in self.realm.players or self.realm.tick >= self.config.HORIZON:
         if eid not in self._dead_agents:
-          self._dead_agents.add(eid)
+          self._dead_agents[eid] = {
+            'death_tick': self.realm.tick
+          }
           dones[eid] = True
 
     # Store the observations, since actions reference them
@@ -315,6 +317,13 @@ class Env(ParallelEnv):
         gym_obs[a]['Task'] = self._encode_goal()[a]
 
     rewards, infos = self._compute_rewards(self.obs.keys(), dones)
+
+    # When the episode ends, add the episode stats to the info of one of
+    # the last dagents
+    if len(self._dead_agents) == len(self.possible_agents):
+      next(iter(self._dead_agents.values()))["episode_stats"] = {
+        "death_tick": self._dead_agents
+      }
 
     return gym_obs, rewards, dones, infos
 
@@ -476,7 +485,7 @@ class Env(ParallelEnv):
   @property
   def agents(self) -> List[AgentID]:
     '''For conformity with the PettingZoo API only; rendering is external'''
-    return list(set(self.realm.players.keys()) - self._dead_agents)
+    return list(set(self.realm.players.keys()) - self._dead_agents.keys())
 
   def close(self):
     '''For conformity with the PettingZoo API only; rendering is external'''
