@@ -1,3 +1,4 @@
+from collections import defaultdict
 import functools
 import random
 import copy
@@ -7,6 +8,7 @@ from ordered_set import OrderedSet
 import gym
 import numpy as np
 from pettingzoo.utils.env import AgentID, ParallelEnv
+from wandb import agent
 
 import nmmo
 from nmmo.core import realm
@@ -36,7 +38,8 @@ class Env(ParallelEnv):
     self.obs = None
 
     self.possible_agents = list(range(1, config.PLAYER_N + 1))
-    self._dead_agents = OrderedDict()
+    self._dead_agents = set()
+    self._episode_stats = defaultdict(lambda: defaultdict(float))
     self.scripted_agents = OrderedSet()
 
     self._gamestate_generator = GameStateGenerator(self.realm, self.config)
@@ -179,7 +182,8 @@ class Env(ParallelEnv):
 
     self._init_random(seed)
     self.realm.reset(map_id)
-    self._dead_agents = OrderedDict()
+    self._dead_agents = set()
+    self._episode_stats.clear()
 
     # check if there are scripted agents
     for eid, ent in self.realm.players.items():
@@ -303,9 +307,8 @@ class Env(ParallelEnv):
     for eid in self.possible_agents:
       if eid not in self.realm.players or self.realm.tick >= self.config.HORIZON:
         if eid not in self._dead_agents:
-          self._dead_agents[eid] = {
-            'death_tick': self.realm.tick
-          }
+          self._dead_agents.add(eid)
+          self._episode_stats[eid]["death_tick"] = self.realm.tick
           dones[eid] = True
 
     # Store the observations, since actions reference them
@@ -317,14 +320,16 @@ class Env(ParallelEnv):
         gym_obs[a]['Task'] = self._encode_goal()[a]
 
     rewards, infos = self._compute_rewards(self.obs.keys(), dones)
+    for k,r in rewards.items():
+      self._episode_stats[k]['reward'] += r
 
     # When the episode ends, add the episode stats to the info of one of
     # the last dagents
     if len(self._dead_agents) == len(self.possible_agents):
-      for eid, es in self._dead_agents.items():
-        if eid not in infos:
-          infos[eid] = {}
-        infos[eid]["episode_stats"] = es
+      for agent_id, stats in self._episode_stats.items():
+        if agent_id not in infos:
+          infos[agent_id] = {}
+        infos[agent_id]["episode_stats"] = stats
 
     return gym_obs, rewards, dones, infos
 
@@ -484,7 +489,7 @@ class Env(ParallelEnv):
   @property
   def agents(self) -> List[AgentID]:
     '''For conformity with the PettingZoo API only; rendering is external'''
-    return list(set(self.realm.players.keys()) - self._dead_agents.keys())
+    return list(set(self.realm.players.keys()) - self._dead_agents)
 
   def close(self):
     '''For conformity with the PettingZoo API only; rendering is external'''
