@@ -67,6 +67,7 @@ class Realm:
     # Initialize actions
     nmmo.Action.init(config)
 
+
   def reset(self, map_id: int = None):
     """Reset the environment and load the specified map
 
@@ -76,7 +77,13 @@ class Realm:
     self.log_helper.reset()
     self.event_log.reset()
 
-    self.map.reset(map_id or np.random.randint(self.config.MAP_N) + 1)
+    self.tick = 0
+
+    if self._replay_helper is not None:
+      self._replay_helper.reset()
+
+    map_id = map_id or np.random.randint(self.config.MAP_N) + 1
+    self.map.reset(map_id)
 
     # EntityState and ItemState tables must be empty after players/npcs.reset()
     self.players.reset()
@@ -92,7 +99,6 @@ class Realm:
 
     self.players.spawn()
     self.npcs.spawn()
-    self.tick = 0
 
     # Global item exchange
     self.exchange = Exchange(self)
@@ -100,9 +106,6 @@ class Realm:
     # Global item registry
     Item.INSTANCE_ID = 0
     self.items = {}
-
-    if self._replay_helper is not None:
-      self._replay_helper.reset()
 
   def packet(self):
     """Client packet"""

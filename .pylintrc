@@ -26,6 +26,8 @@ indent-string='  '
 good-names-rgxs=^[_a-zA-Z][_a-z0-9]?$ # whitelist short variables
 known-third-party=ordered_set,numpy,gym,pettingzoo,vec_noise,imageio,scipy,tqdm
 load-plugins=pylint.extensions.bad_builtin
+init-hook='import sys; sys.path.append("./tests")'
 
 [BASIC]
 bad-functions=print # checks if these functions are used
+
