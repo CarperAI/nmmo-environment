@@ -62,6 +62,10 @@ class Map:
         mat  = materials[idx]
         tile = self.tiles[r, c]
         tile.reset(mat, config)
+
+    assert c == config.MAP_SIZE - 1
+    assert r == config.MAP_SIZE - 1
+
     self._repr = None
 
   def step(self):

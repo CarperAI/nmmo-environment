@@ -40,6 +40,8 @@ class Tile(TileState):
     self.tex = None
 
     self.entities = {}
+    self.last_reset_tick = None
+    self.last_reset_realm = None
 
   @property
   def repr(self):
