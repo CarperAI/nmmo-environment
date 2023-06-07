@@ -1,8 +1,7 @@
 from collections import defaultdict
 import functools
 import random
-import copy
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List
 from ordered_set import OrderedSet
 
 import gym
@@ -18,7 +17,6 @@ from nmmo.entity.entity import Entity
 from nmmo.systems.item import Item
 from nmmo.task import task_api
 from nmmo.task.game_state import GameStateGenerator
-from nmmo.task.task_api import Task
 from scripted.baselines import Scripted
 
 class Env(ParallelEnv):
@@ -413,7 +411,6 @@ class Env(ParallelEnv):
           entity identified by ent_id.
     '''
     # Initialization
-    self.game_state = self._gamestate_generator.generate(self.realm, self.obs)
     infos = {}
     rewards = {}
     reward_cache = {}
@@ -424,6 +421,7 @@ class Env(ParallelEnv):
       rewards[eid] = 0
 
     # Compute Rewards and infos
+    self.game_state = self._gamestate_generator.generate(self.realm, self.obs)
     for task in self.tasks:
       if task in reward_cache:
         task_rewards, task_infos = reward_cache[task]
