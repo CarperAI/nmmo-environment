@@ -79,9 +79,6 @@ class Realm:
 
     self.tick = 0
 
-    if self._replay_helper is not None:
-      self._replay_helper.reset()
-
     map_id = map_id or np.random.randint(self.config.MAP_N) + 1
     self.map.reset(map_id)
 
@@ -106,6 +103,10 @@ class Realm:
     # Global item registry
     Item.INSTANCE_ID = 0
     self.items = {}
+
+    if self._replay_helper is not None:
+      self._replay_helper.reset()
+
 
   def packet(self):
     """Client packet"""
