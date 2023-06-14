@@ -118,23 +118,19 @@ class Observation:
       "CurrentTick": np.array([self.current_tick]),
       "AgentId": np.array([self.agent_id]),
       "Tile": np.zeros((self.config.MAP_N_OBS, self.tiles.shape[1])),
-      "Entity": np.zeros((self.config.PLAYER_N_OBS, self.entities.values.shape[1])),
-    }
-
+      "Entity": np.zeros((self.config.PLAYER_N_OBS, self.entities.values.shape[1]))}
     if self.config.ITEM_SYSTEM_ENABLED:
       gym_obs["Inventory"] = np.zeros((self.config.INVENTORY_N_OBS,
                                        self.inventory.values.shape[1]))
-
     if self.config.EXCHANGE_SYSTEM_ENABLED:
       gym_obs["Market"] = np.zeros((self.config.MARKET_N_OBS,
                                     self.market.values.shape[1]))
-
     return gym_obs
 
   def to_gym(self):
     '''Convert the observation to a format that can be used by OpenAI Gym'''
     gym_obs = self.get_empty_obs()
-    if self.agent() is None:
+    if self.dummy_obs:
       # return empty obs for the dead agents
       if self.config.PROVIDE_ACTION_TARGETS:
         gym_obs["ActionTargets"] = self._make_action_targets()
