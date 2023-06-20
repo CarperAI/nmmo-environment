@@ -152,7 +152,7 @@ class Env(ParallelEnv):
     self.realm.reset(map_id)
     self._dead_agents = set()
     self._episode_stats.clear()
-    self._dead_this_tick = {}
+    self._dead_this_tick = set()
 
     # check if there are scripted agents
     for eid, ent in self.realm.players.items():
@@ -283,18 +283,19 @@ class Env(ParallelEnv):
     #   we don't need _deserialize_scripted_actions() anymore
     actions = self._validate_actions(actions)
     # Execute actions
-    self._dead_this_tick = self.realm.step(actions)
+    dead_agents = self.realm.step(actions)
+    self._dead_this_tick = set(dead_agents.keys())
     dones = {}
     for agent_id in self.agents:
       if agent_id in self._dead_this_tick or \
         self.realm.tick >= self.config.HORIZON or \
         (self.config.RESET_ON_DEATH and len(self._dead_agents) > 0):
-        self._dead_agents.add(agent_id)
+        self._dead_this_tick.add(agent_id)
         self._episode_stats[agent_id]["death_tick"] = self.realm.tick
         dones[agent_id] = True
       else:
         dones[agent_id] = False
-
+    self._dead_agents.update(self._dead_this_tick)
     # Store the observations, since actions reference them
     self.obs = self._compute_observations()
     gym_obs = {a: o.to_gym() for a,o in self.obs.items()}
@@ -309,6 +310,8 @@ class Env(ParallelEnv):
         if agent_id not in infos:
           infos[agent_id] = {}
         infos[agent_id]["episode_stats"] = stats
+
+    self._dead_this_tick = set()
 
     # NOTE: all obs, rewards, dones, infos have data for each agent in self.agents
     return gym_obs, rewards, dones, infos
@@ -457,7 +460,7 @@ class Env(ParallelEnv):
   def agents(self) -> List[AgentID]:
     '''For conformity with the PettingZoo API only; rendering is external'''
     # "current" agents, which return obs: both alive and dead_this_tick
-    agents = set(list(self.realm.players.keys()) + list(self._dead_this_tick.keys()))
+    agents = set(list(self.realm.players.keys()) + list(self._dead_this_tick))
     return list(agents)
 
   def close(self):
