@@ -127,6 +127,10 @@ def get_team_spawn_positions(config, num_teams):
   teams_per_sides = (num_teams + 3) // 4 # 1-4 -> 1, 5-8 -> 2, etc.
 
   sides = get_edge_tiles(config)
+  np.random.shuffle(sides)
+  for s in sides:
+    np.random.shuffle(s)
+
   assert len(sides[0]) >= 4*teams_per_sides, 'Map too small for teams'
 
   team_spawn_positions = []
@@ -134,5 +138,7 @@ def get_team_spawn_positions(config, num_teams):
     for i in range(teams_per_sides):
       idx = int(len(side)*(i+1)/(teams_per_sides + 1))
       team_spawn_positions.append(side[idx])
+
+  np.random.shuffle(sides)
 
   return team_spawn_positions
