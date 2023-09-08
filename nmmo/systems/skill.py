@@ -113,19 +113,23 @@ class NonCombatSkill(Skill):
 
 class HarvestSkill(NonCombatSkill):
   def process_drops(self, matl, drop_table):
+    # NOTE: The below code assumes both the Equipment and Progression systems enabled
     if not self.config.ITEM_SYSTEM_ENABLED:
       return
 
     entity = self.entity
+    tool  = entity.equipment.held
+    has_tool = matl.tool is not None and isinstance(tool.item, matl.tool)
+    if not has_tool:
+      # pylint: disable=protected-access
+      if self.realm._np_random.uniform() > self.config.HARVEST_WITHOUT_TOOL_PROB:
+        # No harvest
+        return
 
     # harvest without tool will only yield level-1 item even with high skill level
     # for example, fishing level=5 without rod will only yield level-1 ration
-    level = 1
-    tool  = entity.equipment.held
-    if matl.tool is not None and isinstance(tool.item, matl.tool):
-      level = min(1+tool.item.level.val, self.config.PROGRESSION_LEVEL_MAX)
+    level = min(tool.item.level.val, self.config.PROGRESSION_LEVEL_MAX) if has_tool else 1
 
-    #TODO: double-check drop table quantity
     for drop in drop_table.roll(self.realm, level):
       assert drop.level.val == level, 'Drop level does not match roll specification'
 

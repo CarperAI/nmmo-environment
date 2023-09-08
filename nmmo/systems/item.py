@@ -225,10 +225,12 @@ class Hat(Armor):
   ITEM_TYPE_ID = 2
   def _slot(self, entity):
     return entity.inventory.equipment.hat
+
 class Top(Armor):
   ITEM_TYPE_ID = 3
   def _slot(self, entity):
     return entity.inventory.equipment.top
+
 class Bottom(Armor):
   ITEM_TYPE_ID = 4
   def _slot(self, entity):
@@ -254,6 +256,7 @@ class Spear(Weapon):
 
   def _level(self, entity):
     return entity.skills.melee.level.val
+
 class Bow(Weapon):
   ITEM_TYPE_ID = 6
 
@@ -263,6 +266,7 @@ class Bow(Weapon):
 
   def _level(self, entity):
     return entity.skills.range.level.val
+
 class Wand(Weapon):
   ITEM_TYPE_ID = 7
 
@@ -274,7 +278,23 @@ class Wand(Weapon):
     return entity.skills.mage.level.val
 
 
-class Tool(Equipment):
+class ConsumableTool(Equipment):
+  # No defense benefit
+  def _slot(self, entity):
+    return entity.inventory.equipment.held
+
+class Rod(ConsumableTool):
+  ITEM_TYPE_ID = 8
+  def _level(self, entity):
+    return entity.skills.fishing.level.val
+
+class Gloves(ConsumableTool):
+  ITEM_TYPE_ID = 9
+  def _level(self, entity):
+    return entity.skills.herbalism.level.val
+
+
+class AmmunitionTool(Equipment):
   def __init__(self, realm, level, **kwargs):
     defense = realm.config.EQUIPMENT_TOOL_BASE_DEFENSE + \
         level*realm.config.EQUIPMENT_TOOL_LEVEL_DEFENSE
@@ -286,23 +306,18 @@ class Tool(Equipment):
 
   def _slot(self, entity):
     return entity.inventory.equipment.held
-class Rod(Tool):
-  ITEM_TYPE_ID = 8
-  def _level(self, entity):
-    return entity.skills.fishing.level.val
-class Gloves(Tool):
-  ITEM_TYPE_ID = 9
-  def _level(self, entity):
-    return entity.skills.herbalism.level.val
-class Pickaxe(Tool):
+
+class Pickaxe(AmmunitionTool):
   ITEM_TYPE_ID = 10
   def _level(self, entity):
     return entity.skills.prospecting.level.val
-class Axe(Tool):
+
+class Axe(AmmunitionTool):
   ITEM_TYPE_ID = 11
   def _level(self, entity):
     return entity.skills.carving.level.val
-class Chisel(Tool):
+
+class Chisel(AmmunitionTool):
   ITEM_TYPE_ID = 12
   def _level(self, entity):
     return entity.skills.alchemy.level.val
@@ -333,7 +348,6 @@ class Ammunition(Equipment, Stack):
 
 class Whetstone(Ammunition):
   ITEM_TYPE_ID = 13
-
   def __init__(self, realm, level, **kwargs):
     super().__init__(realm, level, **kwargs)
     self.melee_attack.update(self.attack)

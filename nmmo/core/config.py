@@ -391,12 +391,12 @@ class Combat:
   '''Combat status lasts for this many ticks after the last combat event.
      Combat events include both attacking and being attacked.'''
 
-  COMBAT_WEAKNESS_MULTIPLIER         = 1.5
+  COMBAT_WEAKNESS_MULTIPLIER         = 1.2
   '''Multiplier for super-effective attacks'''
 
   def COMBAT_DAMAGE_FORMULA(self, offense, defense, multiplier):
     '''Damage formula'''
-    return int(multiplier * (offense * (15 / (15 + defense))))
+    return int(multiplier * (offense * (50 / (45 + defense))))
 
   COMBAT_MELEE_DAMAGE                = 30
   '''Melee attack damage'''
@@ -447,19 +447,19 @@ class Progression:
   PROGRESSION_CONSUMABLE_XP_SCALE   = 30
   '''Multiplier XP for each harvest for Fishing and Herbalism'''
 
-  PROGRESSION_MELEE_BASE_DAMAGE     = 20
+  PROGRESSION_MELEE_BASE_DAMAGE     = 10
   '''Base Melee attack damage'''
 
   PROGRESSION_MELEE_LEVEL_DAMAGE    = 5
   '''Bonus Melee attack damage per level'''
 
-  PROGRESSION_RANGE_BASE_DAMAGE     = 20
+  PROGRESSION_RANGE_BASE_DAMAGE     = 10
   '''Base Range attack damage'''
 
   PROGRESSION_RANGE_LEVEL_DAMAGE    = 5
   '''Bonus Range attack damage per level'''
 
-  PROGRESSION_MAGE_BASE_DAMAGE      = 20
+  PROGRESSION_MAGE_BASE_DAMAGE      = 10
   '''Base Mage attack damage '''
 
   PROGRESSION_MAGE_LEVEL_DAMAGE     = 5
@@ -502,14 +502,20 @@ class NPC:
   NPC_BASE_DEFENSE                    = 0
   '''Base NPC defense'''
 
-  NPC_LEVEL_DEFENSE                   = 15
+  NPC_LEVEL_DEFENSE                   = 10
   '''Bonus NPC defense per level'''
 
-  NPC_BASE_DAMAGE                     = 15
+  NPC_BASE_DAMAGE                     = 0
   '''Base NPC damage'''
 
-  NPC_LEVEL_DAMAGE                    = 15
+  NPC_LEVEL_DAMAGE                    = 10
   '''Bonus NPC damage per level'''
+
+  NPC_ARMOR_DROP_PROB                 = 0.3
+  '''Probability of dropping armor upon death'''
+
+  NPC_TOOL_DROP_PROB                  = 0.3
+  '''Probability of dropping a tool upon death'''
 
 
 class Item:
@@ -542,28 +548,31 @@ class Equipment:
   WEAPON_DROP_PROB = 0.025
   '''Chance of getting a weapon while harvesting ammunition'''
 
-  EQUIPMENT_WEAPON_BASE_DAMAGE         = 15
+  EQUIPMENT_WEAPON_BASE_DAMAGE         = 0
   '''Base weapon damage'''
 
-  EQUIPMENT_WEAPON_LEVEL_DAMAGE        = 15
+  EQUIPMENT_WEAPON_LEVEL_DAMAGE        = 10
   '''Added weapon damage per level'''
 
-  EQUIPMENT_AMMUNITION_BASE_DAMAGE     = 15
+  EQUIPMENT_AMMUNITION_BASE_DAMAGE     = 5
   '''Base ammunition damage'''
 
-  EQUIPMENT_AMMUNITION_LEVEL_DAMAGE    = 15
+  EQUIPMENT_AMMUNITION_LEVEL_DAMAGE    = 20
   '''Added ammunition damage per level'''
 
-  EQUIPMENT_TOOL_BASE_DEFENSE          = 30
+  EQUIPMENT_TOOL_BASE_DEFENSE          = 10
   '''Base tool defense'''
 
-  EQUIPMENT_TOOL_LEVEL_DEFENSE         = 0
+  EQUIPMENT_TOOL_LEVEL_DEFENSE         = 10
   '''Added tool defense per level'''
+
+  HARVEST_WITHOUT_TOOL_PROB            = 0.3
+  '''Probability of harvesting without a tool'''
 
   EQUIPMENT_ARMOR_BASE_DEFENSE         = 0
   '''Base armor defense'''
 
-  EQUIPMENT_ARMOR_LEVEL_DEFENSE        = 10
+  EQUIPMENT_ARMOR_LEVEL_DEFENSE        = 5
   '''Base equipment defense'''
 
 

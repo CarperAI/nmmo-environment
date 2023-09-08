@@ -153,11 +153,11 @@ class NPC(entity.Entity):
       ent.equipment = Equipment(ilvl, offense, offense, offense, defense, defense, defense)
 
       armor =  [Item.Hat, Item.Top, Item.Bottom]
-      ent.droptable.add(np_random.choice(armor))
+      ent.droptable.add(np_random.choice(armor), prob=config.NPC_ARMOR_DROP_PROB)
 
     if config.PROFESSION_SYSTEM_ENABLED:
       tools =  [Item.Rod, Item.Gloves, Item.Pickaxe, Item.Axe, Item.Chisel]
-      ent.droptable.add(np_random.choice(tools))
+      ent.droptable.add(np_random.choice(tools), prob=config.NPC_TOOL_DROP_PROB)
 
     return ent
 
