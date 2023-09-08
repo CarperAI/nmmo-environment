@@ -46,6 +46,7 @@ class Equipment:
 class NPC(entity.Entity):
   def __init__(self, realm, pos, iden, name, npc_type):
     super().__init__(realm, pos, iden, name)
+    self._level = None
     self.skills = skill.Combat(realm, self)
     self.realm = realm
     self.last_action = None
@@ -121,12 +122,12 @@ class NPC(entity.Entity):
     ent.skills.style = style
 
     # Compute level
-    level = 0
-    if config.PROGRESSION_SYSTEM_ENABLED:
-      level_min = config.NPC_LEVEL_MIN
-      level_max = config.NPC_LEVEL_MAX
-      level     = int(danger * (level_max - level_min) + level_min)
+    level_min = config.NPC_LEVEL_MIN
+    level_max = config.NPC_LEVEL_MAX
+    level = int(danger * (level_max - level_min) + level_min)
+    ent.set_level(level)
 
+    if config.PROGRESSION_SYSTEM_ENABLED:
       # Set skill levels
       if style == Action.Melee:
         ent.skills.melee.set_experience_by_level(level)
@@ -173,6 +174,13 @@ class NPC(entity.Entity):
   @property
   def is_npc(self) -> bool:
     return True
+
+  def set_level(self, level):
+    self._level = level
+
+  @property
+  def attack_level(self):
+    return self._level
 
 class Passive(NPC):
   def __init__(self, realm, pos, iden):

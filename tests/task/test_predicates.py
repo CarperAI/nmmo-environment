@@ -698,9 +698,7 @@ class TestBasePredicate(unittest.TestCase):
     npcs = env.realm.npcs
 
     # set levels
-    npcs[-1].skills.melee.level.update(1)
-    npcs[-1].skills.range.level.update(1)
-    npcs[-1].skills.mage.level.update(1)
+    npcs[-1].set_level(1)
     self.assertEqual(npcs[-1].attack_level, 1)
     self.assertEqual(players[2].attack_level, 1)
     players[3].skills.melee.level.update(3)

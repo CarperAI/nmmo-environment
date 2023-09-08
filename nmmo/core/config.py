@@ -365,7 +365,7 @@ class Resource:
   RESOURCE_FOILAGE_CAPACITY           = 1
   '''Maximum number of harvests before a foilage tile decays'''
 
-  RESOURCE_FOILAGE_RESPAWN            = 0.025
+  RESOURCE_FOILAGE_RESPAWN            = 0.05
   '''Probability that a harvested foilage tile will regenerate each tick'''
 
   RESOURCE_HARVEST_RESTORE_FRACTION   = 1.0
@@ -419,8 +419,8 @@ class Combat:
 
 def default_exp_threshold(max_level):
   import math
-  additional_exp_per_level = [round(90*math.sqrt(lvl))
-                              for lvl in range(1, max_level+1)]
+  additional_exp_per_level = [60] + [round(90*math.sqrt(lvl))
+                                     for lvl in range(1, max_level)]
   return [sum(additional_exp_per_level[:lvl]) for lvl in range(max_level)]
 
 class Progression:

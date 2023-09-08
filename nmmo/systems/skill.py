@@ -112,23 +112,26 @@ class NonCombatSkill(Skill):
     return self._dummy_value
 
 class HarvestSkill(NonCombatSkill):
+  def has_tool(self, matl):
+    if matl in [material.Water, material.Foilage]:  # no tools necessary for water and food
+      return True
+
+    tool = self.entity.equipment.held
+    return matl.tool is not None and isinstance(tool.item, matl.tool)
+
   def process_drops(self, matl, drop_table):
-    # NOTE: The below code assumes both the Equipment and Progression systems enabled
     if not self.config.ITEM_SYSTEM_ENABLED:
       return
 
     entity = self.entity
     tool  = entity.equipment.held
-    has_tool = matl.tool is not None and isinstance(tool.item, matl.tool)
-    if not has_tool:
-      # pylint: disable=protected-access
-      if self.realm._np_random.uniform() > self.config.HARVEST_WITHOUT_TOOL_PROB:
-        # No harvest
-        return
 
     # harvest without tool will only yield level-1 item even with high skill level
     # for example, fishing level=5 without rod will only yield level-1 ration
-    level = min(tool.item.level.val, self.config.PROGRESSION_LEVEL_MAX) if has_tool else 1
+    level = 1
+    if self.config.PROGRESSION_SYSTEM_ENABLED and \
+       matl not in [material.Water, material.Foilage] and self.has_tool(matl):
+      level = min(tool.item.level.val, self.config.PROGRESSION_LEVEL_MAX)
 
     for drop in drop_table.roll(self.realm, level):
       assert drop.level.val == level, 'Drop level does not match roll specification'
@@ -150,6 +153,11 @@ class HarvestSkill(NonCombatSkill):
     if realm.map.tiles[r, c].state != matl:
       return False
 
+    if self.config.EQUIPMENT_SYSTEM_ENABLED and not self.has_tool(matl):
+      # pylint: disable=protected-access
+      if self.realm._np_random.random() > self.config.HARVEST_WITHOUT_TOOL_PROB:
+        return False
+
     drop_table = realm.map.harvest(r, c, deplete)
     if drop_table:
       self.process_drops(matl, drop_table)
@@ -163,13 +171,18 @@ class HarvestSkill(NonCombatSkill):
     r, c      = entity.pos
     drop_table = None
 
+    if self.config.EQUIPMENT_SYSTEM_ENABLED and not self.has_tool(matl):
+      # pylint: disable=protected-access
+      if self.realm._np_random.random() > self.config.HARVEST_WITHOUT_TOOL_PROB:
+        return False
+
     if realm.map.tiles[r-1, c].state == matl:
       drop_table = realm.map.harvest(r-1, c, deplete)
-    if realm.map.tiles[r+1, c].state == matl:
+    elif realm.map.tiles[r+1, c].state == matl:
       drop_table = realm.map.harvest(r+1, c, deplete)
-    if realm.map.tiles[r, c-1].state == matl:
+    elif realm.map.tiles[r, c-1].state == matl:
       drop_table = realm.map.harvest(r, c-1, deplete)
-    if realm.map.tiles[r, c+1].state == matl:
+    elif realm.map.tiles[r, c+1].state == matl:
       drop_table = realm.map.harvest(r, c+1, deplete)
 
     if drop_table:
