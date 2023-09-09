@@ -417,10 +417,10 @@ class Combat:
   '''Reach of attacks using the Mage skill'''
 
 
-def default_exp_threshold(max_level):
+def default_exp_threshold(base_exp, max_level):
   import math
-  additional_exp_per_level = [60] + [round(90*math.sqrt(lvl))
-                                     for lvl in range(1, max_level)]
+  additional_exp_per_level = [round(base_exp*math.sqrt(lvl))
+                              for lvl in range(1, max_level+1)]
   return [sum(additional_exp_per_level[:lvl]) for lvl in range(max_level)]
 
 class Progression:
@@ -435,16 +435,19 @@ class Progression:
   PROGRESSION_LEVEL_MAX             = 10
   '''Max skill level'''
 
-  PROGRESSION_EXP_THRESHOLD         = default_exp_threshold(PROGRESSION_LEVEL_MAX)
+  PROGRESSION_EXP_THRESHOLD         = default_exp_threshold(90, PROGRESSION_LEVEL_MAX)
   '''A list of experience thresholds for each level'''
 
-  PROGRESSION_COMBAT_XP_SCALE       = 3
+  PROGRESSION_ATTACK_XP_SCALE       = 1
   '''Additional XP for each attack for skills Melee, Range, and Mage'''
+
+  PROGRESSION_KILL_XP_SCALE         = 5
+  '''Additional XP for each kill for skills Melee, Range, and Mage'''
 
   PROGRESSION_AMMUNITION_XP_SCALE   = 15
   '''Additional XP for each harvest for Prospecting, Carving, and Alchemy'''
 
-  PROGRESSION_CONSUMABLE_XP_SCALE   = 30
+  PROGRESSION_CONSUMABLE_XP_SCALE   = 20
   '''Multiplier XP for each harvest for Fishing and Herbalism'''
 
   PROGRESSION_MELEE_BASE_DAMAGE     = 10
@@ -548,7 +551,7 @@ class Equipment:
   WEAPON_DROP_PROB = 0.025
   '''Chance of getting a weapon while harvesting ammunition'''
 
-  EQUIPMENT_WEAPON_BASE_DAMAGE         = 0
+  EQUIPMENT_WEAPON_BASE_DAMAGE         = 10
   '''Base weapon damage'''
 
   EQUIPMENT_WEAPON_LEVEL_DAMAGE        = 10
@@ -560,13 +563,16 @@ class Equipment:
   EQUIPMENT_AMMUNITION_LEVEL_DAMAGE    = 20
   '''Added ammunition damage per level'''
 
+  EQUIPMENT_TOOL_BASE_DAMAGE           = 5
+  '''Base tool defense'''
+
   EQUIPMENT_TOOL_BASE_DEFENSE          = 10
   '''Base tool defense'''
 
   EQUIPMENT_TOOL_LEVEL_DEFENSE         = 10
   '''Added tool defense per level'''
 
-  HARVEST_WITHOUT_TOOL_PROB            = 0.3
+  HARVEST_WITHOUT_TOOL_PROB            = 0.2
   '''Probability of harvesting without a tool'''
 
   EQUIPMENT_ARMOR_BASE_DEFENSE         = 0
@@ -721,3 +727,24 @@ class Large(Config):
 
 class Default(Medium, AllGameSystems):
   pass
+
+class Easy(Default):
+  # Make agents live longer
+  RESOURCE_FOILAGE_RESPAWN = 0.2
+  RESOURCE_STARVATION_RATE = 6
+  RESOURCE_DEHYDRATION_RATE = 6
+
+  # Increase levels faster
+  PROGRESSION_EXP_THRESHOLD = default_exp_threshold(40, Default.PROGRESSION_LEVEL_MAX)
+
+  # Make NPCs weaker
+  NPC_LEVEL_DAMAGE = 5
+  NPC_LEVEL_DEFENSE = 5
+
+  # Make items easier to get
+  WEAPON_DROP_PROB = 0.15
+  PROFESSION_TREE_RESPAWN = 0.2
+  PROFESSION_ORE_RESPAWN = 0.2
+  PROFESSION_CRYSTAL_RESPAWN = 0.2
+  PROFESSION_HERB_RESPAWN = 0.05
+  PROFESSION_FISH_RESPAWN = 0.05

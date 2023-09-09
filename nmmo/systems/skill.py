@@ -258,7 +258,7 @@ class Combat(SkillGroup):
   def apply_damage(self, style):
     if self.config.PROGRESSION_SYSTEM_ENABLED:
       skill  = self.__dict__[style]
-      skill.add_xp(self.config.PROGRESSION_COMBAT_XP_SCALE)
+      skill.add_xp(self.config.PROGRESSION_ATTACK_XP_SCALE)
 
   def receive_damage(self, dmg):
     pass

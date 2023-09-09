@@ -44,6 +44,7 @@ class EventCode:
   # Attack
   SCORE_HIT = 11
   PLAYER_KILL = 12
+  FIRE_AMMO = 13
 
   # Item
   CONSUME_ITEM = 21

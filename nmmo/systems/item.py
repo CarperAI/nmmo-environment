@@ -296,6 +296,7 @@ class Gloves(ConsumableTool):
 
 class AmmunitionTool(Equipment):
   def __init__(self, realm, level, **kwargs):
+    self.attack = realm.config.EQUIPMENT_TOOL_BASE_DAMAGE
     defense = realm.config.EQUIPMENT_TOOL_BASE_DEFENSE + \
         level*realm.config.EQUIPMENT_TOOL_LEVEL_DEFENSE
     super().__init__(realm, level,
@@ -309,16 +310,31 @@ class AmmunitionTool(Equipment):
 
 class Pickaxe(AmmunitionTool):
   ITEM_TYPE_ID = 10
+
+  def __init__(self, realm, level, **kwargs):
+    super().__init__(realm, level, **kwargs)
+    self.melee_attack.update(self.attack)
+
   def _level(self, entity):
     return entity.skills.prospecting.level.val
 
 class Axe(AmmunitionTool):
   ITEM_TYPE_ID = 11
+
+  def __init__(self, realm, level, **kwargs):
+    super().__init__(realm, level, **kwargs)
+    self.range_attack.update(self.attack)
+
   def _level(self, entity):
     return entity.skills.carving.level.val
 
 class Chisel(AmmunitionTool):
   ITEM_TYPE_ID = 12
+
+  def __init__(self, realm, level, **kwargs):
+    super().__init__(realm, level, **kwargs)
+    self.mage_attack.update(self.attack)
+
   def _level(self, entity):
     return entity.skills.alchemy.level.val
 
@@ -338,6 +354,7 @@ class Ammunition(Equipment, Stack):
     assert self.quantity.val > 0, 'Used ammunition with 0 quantity'
 
     self.quantity.decrement()
+    self.realm.event_log.record(EventCode.FIRE_AMMO, entity, item=self)
 
     if self.quantity.val == 0:
       entity.inventory.remove(self)
@@ -436,3 +453,11 @@ class Potion(Consumable):
     entity.poultice_consumed += 1
     entity.poultice_level_consumed = max(
       entity.poultice_level_consumed, self.level.val)
+
+# For convenience
+ARMOR = [Hat, Top, Bottom]
+WEAPON = [Spear, Bow, Wand]
+TOOL = [Rod, Gloves, Pickaxe, Axe, Chisel]
+AMMUNITION = [Whetstone, Arrow, Runes]
+CONSUMABLE = [Ration, Potion]
+ALL_ITEM = ARMOR + WEAPON + TOOL + AMMUNITION + CONSUMABLE
