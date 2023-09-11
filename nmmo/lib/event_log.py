@@ -110,13 +110,30 @@ class EventLogger(EventCode):
         target = kwargs['target']
         log = self._create_event(entity, event_code)
         log.target_ent.update(target.ent_id)
-
-        # CHECK ME: attack_level or "general" level?? need to clarify
         log.level.update(target.attack_level)
         return
 
+    if event_code == EventCode.LOOT_ITEM:
+      if ('item' in kwargs and isinstance(kwargs['item'], Item)) & \
+         ('target' in kwargs and isinstance(kwargs['target'], Entity)):
+        item = kwargs['item']
+        log = self._create_event(entity, event_code)
+        log.type.update(item.ITEM_TYPE_ID)
+        log.level.update(item.level.val)
+        log.number.update(item.quantity.val)
+        log.target_ent.update(kwargs['target'].ent_id)
+        return
+
+    if event_code == EventCode.LOOT_GOLD:
+      if ('amount' in kwargs and kwargs['amount'] > 0) & \
+         ('target' in kwargs and isinstance(kwargs['target'], Entity)):
+        log = self._create_event(entity, event_code)
+        log.gold.update(kwargs['amount'])
+        log.target_ent.update(kwargs['target'].ent_id)
+        return
+
     if event_code in [EventCode.CONSUME_ITEM, EventCode.HARVEST_ITEM, EventCode.EQUIP_ITEM,
-                      EventCode.LOOT_ITEM, EventCode.FIRE_AMMO]:
+                      EventCode.FIRE_AMMO]:
       # CHECK ME: item types should be checked. For example,
       #   Only Ration and Potion can be consumed
       #   Only Ration, Potion, Whetstone, Arrow, Runes can be produced
@@ -140,7 +157,6 @@ class EventLogger(EventCode):
         log.gold.update(kwargs['price'])
         return
 
-    # NOTE: do we want to separate the source of income? from selling vs looting
     if event_code == EventCode.EARN_GOLD:
       if ('amount' in kwargs and kwargs['amount'] > 0):
         log = self._create_event(entity, event_code)

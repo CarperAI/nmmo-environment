@@ -129,7 +129,8 @@ def HoardGold(gs: GameState, subject: Group, amount: int):
 def EarnGold(gs: GameState, subject: Group, amount: int):
   """ True if the total amount of gold earned is greater than or equal to amount.
   """
-  return norm(subject.event.EARN_GOLD.gold.sum() / amount)
+  gold = subject.event.EARN_GOLD.gold.sum() + subject.event.LOOT_GOLD.gold.sum()
+  return norm(gold / amount)
 
 def SpendGold(gs: GameState, subject: Group, amount: int):
   """ True if the total amount of gold spent is greater than or equal to amount.
@@ -139,7 +140,7 @@ def SpendGold(gs: GameState, subject: Group, amount: int):
 def MakeProfit(gs: GameState, subject: Group, amount: int):
   """ True if the total amount of gold earned-spent is greater than or equal to amount.
   """
-  profits = subject.event.EARN_GOLD.gold.sum()
+  profits = subject.event.EARN_GOLD.gold.sum() + subject.event.LOOT_GOLD.gold.sum()
   costs = subject.event.BUY_ITEM.gold.sum()
   return  norm((profits-costs) / amount)
 

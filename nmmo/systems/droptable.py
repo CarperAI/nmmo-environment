@@ -6,16 +6,17 @@ class Fixed():
     return [self.item(realm, level)]
 
 class Drop:
-  def __init__(self, item, prob):
+  def __init__(self, item, prob, quantity):
     self.item = item
     self.prob = prob
+    self.quantity = quantity
 
   def roll(self, realm, level):
     # TODO: do not access realm._np_random directly
     #   related to skill.py, all harvest skills
     # pylint: disable=protected-access
     if realm._np_random.random() < self.prob:
-      return self.item(realm, level)
+      return self.item(realm, level, quantity=self.quantity)
 
     return None
 
@@ -23,8 +24,8 @@ class Standard:
   def __init__(self):
     self.drops = []
 
-  def add(self, item, prob=1.0):
-    self.drops += [Drop(item, prob)]
+  def add(self, item, prob=1.0, quantity=1):
+    self.drops += [Drop(item, prob, quantity)]
 
   def roll(self, realm, level):
     ret = []

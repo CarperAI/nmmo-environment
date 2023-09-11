@@ -72,8 +72,7 @@ class Ore(Material):
     cls = self.__class__
     if cls.table is None:
       cls.table = droptable.Standard()
-      cls.table.add(item.Whetstone)
-
+      cls.table.add(item.Whetstone, quantity=config.EQUIPMENT_AMMUNITION_HARVEST_BUNCH)
       if config.EQUIPMENT_SYSTEM_ENABLED:
         cls.table.add(item.Wand, prob=config.WEAPON_DROP_PROB)
 
@@ -98,7 +97,7 @@ class Tree(Material):
     cls = self.__class__
     if cls.table is None:
       cls.table = droptable.Standard()
-      cls.table.add(item.Arrow)
+      cls.table.add(item.Arrow, quantity=config.EQUIPMENT_AMMUNITION_HARVEST_BUNCH)
       if config.EQUIPMENT_SYSTEM_ENABLED:
         cls.table.add(item.Spear, prob=config.WEAPON_DROP_PROB)
 
@@ -120,7 +119,7 @@ class Crystal(Material):
     cls = self.__class__
     if cls.table is None:
       cls.table = droptable.Standard()
-      cls.table.add(item.Runes)
+      cls.table.add(item.Runes, quantity=config.EQUIPMENT_AMMUNITION_HARVEST_BUNCH)
       if config.EQUIPMENT_SYSTEM_ENABLED:
         cls.table.add(item.Bow, prob=config.WEAPON_DROP_PROB)
 

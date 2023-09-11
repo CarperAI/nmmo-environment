@@ -194,14 +194,14 @@ class AmmunitionSkill(HarvestSkill):
   def process_drops(self, matl, drop_table):
     super().process_drops(matl, drop_table)
     if self.config.PROGRESSION_SYSTEM_ENABLED:
-      self.add_xp(self.config.PROGRESSION_AMMO_HARVEST_XP_SCALE + self.level.val)
+      self.add_xp(self.config.PROGRESSION_AMMO_HARVEST_XP_SCALE)
 
 
 class ConsumableSkill(HarvestSkill):
   def process_drops(self, matl, drop_table):
     super().process_drops(matl, drop_table)
     if self.config.PROGRESSION_SYSTEM_ENABLED:
-      self.add_xp(self.config.PROGRESSION_CONSUMABLE_XP_SCALE + self.level.val)
+      self.add_xp(self.config.PROGRESSION_CONSUMABLE_XP_SCALE)
 
 
 ### Skill groups ###

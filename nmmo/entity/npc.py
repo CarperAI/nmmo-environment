@@ -74,7 +74,7 @@ class NPC(entity.Entity):
     # pylint: disable=no-member
     if self.gold.val > 0 and self._np_random.random() < self.config.NPC_GOLD_DROP_PROB:
       source.gold.increment(self.gold.val)
-      self.realm.event_log.record(EventCode.EARN_GOLD, source, amount=self.gold.val)
+      self.realm.event_log.record(EventCode.LOOT_GOLD, source, amount=self.gold.val, target=self)
       self.gold.update(0)
 
     for item in self.droptable.roll(self.realm, self.attack_level):
@@ -82,7 +82,7 @@ class NPC(entity.Entity):
         # inventory.receive() returns True if the item is received
         # if source doesn't have space, inventory.receive() destroys the item
         if source.inventory.receive(item):
-          self.realm.event_log.record(EventCode.LOOT_ITEM, source, item=item)
+          self.realm.event_log.record(EventCode.LOOT_ITEM, source, item=item, target=self)
       else:
         item.destroy()
 
@@ -146,10 +146,11 @@ class NPC(entity.Entity):
     # Equipment to instantiate
     if config.EQUIPMENT_SYSTEM_ENABLED:
       lvl     = level - np_random.random()
+      power_level = lvl + config.NPC_LEVEL_POWER_BASE**lvl
       ilvl    = int(5 * lvl)
 
-      offense = int(config.NPC_BASE_DAMAGE + lvl*config.NPC_LEVEL_DAMAGE)
-      defense = int(config.NPC_BASE_DEFENSE + lvl*config.NPC_LEVEL_DEFENSE)
+      offense = int(config.NPC_BASE_DAMAGE + power_level*config.NPC_LEVEL_DAMAGE)
+      defense = int(config.NPC_BASE_DEFENSE + power_level*config.NPC_LEVEL_DEFENSE)
 
       ent.equipment = Equipment(ilvl, offense, offense, offense, defense, defense, defense)
 

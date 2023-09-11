@@ -91,9 +91,11 @@ def attack(realm, player, target, skill_fn):
   # Total damage calculation
   offense = skill_offense + equipment_offense
   defense = skill_defense + equipment_defense
-  damage  = config.COMBAT_DAMAGE_FORMULA(offense, defense, multiplier)
-  #damage  = multiplier * (offense - defense)
-  damage  = max(int(damage), 0)
+  if player.is_player:
+    min_damage_prop = config.COMBAT_MINIMUM_DAMAGE_PROPORTION
+  else:
+    min_damage_prop = config.NPC_MINIMUM_DAMAGE_PROPORTION
+  damage  = config.COMBAT_DAMAGE_FORMULA(offense, defense, multiplier, min_damage_prop)
 
   if player.is_player:
     equipment_level_offense = 0

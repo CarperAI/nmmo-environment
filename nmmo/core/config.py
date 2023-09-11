@@ -391,12 +391,15 @@ class Combat:
   '''Combat status lasts for this many ticks after the last combat event.
      Combat events include both attacking and being attacked.'''
 
-  COMBAT_WEAKNESS_MULTIPLIER         = 1.2
+  COMBAT_WEAKNESS_MULTIPLIER         = 1.25
   '''Multiplier for super-effective attacks'''
 
-  def COMBAT_DAMAGE_FORMULA(self, offense, defense, multiplier):
+  COMBAT_MINIMUM_DAMAGE_PROPORTION   = 0.25
+  '''Minimum proportion of damage to inflict on a target'''
+
+  def COMBAT_DAMAGE_FORMULA(self, offense, defense, multiplier, minimum_proportion):
     '''Damage formula'''
-    return int(multiplier * (offense * (50 / (45 + defense))))
+    return int(max(multiplier * offense - defense, offense * minimum_proportion))
 
   COMBAT_MELEE_DAMAGE                = 30
   '''Melee attack damage'''
@@ -444,37 +447,37 @@ class Progression:
   PROGRESSION_KILL_XP_SCALE         = 3  # + target level
   '''Additional XP for each kill for skills Melee, Range, and Mage'''
 
-  PROGRESSION_AMMO_HARVEST_XP_SCALE = 10  # + ammo level
+  PROGRESSION_AMMO_HARVEST_XP_SCALE = 10
   '''Additional XP for each harvest for Prospecting, Carving, and Alchemy'''
 
-  PROGRESSION_AMMO_USE_XP_SCALE     = 3  # + ammo level
+  PROGRESSION_AMMO_USE_XP_SCALE     = 1
   '''Additional XP for each ammo fire for Prospecting, Carving, and Alchemy'''
 
-  PROGRESSION_CONSUMABLE_XP_SCALE   = 10  # + item level
+  PROGRESSION_CONSUMABLE_XP_SCALE   = 10
   '''Multiplier XP for each harvest for Fishing and Herbalism'''
 
-  PROGRESSION_MELEE_BASE_DAMAGE     = 5
+  PROGRESSION_MELEE_BASE_DAMAGE     = 10
   '''Base Melee attack damage'''
 
-  PROGRESSION_MELEE_LEVEL_DAMAGE    = 5
+  PROGRESSION_MELEE_LEVEL_DAMAGE    = 3
   '''Bonus Melee attack damage per level'''
 
-  PROGRESSION_RANGE_BASE_DAMAGE     = 5
+  PROGRESSION_RANGE_BASE_DAMAGE     = 10
   '''Base Range attack damage'''
 
-  PROGRESSION_RANGE_LEVEL_DAMAGE    = 5
+  PROGRESSION_RANGE_LEVEL_DAMAGE    = 3
   '''Bonus Range attack damage per level'''
 
-  PROGRESSION_MAGE_BASE_DAMAGE      = 5
+  PROGRESSION_MAGE_BASE_DAMAGE      = 10
   '''Base Mage attack damage '''
 
-  PROGRESSION_MAGE_LEVEL_DAMAGE     = 5
+  PROGRESSION_MAGE_LEVEL_DAMAGE     = 3
   '''Bonus Mage attack damage per level'''
 
   PROGRESSION_BASE_DEFENSE          = 0
   '''Base defense'''
 
-  PROGRESSION_LEVEL_DEFENSE         = 5
+  PROGRESSION_LEVEL_DEFENSE         = 4
   '''Bonus defense per level'''
 
 
@@ -505,17 +508,23 @@ class NPC:
   NPC_LEVEL_MAX                       = 10
   '''Maximum NPC level'''
 
+  NPC_LEVEL_POWER_BASE                = 1.5
+  '''NPC level offense and defense are multiplied by (level + level_power_base^level)'''
+
   NPC_BASE_DEFENSE                    = 0
   '''Base NPC defense'''
 
-  NPC_LEVEL_DEFENSE                   = 10
+  NPC_LEVEL_DEFENSE                   = 3
   '''Bonus NPC defense per level'''
 
   NPC_BASE_DAMAGE                     = 0
   '''Base NPC damage'''
 
-  NPC_LEVEL_DAMAGE                    = 10
+  NPC_LEVEL_DAMAGE                    = 2
   '''Bonus NPC damage per level'''
+
+  NPC_MINIMUM_DAMAGE_PROPORTION       = 0.3
+  '''Minimum proportion of damage to inflict on a target'''
 
   NPC_ARMOR_DROP_PROB                 = 0.3
   '''Probability of dropping armor upon death'''
@@ -525,6 +534,7 @@ class NPC:
 
   NPC_GOLD_DROP_PROB                  = 0.3
   '''Probability of dropping gold upon death'''
+
 
 class Item:
   '''Inventory Game System'''
@@ -559,25 +569,22 @@ class Equipment:
   EQUIPMENT_WEAPON_BASE_DAMAGE         = 10
   '''Base weapon damage'''
 
-  EQUIPMENT_WEAPON_LEVEL_DAMAGE        = 10
+  EQUIPMENT_WEAPON_LEVEL_DAMAGE        = 3
   '''Added weapon damage per level'''
 
-  EQUIPMENT_AMMUNITION_BASE_DAMAGE     = 5
+  EQUIPMENT_AMMUNITION_BASE_DAMAGE     = 10
   '''Base ammunition damage'''
 
-  EQUIPMENT_AMMUNITION_LEVEL_DAMAGE    = 15
+  EQUIPMENT_AMMUNITION_LEVEL_DAMAGE    = 7
   '''Added ammunition damage per level'''
 
-  EQUIPMENT_TOOL_BASE_DAMAGE           = 0
-  '''Base tool defense'''
-
-  EQUIPMENT_TOOL_LEVEL_DAMAGE          = 5
-  '''Base tool defense'''
+  EQUIPMENT_AMMUNITION_HARVEST_BUNCH   = 3
+  '''Number of ammunition harvested per harvest'''
 
   EQUIPMENT_TOOL_BASE_DEFENSE          = 0
   '''Base tool defense'''
 
-  EQUIPMENT_TOOL_LEVEL_DEFENSE         = 5
+  EQUIPMENT_TOOL_LEVEL_DEFENSE         = 4
   '''Added tool defense per level'''
 
   HARVEST_WITHOUT_TOOL_PROB            = 0.2
@@ -586,7 +593,7 @@ class Equipment:
   EQUIPMENT_ARMOR_BASE_DEFENSE         = 0
   '''Base armor defense'''
 
-  EQUIPMENT_ARMOR_LEVEL_DEFENSE        = 3
+  EQUIPMENT_ARMOR_LEVEL_DEFENSE        = 4
   '''Base equipment defense'''
 
 
@@ -741,9 +748,13 @@ class Tutorial(Default):
   PROFESSION_TREE_RESPAWN = 0.5
   PROFESSION_ORE_RESPAWN = 0.5
   PROFESSION_CRYSTAL_RESPAWN = 0.5
+  EQUIPMENT_AMMUNITION_HARVEST_BUNCH = 5
 
   # Disable weapon, ration, potion -- focus on the main loop
   NPC_GOLD_DROP_PROB = 0
   WEAPON_DROP_PROB = 0
   PROFESSION_HERB_RESPAWN = 0
   PROFESSION_FISH_RESPAWN = 0
+
+  # Make some things simpler
+  COMBAT_STATUS_DURATION = 1
