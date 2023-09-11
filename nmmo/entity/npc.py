@@ -72,7 +72,7 @@ class NPC(entity.Entity):
     # run the next lines if the npc is killed
     # source receive gold & items in the droptable
     # pylint: disable=no-member
-    if self.gold.val > 0:
+    if self.gold.val > 0 and self._np_random.random() < self.config.NPC_GOLD_DROP_PROB:
       source.gold.increment(self.gold.val)
       self.realm.event_log.record(EventCode.EARN_GOLD, source, amount=self.gold.val)
       self.gold.update(0)

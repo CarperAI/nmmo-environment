@@ -523,6 +523,8 @@ class NPC:
   NPC_TOOL_DROP_PROB                  = 0.3
   '''Probability of dropping a tool upon death'''
 
+  NPC_GOLD_DROP_PROB                  = 0.3
+  '''Probability of dropping gold upon death'''
 
 class Item:
   '''Inventory Game System'''
@@ -721,8 +723,7 @@ class Default(Medium, AllGameSystems):
 
 # Make configs for Tutorial, Easy, (Normal: Default), Hard, Insane
 
-class Tutorial(Medium, Terrain, Resource, Combat, NPC,
-               Item, Equipment, Profession, Progression):  # and no market
+class Tutorial(Default):
   # Make agents live longer
   RESOURCE_FOILAGE_RESPAWN = 0.5
   RESOURCE_STARVATION_RATE = 6
@@ -742,6 +743,7 @@ class Tutorial(Medium, Terrain, Resource, Combat, NPC,
   PROFESSION_CRYSTAL_RESPAWN = 0.5
 
   # Disable weapon, ration, potion -- focus on the main loop
+  NPC_GOLD_DROP_PROB = 0
   WEAPON_DROP_PROB = 0
   PROFESSION_HERB_RESPAWN = 0
   PROFESSION_FISH_RESPAWN = 0
