@@ -71,6 +71,8 @@ class Env(ParallelEnv):
     obs_space = {
       "CurrentTick": gym.spaces.Discrete(self.config.HORIZON+1),
       "AgentId": gym.spaces.Discrete(self.config.PLAYER_N+1),
+      # offense, defense for melee, range, mage
+      "CombatAttr": gym.spaces.Box(low=-2**15, high=2**15-1, shape=(6,), dtype=np.int16),
       "Tile": box(self.config.MAP_N_OBS, Tile.State.num_attributes),
       "Entity": box(self.config.PLAYER_N_OBS, Entity.State.num_attributes),
       "Task": gym.spaces.Box(low=-2**15, high=2**15-1,
@@ -80,6 +82,9 @@ class Env(ParallelEnv):
 
     if self.config.ITEM_SYSTEM_ENABLED:
       obs_space["Inventory"] = box(self.config.INVENTORY_N_OBS, Item.State.num_attributes)
+
+    if self.config.EQUIPMENT_SYSTEM_ENABLED:
+      obs_space["Equipment"] = box(self.config.ITEM_N, self.config.PROGRESSION_LEVEL_MAX)
 
     if self.config.EXCHANGE_SYSTEM_ENABLED:
       obs_space["Market"] = box(self.config.MARKET_N_OBS, Item.State.num_attributes)
@@ -418,10 +423,12 @@ class Env(ParallelEnv):
   def _make_dummy_obs(self):
     dummy_tiles = np.zeros((0, len(Tile.State.attr_name_to_col)), dtype=np.int16)
     dummy_entities = np.zeros((0, len(Entity.State.attr_name_to_col)), dtype=np.int16)
+    dummy_combat = np.zeros((0, 6), dtype=np.int16)
     dummy_inventory = np.zeros((0, len(Item.State.attr_name_to_col)), dtype=np.int16)
     dummy_market = np.zeros((0, len(Item.State.attr_name_to_col)), dtype=np.int16)
     return Observation(self.config, self.realm.tick, 0, self._dummy_task_embedding,
-                       dummy_tiles, dummy_entities, dummy_inventory, dummy_market)
+                       dummy_tiles, dummy_entities, dummy_combat,
+                       dummy_inventory, dummy_market)
 
   def _compute_observations(self):
     # Clean up unnecessary observations, which cause memory leaks
@@ -471,7 +478,8 @@ class Env(ParallelEnv):
         if agent_id in self.agent_task_map:
           task_embedding = self.agent_task_map[agent_id][0].embedding # NOTE: first task only
         obs[agent_id] = Observation(self.config, self.realm.tick, agent_id, task_embedding,
-                                    visible_tiles, visible_entities, inventory, market)
+                                    visible_tiles, visible_entities, agent.combat_attributes,
+                                    inventory, market)
     return obs
 
   def _compute_rewards(self):

@@ -51,7 +51,6 @@ class Foilage(Material):
 
   def __init__(self, config):
     if config.RESOURCE_SYSTEM_ENABLED:
-      self.capacity = config.RESOURCE_FOILAGE_CAPACITY
       self.respawn  = config.RESOURCE_FOILAGE_RESPAWN
 
 class Stone(Material):
@@ -79,7 +78,6 @@ class Ore(Material):
         cls.table.add(item.Wand, prob=config.WEAPON_DROP_PROB)
 
     if config.PROFESSION_SYSTEM_ENABLED:
-      self.capacity = config.PROFESSION_ORE_CAPACITY
       self.respawn  = config.PROFESSION_ORE_RESPAWN
 
   tool    = item.Pickaxe
@@ -105,7 +103,6 @@ class Tree(Material):
         cls.table.add(item.Spear, prob=config.WEAPON_DROP_PROB)
 
     if config.PROFESSION_SYSTEM_ENABLED:
-      self.capacity = config.PROFESSION_TREE_CAPACITY
       self.respawn  = config.PROFESSION_TREE_RESPAWN
 
 class Fragment(Material):
@@ -128,7 +125,6 @@ class Crystal(Material):
         cls.table.add(item.Bow, prob=config.WEAPON_DROP_PROB)
 
     if config.PROFESSION_SYSTEM_ENABLED:
-      self.capacity = config.PROFESSION_CRYSTAL_CAPACITY
       self.respawn  = config.PROFESSION_CRYSTAL_RESPAWN
 
 class Weeds(Material):
@@ -147,7 +143,6 @@ class Herb(Material):
 
   def __init__(self, config):
     if config.PROFESSION_SYSTEM_ENABLED:
-      self.capacity = config.PROFESSION_HERB_CAPACITY
       self.respawn  = config.PROFESSION_HERB_RESPAWN
 
 class Ocean(Material):
@@ -166,7 +161,6 @@ class Fish(Material):
 
   def __init__(self, config):
     if config.PROFESSION_SYSTEM_ENABLED:
-      self.capacity = config.PROFESSION_FISH_CAPACITY
       self.respawn  = config.PROFESSION_FISH_RESPAWN
 
 # TODO: Fix lint errors

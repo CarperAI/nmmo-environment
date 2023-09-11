@@ -76,6 +76,9 @@ def validate(config):
     assert not config.PROFESSION_SYSTEM_ENABLED, err.format('Profession')
     assert not config.EXCHANGE_SYSTEM_ENABLED, err.format('Exchange')
 
+  if not config.PROGRESSION_SYSTEM_ENABLED:
+    err = 'Invalid Config: {} requires Progression'
+    assert not config.EQUIPMENT_SYSTEM_ENABLED, err.format('Equipment')
 
 class Config(Template):
   '''An environment configuration object
@@ -362,9 +365,6 @@ class Resource:
   RESOURCE_DAMAGE_REDUCTION           = 0.5
   '''Training helper: damage reduction from starvation and dehydration for resilient agents'''
 
-  RESOURCE_FOILAGE_CAPACITY           = 1
-  '''Maximum number of harvests before a foilage tile decays'''
-
   RESOURCE_FOILAGE_RESPAWN            = 0.05
   '''Probability that a harvested foilage tile will regenerate each tick'''
 
@@ -441,28 +441,31 @@ class Progression:
   PROGRESSION_ATTACK_XP_SCALE       = 1
   '''Additional XP for each attack for skills Melee, Range, and Mage'''
 
-  PROGRESSION_KILL_XP_SCALE         = 5
+  PROGRESSION_KILL_XP_SCALE         = 3  # + target level
   '''Additional XP for each kill for skills Melee, Range, and Mage'''
 
-  PROGRESSION_AMMUNITION_XP_SCALE   = 15
+  PROGRESSION_AMMO_HARVEST_XP_SCALE = 10  # + ammo level
   '''Additional XP for each harvest for Prospecting, Carving, and Alchemy'''
 
-  PROGRESSION_CONSUMABLE_XP_SCALE   = 20
+  PROGRESSION_AMMO_USE_XP_SCALE     = 3  # + ammo level
+  '''Additional XP for each ammo fire for Prospecting, Carving, and Alchemy'''
+
+  PROGRESSION_CONSUMABLE_XP_SCALE   = 10  # + item level
   '''Multiplier XP for each harvest for Fishing and Herbalism'''
 
-  PROGRESSION_MELEE_BASE_DAMAGE     = 10
+  PROGRESSION_MELEE_BASE_DAMAGE     = 5
   '''Base Melee attack damage'''
 
   PROGRESSION_MELEE_LEVEL_DAMAGE    = 5
   '''Bonus Melee attack damage per level'''
 
-  PROGRESSION_RANGE_BASE_DAMAGE     = 10
+  PROGRESSION_RANGE_BASE_DAMAGE     = 5
   '''Base Range attack damage'''
 
   PROGRESSION_RANGE_LEVEL_DAMAGE    = 5
   '''Bonus Range attack damage per level'''
 
-  PROGRESSION_MAGE_BASE_DAMAGE      = 10
+  PROGRESSION_MAGE_BASE_DAMAGE      = 5
   '''Base Mage attack damage '''
 
   PROGRESSION_MAGE_LEVEL_DAMAGE     = 5
@@ -484,13 +487,13 @@ class NPC:
   NPC_N                               = None
   '''Maximum number of NPCs spawnable in the environment'''
 
-  NPC_SPAWN_ATTEMPTS                  = 25
+  NPC_SPAWN_ATTEMPTS                  = 128
   '''Number of NPC spawn attempts per tick'''
 
-  NPC_SPAWN_AGGRESSIVE                = 0.80
+  NPC_SPAWN_AGGRESSIVE                = 0.75
   '''Percentage distance threshold from spawn for aggressive NPCs'''
 
-  NPC_SPAWN_NEUTRAL                   = 0.50
+  NPC_SPAWN_NEUTRAL                   = 0.25
   '''Percentage distance threshold from spawn for neutral NPCs'''
 
   NPC_SPAWN_PASSIVE                   = 0.00
@@ -560,16 +563,19 @@ class Equipment:
   EQUIPMENT_AMMUNITION_BASE_DAMAGE     = 5
   '''Base ammunition damage'''
 
-  EQUIPMENT_AMMUNITION_LEVEL_DAMAGE    = 20
+  EQUIPMENT_AMMUNITION_LEVEL_DAMAGE    = 15
   '''Added ammunition damage per level'''
 
-  EQUIPMENT_TOOL_BASE_DAMAGE           = 5
+  EQUIPMENT_TOOL_BASE_DAMAGE           = 0
   '''Base tool defense'''
 
-  EQUIPMENT_TOOL_BASE_DEFENSE          = 10
+  EQUIPMENT_TOOL_LEVEL_DAMAGE          = 5
   '''Base tool defense'''
 
-  EQUIPMENT_TOOL_LEVEL_DEFENSE         = 10
+  EQUIPMENT_TOOL_BASE_DEFENSE          = 0
+  '''Base tool defense'''
+
+  EQUIPMENT_TOOL_LEVEL_DEFENSE         = 5
   '''Added tool defense per level'''
 
   HARVEST_WITHOUT_TOOL_PROB            = 0.2
@@ -578,7 +584,7 @@ class Equipment:
   EQUIPMENT_ARMOR_BASE_DEFENSE         = 0
   '''Base armor defense'''
 
-  EQUIPMENT_ARMOR_LEVEL_DEFENSE        = 5
+  EQUIPMENT_ARMOR_LEVEL_DEFENSE        = 3
   '''Base equipment defense'''
 
 
@@ -588,32 +594,17 @@ class Profession:
   PROFESSION_SYSTEM_ENABLED           = True
   '''Game system flag'''
 
-  PROFESSION_TREE_CAPACITY            = 1
-  '''Maximum number of harvests before a tree tile decays'''
-
   PROFESSION_TREE_RESPAWN             = 0.105
   '''Probability that a harvested tree tile will regenerate each tick'''
-
-  PROFESSION_ORE_CAPACITY             = 1
-  '''Maximum number of harvests before an ore tile decays'''
 
   PROFESSION_ORE_RESPAWN              = 0.10
   '''Probability that a harvested ore tile will regenerate each tick'''
 
-  PROFESSION_CRYSTAL_CAPACITY         = 1
-  '''Maximum number of harvests before a crystal tile decays'''
-
   PROFESSION_CRYSTAL_RESPAWN          = 0.10
   '''Probability that a harvested crystal tile will regenerate each tick'''
 
-  PROFESSION_HERB_CAPACITY            = 1
-  '''Maximum number of harvests before an herb tile decays'''
-
   PROFESSION_HERB_RESPAWN             = 0.02
   '''Probability that a harvested herb tile will regenerate each tick'''
-
-  PROFESSION_FISH_CAPACITY            = 1
-  '''Maximum number of harvests before a fish tile decays'''
 
   PROFESSION_FISH_RESPAWN             = 0.02
   '''Probability that a harvested fish tile will regenerate each tick'''
@@ -728,23 +719,29 @@ class Large(Config):
 class Default(Medium, AllGameSystems):
   pass
 
-class Easy(Default):
+# Make configs for Tutorial, Easy, (Normal: Default), Hard, Insane
+
+class Tutorial(Medium, Terrain, Resource, Combat, NPC,
+               Item, Equipment, Profession, Progression):  # and no market
   # Make agents live longer
-  RESOURCE_FOILAGE_RESPAWN = 0.2
+  RESOURCE_FOILAGE_RESPAWN = 0.5
   RESOURCE_STARVATION_RATE = 6
   RESOURCE_DEHYDRATION_RATE = 6
 
   # Increase levels faster
-  PROGRESSION_EXP_THRESHOLD = default_exp_threshold(40, Default.PROGRESSION_LEVEL_MAX)
+  PROGRESSION_EXP_THRESHOLD = default_exp_threshold(25, Default.PROGRESSION_LEVEL_MAX)
 
   # Make NPCs weaker
   NPC_LEVEL_DAMAGE = 5
   NPC_LEVEL_DEFENSE = 5
 
   # Make items easier to get
-  WEAPON_DROP_PROB = 0.15
-  PROFESSION_TREE_RESPAWN = 0.2
-  PROFESSION_ORE_RESPAWN = 0.2
-  PROFESSION_CRYSTAL_RESPAWN = 0.2
-  PROFESSION_HERB_RESPAWN = 0.05
-  PROFESSION_FISH_RESPAWN = 0.05
+  NPC_TOOL_DROP_PROB = 0.5
+  PROFESSION_TREE_RESPAWN = 0.5
+  PROFESSION_ORE_RESPAWN = 0.5
+  PROFESSION_CRYSTAL_RESPAWN = 0.5
+
+  # Disable weapon, ration, potion -- focus on the main loop
+  WEAPON_DROP_PROB = 0
+  PROFESSION_HERB_RESPAWN = 0
+  PROFESSION_FISH_RESPAWN = 0

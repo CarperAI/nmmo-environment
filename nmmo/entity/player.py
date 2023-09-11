@@ -137,3 +137,65 @@ class Player(entity.Entity):
 
     self.resources.update()
     self.skills.update()
+
+  def get_skill_offense(self, skill):
+    if not self.config.COMBAT_SYSTEM_ENABLED:
+      return 0
+
+    base_damage = getattr(self.config, f"COMBAT_{skill.upper()}_DAMAGE")
+    level_damage = 0
+    if self.config.PROGRESSION_SYSTEM_ENABLED:
+      base_damage = getattr(self.config, f"PROGRESSION_{skill.upper()}_BASE_DAMAGE")
+      level_damage = getattr(self.config, f"PROGRESSION_{skill.upper()}_LEVEL_DAMAGE")
+      level_damage *= getattr(self.skills, skill).level.val
+
+    equipment_bonus = 0
+    if self.config.EQUIPMENT_SYSTEM_ENABLED:
+      equipment_bonus = getattr(self.equipment, f"{skill}_attack")
+
+    return base_damage + level_damage + equipment_bonus
+
+  def get_skill_defense(self, skill):
+    if not self.config.COMBAT_SYSTEM_ENABLED:
+      return 0
+
+    base_defense = 0
+    level_defense = 0
+    if self.config.PROGRESSION_SYSTEM_ENABLED:
+      base_defense = self.config.PROGRESSION_BASE_DEFENSE
+      level_defense = self.config.PROGRESSION_LEVEL_DEFENSE * self.level
+
+    equipment_bonus = 0
+    if self.config.EQUIPMENT_SYSTEM_ENABLED:
+      equipment_bonus = getattr(self.equipment, f"{skill}_defense")
+
+    return base_defense + level_defense + equipment_bonus
+
+  @property
+  def melee_attack(self):
+    return self.get_skill_offense("melee")
+
+  @property
+  def range_attack(self):
+    return self.get_skill_offense("range")
+
+  @property
+  def mage_attack(self):
+    return self.get_skill_offense("mage")
+
+  @property
+  def melee_defense(self):
+    return self.get_skill_defense("melee")
+
+  @property
+  def range_defense(self):
+    return self.get_skill_defense("range")
+
+  @property
+  def mage_defense(self):
+    return self.get_skill_defense("mage")
+
+  @property
+  def combat_attributes(self):
+    return [self.melee_attack, self.range_attack, self.mage_attack,
+            self.melee_defense, self.range_defense, self.mage_defense]

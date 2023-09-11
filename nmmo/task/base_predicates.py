@@ -200,6 +200,13 @@ def ConsumeItem(gs: GameState, subject: Group, item: type[Item], level: int, qua
   lvl_flt = subject.event.CONSUME_ITEM.level >= level
   return norm(subject.event.CONSUME_ITEM.number[type_flt & lvl_flt].sum() / quantity)
 
+def FireAmmo(gs: GameState, subject: Group, item: type[Item], level: int, quantity: int):
+  """True if total quantity consumed of item type above level is >= quantity
+  """
+  type_flt = subject.event.FIRE_AMMO.type == item.ITEM_TYPE_ID
+  lvl_flt = subject.event.FIRE_AMMO.level >= level
+  return norm(subject.event.FIRE_AMMO.number[type_flt & lvl_flt].sum() / quantity)
+
 def HarvestItem(gs: GameState, subject: Group, item: type[Item], level: int, quantity: int):
   """True if total quantity harvested of item type above level is >= quantity
   """

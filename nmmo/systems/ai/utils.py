@@ -9,7 +9,8 @@ from nmmo.lib.utils import in_bounds
 
 
 def validTarget(ent, targ, rng):
-  if targ is None or not targ.alive or lInfty(ent.pos, targ.pos) > rng:
+  # Make npcs NOT attack other npcs (for now)
+  if targ is None or not targ.alive or targ.is_npc or lInfty(ent.pos, targ.pos) > rng:
     return False
   return True
 

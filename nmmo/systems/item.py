@@ -296,7 +296,8 @@ class Gloves(ConsumableTool):
 
 class AmmunitionTool(Equipment):
   def __init__(self, realm, level, **kwargs):
-    self.attack = realm.config.EQUIPMENT_TOOL_BASE_DAMAGE
+    self.attack = realm.config.EQUIPMENT_TOOL_BASE_DAMAGE + \
+        level*realm.config.EQUIPMENT_TOOL_LEVEL_DAMAGE
     defense = realm.config.EQUIPMENT_TOOL_BASE_DEFENSE + \
         level*realm.config.EQUIPMENT_TOOL_LEVEL_DEFENSE
     super().__init__(realm, level,
@@ -355,6 +356,8 @@ class Ammunition(Equipment, Stack):
 
     self.quantity.decrement()
     self.realm.event_log.record(EventCode.FIRE_AMMO, entity, item=self)
+    if self.realm.config.PROGRESSION_SYSTEM_ENABLED:
+      self._add_xp(entity, self.realm.config.PROGRESSION_AMMO_USE_XP_SCALE + self.level.val)
 
     if self.quantity.val == 0:
       entity.inventory.remove(self)
@@ -370,7 +373,11 @@ class Whetstone(Ammunition):
     self.melee_attack.update(self.attack)
 
   def _level(self, entity):
-    return entity.skills.melee.level.val
+    return max(entity.skills.melee.level.val,
+               entity.skills.prospecting.level.val)
+
+  def _add_xp(self, entity, xp):
+    entity.skills.prospecting.add_xp(xp)
 
   @property
   def damage(self):
@@ -384,7 +391,11 @@ class Arrow(Ammunition):
     self.range_attack.update(self.attack)
 
   def _level(self, entity):
-    return entity.skills.range.level.val
+    return max(entity.skills.range.level.val,
+               entity.skills.carving.level.val)
+
+  def _add_xp(self, entity, xp):
+    entity.skills.carving.add_xp(xp)
 
   @property
   def damage(self):
@@ -398,7 +409,11 @@ class Runes(Ammunition):
     self.mage_attack.update(self.attack)
 
   def _level(self, entity):
-    return entity.skills.mage.level.val
+    return max(entity.skills.mage.level.val,
+               entity.skills.alchemy.level.val)
+
+  def _add_xp(self, entity, xp):
+    entity.skills.alchemy.add_xp(xp)
 
   @property
   def damage(self):

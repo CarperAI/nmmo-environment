@@ -114,7 +114,7 @@ def attack(realm, player, target, skill_fn):
   player.apply_damage(damage, skill.__class__.__name__.lower())
   alive = target.receive_damage(player, damage)
   if alive is False and player.is_player:
-    skill.add_xp(config.PROGRESSION_KILL_XP_SCALE)
+    skill.add_xp(config.PROGRESSION_KILL_XP_SCALE + target.attack_level)
 
   return damage
 

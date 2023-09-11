@@ -36,6 +36,13 @@ class InventoryObs(BasicObs):
     idx = np.nonzero((self.inv_type == item.ITEM_TYPE_ID) & (self.inv_level == level))[0]
     return idx[0] if len(idx) else None
 
+  def get_equipment(self, equip_obs):
+    equipped = np.nonzero(self.values[:,ItemState.State.attr_name_to_col["equipped"]] > 0)[0]
+    for idx in equipped:
+      item = ItemState.parse_array(self.values[idx])
+      equip_obs[item.type_id-1, item.level-1] = item.quantity
+    return equip_obs
+
 
 class Observation:
   def __init__(self,
@@ -45,13 +52,16 @@ class Observation:
     task_embedding,
     tiles,
     entities,
+    combat_attributes,
     inventory,
-    market) -> None:
+    market
+  ) -> None:
 
     self.config = config
     self.current_tick = current_tick
     self.agent_id = agent_id
     self.task_embedding = task_embedding
+    self.combat_attributes = np.array(combat_attributes, dtype=np.int16)
 
     self.tiles = tiles[0:config.MAP_N_OBS]
     self.entities = BasicObs(entities[0:config.PLAYER_N_OBS],
@@ -127,6 +137,7 @@ class Observation:
     gym_obs = {
       "CurrentTick": self.current_tick,
       "AgentId": self.agent_id,
+      "CombatAttr": np.zeros((1, 6), dtype=np.int16),
       "Task": self.task_embedding,
       "Tile": None, # np.zeros((self.config.MAP_N_OBS, self.tiles.shape[1])),
       "Entity": np.zeros((self.config.PLAYER_N_OBS,
@@ -144,17 +155,26 @@ class Observation:
     gym_obs = self.get_empty_obs()
     if self.dummy_obs:
       # return empty obs for the dead agents
-      gym_obs['Tile'] = np.zeros((self.config.MAP_N_OBS, self.tiles.shape[1]), dtype=np.int16)
+      gym_obs["Tile"] = np.zeros((self.config.MAP_N_OBS, self.tiles.shape[1]), dtype=np.int16)
+      if self.config.EQUIPMENT_SYSTEM_ENABLED:
+        gym_obs["Equipment"] = np.zeros((self.config.ITEM_N,
+                                         self.config.PROGRESSION_LEVEL_MAX), dtype=np.int16)
       if self.config.PROVIDE_ACTION_TARGETS:
         gym_obs["ActionTargets"] = self._make_action_targets()
       return gym_obs
 
     # NOTE: assume that all len(self.tiles) == self.config.MAP_N_OBS
-    gym_obs['Tile'] = self.tiles
-    gym_obs['Entity'][:self.entities.values.shape[0],:] = self.entities.values
+    gym_obs["Tile"] = self.tiles
+    gym_obs["Entity"][:self.entities.values.shape[0],:] = self.entities.values
+    gym_obs["CombatAttr"] = self.combat_attributes
 
     if self.config.ITEM_SYSTEM_ENABLED:
       gym_obs["Inventory"][:self.inventory.values.shape[0],:] = self.inventory.values
+
+    if self.config.EQUIPMENT_SYSTEM_ENABLED:
+      equip_obs = np.zeros((self.config.ITEM_N,
+                            self.config.PROGRESSION_LEVEL_MAX), dtype=np.int16)
+      gym_obs["Equipment"] = self.inventory.get_equipment(equip_obs)
 
     if self.config.EXCHANGE_SYSTEM_ENABLED:
       gym_obs["Market"][:self.market.values.shape[0],:] = self.market.values
