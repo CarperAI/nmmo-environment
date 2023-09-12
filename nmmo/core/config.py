@@ -508,19 +508,19 @@ class NPC:
   NPC_LEVEL_MAX                       = 10
   '''Maximum NPC level'''
 
-  NPC_LEVEL_POWER_BASE                = 1.5
+  NPC_LEVEL_POWER_BASE                = 1.41
   '''NPC level offense and defense are multiplied by (level + level_power_base^level)'''
 
   NPC_BASE_DEFENSE                    = 0
   '''Base NPC defense'''
 
-  NPC_LEVEL_DEFENSE                   = 3
+  NPC_LEVEL_DEFENSE                   = 5
   '''Bonus NPC defense per level'''
 
   NPC_BASE_DAMAGE                     = 0
   '''Base NPC damage'''
 
-  NPC_LEVEL_DAMAGE                    = 2
+  NPC_LEVEL_DAMAGE                    = 4
   '''Bonus NPC damage per level'''
 
   NPC_MINIMUM_DAMAGE_PROPORTION       = 0.3
