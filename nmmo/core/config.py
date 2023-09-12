@@ -739,12 +739,9 @@ class Tutorial(Default):
   # Increase levels faster
   PROGRESSION_EXP_THRESHOLD = default_exp_threshold(25, Default.PROGRESSION_LEVEL_MAX)
 
-  # Make NPCs weaker
-  NPC_LEVEL_DAMAGE = 5
-  NPC_LEVEL_DEFENSE = 5
-
   # Make items easier to get
   NPC_TOOL_DROP_PROB = 0.5
+  HARVEST_WITHOUT_TOOL_PROB = 0.35
   PROFESSION_TREE_RESPAWN = 0.5
   PROFESSION_ORE_RESPAWN = 0.5
   PROFESSION_CRYSTAL_RESPAWN = 0.5
