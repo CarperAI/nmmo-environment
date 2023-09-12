@@ -150,7 +150,7 @@ EVENTCODE_CONSTRAINT = DiscreteConstraint(space=event_names)
 
 # Skill Constraints
 combat_skills = [skill.Melee, skill.Mage, skill.Range]
-harvest_skills = [skill.Fishing, skill.Herbalism, skill.Prospecting, skill.Alchemy, skill.Carving]
+harvest_skills = [skill.Fishing, skill.Herbalism]
 SKILL_CONSTRAINT = DiscreteConstraint(space=combat_skills+harvest_skills,
                                       systems=['PROFESSION_SYSTEM_ENABLED'])
 COMBAT_SKILL_CONSTRAINT = DiscreteConstraint(space=combat_skills,

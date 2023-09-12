@@ -310,8 +310,7 @@ class Observation:
 
     # the minimum agent level is 1
     level = max(1, agent.melee_level, agent.range_level, agent.mage_level,
-                agent.fishing_level, agent.herbalism_level, agent.prospecting_level,
-                agent.carving_level, agent.alchemy_level)
+                agent.fishing_level, agent.herbalism_level)
     return {
       item_system.Hat.ITEM_TYPE_ID: level,
       item_system.Top.ITEM_TYPE_ID: level,
@@ -321,9 +320,9 @@ class Observation:
       item_system.Wand.ITEM_TYPE_ID: agent.mage_level,
       item_system.Rod.ITEM_TYPE_ID: agent.fishing_level,
       item_system.Gloves.ITEM_TYPE_ID: agent.herbalism_level,
-      item_system.Pickaxe.ITEM_TYPE_ID: agent.prospecting_level,
-      item_system.Axe.ITEM_TYPE_ID: agent.carving_level,
-      item_system.Chisel.ITEM_TYPE_ID: agent.alchemy_level,
+      item_system.Pickaxe.ITEM_TYPE_ID: agent.melee_level,
+      item_system.Axe.ITEM_TYPE_ID: agent.range_level,
+      item_system.Chisel.ITEM_TYPE_ID: agent.mage_level,
       item_system.Whetstone.ITEM_TYPE_ID: agent.melee_level,
       item_system.Arrow.ITEM_TYPE_ID: agent.range_level,
       item_system.Runes.ITEM_TYPE_ID: agent.mage_level,
@@ -402,7 +401,8 @@ class Observation:
 
     # empty inventory -- nothing to sell
     if not (self.config.EXCHANGE_SYSTEM_ENABLED and self.inventory.len > 0) \
-      or self.dummy_obs or self.agent_in_combat:
+      or self.dummy_obs or self.agent_in_combat \
+      or self.config.EXCHANGE_ACTION_TARGET_DISABLE_LISTING:
       return sell_mask
 
     not_equipped = self.inventory.values[:,ItemState.State.attr_name_to_col["equipped"]] == 0

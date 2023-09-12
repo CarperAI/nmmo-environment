@@ -143,9 +143,9 @@ class Scripted(nmmo.Scripted):
       item_system.Wand.ITEM_TYPE_ID: self.me.mage_level,
       item_system.Rod.ITEM_TYPE_ID: self.me.fishing_level,
       item_system.Gloves.ITEM_TYPE_ID: self.me.herbalism_level,
-      item_system.Pickaxe.ITEM_TYPE_ID: self.me.prospecting_level,
-      item_system.Axe.ITEM_TYPE_ID: self.me.carving_level,
-      item_system.Chisel.ITEM_TYPE_ID: self.me.alchemy_level,
+      item_system.Pickaxe.ITEM_TYPE_ID: self.me.melee_level,
+      item_system.Axe.ITEM_TYPE_ID: self.me.range_level,
+      item_system.Chisel.ITEM_TYPE_ID: self.me.mage_level,
       item_system.Whetstone.ITEM_TYPE_ID: self.me.melee_level,
       item_system.Arrow.ITEM_TYPE_ID: self.me.range_level,
       item_system.Runes.ITEM_TYPE_ID: self.me.mage_level,
@@ -328,9 +328,6 @@ class Scripted(nmmo.Scripted):
       skill.Mage: self.me.mage_level,
       skill.Fishing: self.me.fishing_level,
       skill.Herbalism: self.me.herbalism_level,
-      skill.Prospecting: self.me.prospecting_level,
-      skill.Carving: self.me.carving_level,
-      skill.Alchemy: self.me.alchemy_level
     }
 
     # TODO(kywch): need a consistent level variables

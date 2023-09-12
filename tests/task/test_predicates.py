@@ -362,8 +362,8 @@ class TestBasePredicate(unittest.TestCase):
       (attain_skill_pred_cls(Group([2]), Skill.Melee, goal_level, 1), ALL_AGENT), # False
       (attain_skill_pred_cls(Group([1]), Skill.Range, goal_level, 1), ALL_AGENT), # True
       (attain_skill_pred_cls(Group([1,3]), Skill.Fishing, goal_level, 1), ALL_AGENT), # True
-      (attain_skill_pred_cls(Group([1,2,3]), Skill.Carving, goal_level, 3), ALL_AGENT), # False
-      (attain_skill_pred_cls(Group([2,4]), Skill.Carving, goal_level, 2), ALL_AGENT)] # True
+      (attain_skill_pred_cls(Group([1,2,3]), Skill.Herbalism, goal_level, 3), ALL_AGENT), # False
+      (attain_skill_pred_cls(Group([2,4]), Skill.Herbalism, goal_level, 2), ALL_AGENT)] # True
 
     env = self._get_taskenv(test_preds)
 
@@ -374,11 +374,11 @@ class TestBasePredicate(unittest.TestCase):
     env.realm.players[1].skills.range.level.update(goal_level)
     # AttainSkill(Group([1,3]), Skill.Fishing, goal_level, 1) is true
     env.realm.players[1].skills.fishing.level.update(goal_level)
-    # AttainSkill(Group([1,2,3]), Skill.Carving, goal_level, 3) is false
-    env.realm.players[1].skills.carving.level.update(goal_level)
-    env.realm.players[2].skills.carving.level.update(goal_level)
-    # AttainSkill(Group([2,4]), Skill.Carving, goal_level, 2) is true
-    env.realm.players[4].skills.carving.level.update(goal_level+2)
+    # AttainSkill(Group([1,2,3]), Skill.Herbalism, goal_level, 3) is false
+    env.realm.players[1].skills.herbalism.level.update(goal_level)
+    env.realm.players[2].skills.herbalism.level.update(goal_level)
+    # AttainSkill(Group([2,4]), Skill.Herbalism, goal_level, 2) is true
+    env.realm.players[4].skills.herbalism.level.update(goal_level+2)
     env.obs = env._compute_observations()
 
     _, _, _, infos = env.step({})
@@ -397,8 +397,8 @@ class TestBasePredicate(unittest.TestCase):
       (attain_gain_exp_cls(Group([2]), Skill.Melee, goal_exp, 1), ALL_AGENT), # False
       (attain_gain_exp_cls(Group([1]), Skill.Range, goal_exp, 1), ALL_AGENT), # True
       (attain_gain_exp_cls(Group([1,3]), Skill.Fishing, goal_exp, 1), ALL_AGENT), # True
-      (attain_gain_exp_cls(Group([1,2,3]), Skill.Carving, goal_exp, 3), ALL_AGENT), # False
-      (attain_gain_exp_cls(Group([2,4]), Skill.Carving, goal_exp, 2), ALL_AGENT)] # True
+      (attain_gain_exp_cls(Group([1,2,3]), Skill.Herbalism, goal_exp, 3), ALL_AGENT), # False
+      (attain_gain_exp_cls(Group([2,4]), Skill.Herbalism, goal_exp, 2), ALL_AGENT)] # True
 
     env = self._get_taskenv(test_preds)
 
@@ -409,11 +409,11 @@ class TestBasePredicate(unittest.TestCase):
     env.realm.players[1].skills.range.exp.update(goal_exp)
     # AttainSkill(Group([1,3]), Skill.Fishing, goal_level, 1) is true
     env.realm.players[1].skills.fishing.exp.update(goal_exp)
-    # AttainSkill(Group([1,2,3]), Skill.Carving, goal_level, 3) is false
-    env.realm.players[1].skills.carving.exp.update(goal_exp)
-    env.realm.players[2].skills.carving.exp.update(goal_exp)
-    # AttainSkill(Group([2,4]), Skill.Carving, goal_level, 2) is true
-    env.realm.players[4].skills.carving.exp.update(goal_exp+2)
+    # AttainSkill(Group([1,2,3]), Skill.Herbalism, goal_level, 3) is false
+    env.realm.players[1].skills.herbalism.exp.update(goal_exp)
+    env.realm.players[2].skills.herbalism.exp.update(goal_exp)
+    # AttainSkill(Group([2,4]), Skill.Herbalism, goal_level, 2) is true
+    env.realm.players[4].skills.herbalism.exp.update(goal_exp+2)
     env.obs = env._compute_observations()
 
     _, _, _, infos = env.step({})

@@ -35,7 +35,6 @@ class SkillGroup:
     self.config  = realm.config
     self.realm   = realm
     self.entity = entity
-
     self.experience_calculator = ExperienceCalculator(self.config)
     self.skills  = OrderedSet() # critical for determinism
 
@@ -47,7 +46,6 @@ class SkillGroup:
     data = {}
     for skill in self.skills:
       data[skill.__class__.__name__.lower()] = skill.packet()
-
     return data
 
 class Skill(abc.ABC):
@@ -55,7 +53,6 @@ class Skill(abc.ABC):
     self.realm = skill_group.realm
     self.config = skill_group.config
     self.entity = skill_group.entity
-
     self.experience_calculator = skill_group.experience_calculator
     self.skill_group = skill_group
     skill_group.skills.add(self)
@@ -83,35 +80,8 @@ class Skill(abc.ABC):
     self.exp.update(self.experience_calculator.level_at_exp(level))
     self.level.update(int(level))
 
-  @property
-  def level(self):
-    raise NotImplementedError(f"Skill {self.__class__.__name__} "\
-      "does not implement 'level' property")
-
-  @property
-  def exp(self):
-    raise NotImplementedError(f"Skill {self.__class__.__name__} "\
-      "does not implement 'exp' property")
-
-### Skill Bases ###
-class CombatSkill(Skill):
-  def update(self):
-    pass
-
-class NonCombatSkill(Skill):
-  def __init__(self, skill_group: SkillGroup):
-    super().__init__(skill_group)
-    self._dummy_value = DummyValue()  # for water and food
-
-  @property
-  def level(self):
-    return self._dummy_value
-
-  @property
-  def exp(self):
-    return self._dummy_value
-
-class HarvestSkill(NonCombatSkill):
+  # NOTE: All skills have harvest components
+  # melee has prospecting, range has carving, mage has alchemy
   def has_tool(self, matl):
     if matl in [material.Water, material.Foilage]:  # no tools necessary for water and food
       return True
@@ -124,7 +94,7 @@ class HarvestSkill(NonCombatSkill):
       return
 
     entity = self.entity
-    tool  = entity.equipment.held
+    tool = entity.equipment.held
 
     # harvest without tool will only yield level-1 item even with high skill level
     # for example, fishing level=5 without rod will only yield level-1 ration
@@ -168,7 +138,7 @@ class HarvestSkill(NonCombatSkill):
     entity = self.entity
     realm  = self.realm
 
-    r, c      = entity.pos
+    r, c = entity.pos
     drop_table = None
 
     if self.config.EQUIPMENT_SYSTEM_ENABLED and not self.has_tool(matl):
@@ -190,55 +160,68 @@ class HarvestSkill(NonCombatSkill):
 
     return drop_table
 
-class AmmunitionSkill(HarvestSkill):
+  @property
+  def level(self):
+    raise NotImplementedError(f"Skill {self.__class__.__name__} "\
+      "does not implement 'level' property")
+
+  @property
+  def exp(self):
+    raise NotImplementedError(f"Skill {self.__class__.__name__} "\
+      "does not implement 'exp' property")
+
+### Skill Bases ###
+class CombatSkill(Skill):
   def process_drops(self, matl, drop_table):
     super().process_drops(matl, drop_table)
     if self.config.PROGRESSION_SYSTEM_ENABLED:
       self.add_xp(self.config.PROGRESSION_AMMO_HARVEST_XP_SCALE)
 
+class DummyValue:
+  def __init__(self, val=0):
+    self.val = val
 
-class ConsumableSkill(HarvestSkill):
+  def update(self, val):
+    self.val = val
+
+class NonCombatSkill(Skill):
+  def __init__(self, skill_group: SkillGroup):
+    super().__init__(skill_group)
+    self._dummy_value = DummyValue()  # for water and food
+
+  @property
+  def level(self):
+    return self._dummy_value
+
+  @property
+  def exp(self):
+    return self._dummy_value
+
+class ConsumableSkill(NonCombatSkill):
   def process_drops(self, matl, drop_table):
     super().process_drops(matl, drop_table)
     if self.config.PROGRESSION_SYSTEM_ENABLED:
       self.add_xp(self.config.PROGRESSION_CONSUMABLE_XP_SCALE)
 
-
 ### Skill groups ###
 class Basic(SkillGroup):
   def __init__(self, realm, entity):
     super().__init__(realm, entity)
-
     self.water = Water(self)
     self.food  = Food(self)
-
-  @property
-  def basic_level(self):
-    return 0.5 * (self.water.level
-            + self.food.level)
 
 class Harvest(SkillGroup):
   def __init__(self, realm, entity):
     super().__init__(realm, entity)
-
-    self.fishing      = Fishing(self)
-    self.herbalism    = Herbalism(self)
-    self.prospecting  = Prospecting(self)
-    self.carving      = Carving(self)
-    self.alchemy      = Alchemy(self)
-
-  @property
-  def harvest_level(self):
-    return max(self.fishing.level,
-                self.herbalism.level,
-                self.prospecting.level,
-                self.carving.level,
-                self.alchemy.level)
+    self.fishing = Fishing(self)
+    self.herbalism = Herbalism(self)
 
 class Combat(SkillGroup):
   def __init__(self, realm, entity):
     super().__init__(realm, entity)
 
+    # NOTE: All skills have harvest components
+    # melee has prospecting, range has carving, mage has alchemy
     self.melee = Melee(self)
     self.range = Range(self)
     self.mage  = Mage(self)
@@ -246,14 +229,7 @@ class Combat(SkillGroup):
   def packet(self):
     data          = super().packet()
     data['level'] = combat.level(self)
-
     return data
-
-  @property
-  def combat_level(self):
-    return max(self.melee.level,
-                self.range.level,
-                self.mage.level)
 
   def apply_damage(self, style):
     if self.config.PROGRESSION_SYSTEM_ENABLED:
@@ -266,7 +242,7 @@ class Combat(SkillGroup):
 class Skills(Basic, Harvest, Combat):
   pass
 
-### Combat Skills ###
+### Combat Skills, now cover harvest ###
 class Melee(CombatSkill):
   SKILL_ID = 1
 
@@ -277,6 +253,9 @@ class Melee(CombatSkill):
   @property
   def exp(self):
     return self.entity.melee_exp
+
+  def update(self):
+    self.harvest(material.Ore)
 
 class Range(CombatSkill):
   SKILL_ID = 2
@@ -289,6 +268,9 @@ class Range(CombatSkill):
   def exp(self):
     return self.entity.range_exp
 
+  def update(self,):
+    self.harvest(material.Tree)
+
 class Mage(CombatSkill):
   SKILL_ID = 3
 
@@ -300,27 +282,19 @@ class Mage(CombatSkill):
   def exp(self):
     return self.entity.mage_exp
 
+  def update(self):
+    self.harvest(material.Crystal)
+
 Melee.weakness = Mage
 Range.weakness = Melee
 Mage.weakness  = Range
 
 
 ### Basic/Harvest Skills ###
-
-class DummyValue:
-  def __init__(self, val=0):
-    self.val = val
-
-  def update(self, val):
-    self.val = val
-
-class Water(HarvestSkill):
+class Water(NonCombatSkill):
   def update(self):
     config = self.config
-    if not config.RESOURCE_SYSTEM_ENABLED:
-      return
-
-    if config.IMMORTAL:
+    if not config.RESOURCE_SYSTEM_ENABLED or config.IMMORTAL:
       return
 
     depletion = config.RESOURCE_DEPLETION_RATE
@@ -330,19 +304,14 @@ class Water(HarvestSkill):
     if not self.harvest_adjacent(material.Water, deplete=False):
       return
 
-    restore = np.floor(config.RESOURCE_BASE
-                      * config.RESOURCE_HARVEST_RESTORE_FRACTION)
+    restore = np.floor(config.RESOURCE_BASE * config.RESOURCE_HARVEST_RESTORE_FRACTION)
     water.increment(restore)
-
     self.realm.event_log.record(EventCode.DRINK_WATER, self.entity)
 
-class Food(HarvestSkill):
+class Food(NonCombatSkill):
   def update(self):
     config = self.config
-    if not config.RESOURCE_SYSTEM_ENABLED:
-      return
-
-    if config.IMMORTAL:
+    if not config.RESOURCE_SYSTEM_ENABLED or config.IMMORTAL:
       return
 
     depletion = config.RESOURCE_DEPLETION_RATE
@@ -352,10 +321,8 @@ class Food(HarvestSkill):
     if not self.harvest(material.Foilage):
       return
 
-    restore = np.floor(config.RESOURCE_BASE
-                      * config.RESOURCE_HARVEST_RESTORE_FRACTION)
+    restore = np.floor(config.RESOURCE_BASE * config.RESOURCE_HARVEST_RESTORE_FRACTION)
     food.increment(restore)
-
     self.realm.event_log.record(EventCode.EAT_FOOD, self.entity)
 
 class Fishing(ConsumableSkill):
@@ -385,45 +352,3 @@ class Herbalism(ConsumableSkill):
 
   def update(self):
     self.harvest(material.Herb)
-
-class Prospecting(AmmunitionSkill):
-  SKILL_ID = 6
-
-  @property
-  def level(self):
-    return self.entity.prospecting_level
-
-  @property
-  def exp(self):
-    return self.entity.prospecting_exp
-
-  def update(self):
-    self.harvest(material.Ore)
-
-class Carving(AmmunitionSkill):
-  SKILL_ID = 7
-
-  @property
-  def level(self):
-    return self.entity.carving_level
-
-  @property
-  def exp(self):
-    return self.entity.carving_exp
-
-  def update(self,):
-    self.harvest(material.Tree)
-
-class Alchemy(AmmunitionSkill):
-  SKILL_ID = 8
-
-  @property
-  def level(self):
-    return self.entity.alchemy_level
-
-  @property
-  def exp(self):
-    return self.entity.alchemy_exp
-
-  def update(self):
-    self.harvest(material.Crystal)

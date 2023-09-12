@@ -444,14 +444,14 @@ class Progression:
   PROGRESSION_ATTACK_XP_SCALE       = 1
   '''Additional XP for each attack for skills Melee, Range, and Mage'''
 
-  PROGRESSION_KILL_XP_SCALE         = 3  # + target level
+  PROGRESSION_KILL_XP_SCALE         = 5  # + target level
   '''Additional XP for each kill for skills Melee, Range, and Mage'''
 
-  PROGRESSION_AMMO_HARVEST_XP_SCALE = 10
-  '''Additional XP for each harvest for Prospecting, Carving, and Alchemy'''
+  PROGRESSION_AMMO_HARVEST_XP_SCALE = 3
+  '''Additional XP for each harvest for skills Melee, Range, and Mage'''
 
   PROGRESSION_AMMO_USE_XP_SCALE     = 1
-  '''Additional XP for each ammo fire for Prospecting, Carving, and Alchemy'''
+  '''Additional XP for each ammo fire for skills Melee, Range, and Mage'''
 
   PROGRESSION_CONSUMABLE_XP_SCALE   = 10
   '''Multiplier XP for each harvest for Fishing and Herbalism'''
@@ -508,19 +508,19 @@ class NPC:
   NPC_LEVEL_MAX                       = 10
   '''Maximum NPC level'''
 
-  NPC_LEVEL_POWER_BASE                = 1.41
+  NPC_LEVEL_POWER_BASE                = 1
   '''NPC level offense and defense are multiplied by (level + level_power_base^level)'''
 
   NPC_BASE_DEFENSE                    = 0
   '''Base NPC defense'''
 
-  NPC_LEVEL_DEFENSE                   = 5
+  NPC_LEVEL_DEFENSE                   = 10
   '''Bonus NPC defense per level'''
 
   NPC_BASE_DAMAGE                     = 0
   '''Base NPC damage'''
 
-  NPC_LEVEL_DAMAGE                    = 4
+  NPC_LEVEL_DAMAGE                    = 8
   '''Bonus NPC damage per level'''
 
   NPC_MINIMUM_DAMAGE_PROPORTION       = 0.3
@@ -566,16 +566,16 @@ class Equipment:
   WEAPON_DROP_PROB = 0.025
   '''Chance of getting a weapon while harvesting ammunition'''
 
-  EQUIPMENT_WEAPON_BASE_DAMAGE         = 10
+  EQUIPMENT_WEAPON_BASE_DAMAGE         = 0
   '''Base weapon damage'''
 
-  EQUIPMENT_WEAPON_LEVEL_DAMAGE        = 3
+  EQUIPMENT_WEAPON_LEVEL_DAMAGE        = 6
   '''Added weapon damage per level'''
 
-  EQUIPMENT_AMMUNITION_BASE_DAMAGE     = 10
+  EQUIPMENT_AMMUNITION_BASE_DAMAGE     = 1
   '''Base ammunition damage'''
 
-  EQUIPMENT_AMMUNITION_LEVEL_DAMAGE    = 7
+  EQUIPMENT_AMMUNITION_LEVEL_DAMAGE    = 6
   '''Added ammunition damage per level'''
 
   EQUIPMENT_AMMUNITION_HARVEST_BUNCH   = 3
@@ -628,6 +628,9 @@ class Exchange:
 
   EXCHANGE_SYSTEM_ENABLED             = True
   '''Game system flag'''
+
+  EXCHANGE_ACTION_TARGET_DISABLE_LISTING = False
+  '''Debug parameter: Disable listing items for sale'''
 
   EXCHANGE_BASE_GOLD                  = 1
   '''Initial gold amount'''
@@ -737,7 +740,7 @@ class Tutorial(Default):
   RESOURCE_DEHYDRATION_RATE = 6
 
   # Increase levels faster
-  PROGRESSION_EXP_THRESHOLD = default_exp_threshold(25, Default.PROGRESSION_LEVEL_MAX)
+  PROGRESSION_EXP_THRESHOLD = default_exp_threshold(30, Default.PROGRESSION_LEVEL_MAX)
 
   # Make items easier to get
   NPC_TOOL_DROP_PROB = 0.5
@@ -755,3 +758,9 @@ class Tutorial(Default):
 
   # Make some things simpler
   COMBAT_STATUS_DURATION = 1
+  EXCHANGE_ACTION_TARGET_DISABLE_LISTING = True  # prevent agents from listing
+
+  # Push agents toward the center
+  PLAYER_DEATH_FOG = 256
+  PLAYER_DEATH_FOG_SPEED = 1/16
+  PLAYER_DEATH_FOG_FINAL_SIZE = 16

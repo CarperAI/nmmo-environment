@@ -90,12 +90,6 @@ class SimpleLogHelper(LogHelper):
         self._register_player_stat('Skill/Fishing', lambda player: player.skills.fishing.level.val)
         self._register_player_stat('Skill/Herbalism',
           lambda player: player.skills.herbalism.level.val)
-        self._register_player_stat('Skill/Prospecting',
-          lambda player: player.skills.prospecting.level.val)
-        self._register_player_stat('Skill/Carving',
-          lambda player: player.skills.carving.level.val)
-        self._register_player_stat('Skill/Alchemy',
-        lambda player: player.skills.alchemy.level.val)
       if self.config.EQUIPMENT_SYSTEM_ENABLED:
         self._register_player_stat('Item/Held-Level',
           lambda player: player.inventory.equipment.held.item.level.val \

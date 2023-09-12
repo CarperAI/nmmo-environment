@@ -239,9 +239,8 @@ class Bottom(Armor):
 class Weapon(Equipment):
   def __init__(self, realm, level, **kwargs):
     super().__init__(realm, level, **kwargs)
-    self.attack = (
-      realm.config.EQUIPMENT_WEAPON_BASE_DAMAGE +
-      level*realm.config.EQUIPMENT_WEAPON_LEVEL_DAMAGE)
+    self.attack = realm.config.EQUIPMENT_WEAPON_BASE_DAMAGE +\
+                  level*realm.config.EQUIPMENT_WEAPON_LEVEL_DAMAGE
 
   def _slot(self, entity):
     return entity.inventory.equipment.held
@@ -295,31 +294,44 @@ class Gloves(ConsumableTool):
 
 class AmmunitionTool(Equipment):
   def __init__(self, realm, level, **kwargs):
-    defense = realm.config.EQUIPMENT_TOOL_BASE_DEFENSE + \
-        level*realm.config.EQUIPMENT_TOOL_LEVEL_DEFENSE
-    super().__init__(realm, level,
-                      melee_defense=defense,
-                      range_defense=defense,
-                      mage_defense=defense,
-                      **kwargs)
+    super().__init__(realm, level, **kwargs)
+    # Ammunition tools add defense to the weaker skill,
+    #  so that other's critical attack can be reduced
+    self.defense = realm.config.EQUIPMENT_TOOL_BASE_DEFENSE +\
+                   level*realm.config.EQUIPMENT_TOOL_LEVEL_DEFENSE
 
   def _slot(self, entity):
     return entity.inventory.equipment.held
 
 class Pickaxe(AmmunitionTool):
   ITEM_TYPE_ID = 10
+
+  def __init__(self, realm, level, **kwargs):
+    super().__init__(realm, level, **kwargs)
+    self.mage_defense.update(self.defense)  # mage is strong against melee
+
   def _level(self, entity):
-    return entity.skills.prospecting.level.val
+    return entity.skills.melee.level.val
 
 class Axe(AmmunitionTool):
   ITEM_TYPE_ID = 11
+
+  def __init__(self, realm, level, **kwargs):
+    super().__init__(realm, level, **kwargs)
+    self.melee_defense.update(self.defense)  # melee is strong against range
+
   def _level(self, entity):
-    return entity.skills.carving.level.val
+    return entity.skills.range.level.val
 
 class Chisel(AmmunitionTool):
   ITEM_TYPE_ID = 12
+
+  def __init__(self, realm, level, **kwargs):
+    super().__init__(realm, level, **kwargs)
+    self.range_defense.update(self.defense)  # range is strong against mage
+
   def _level(self, entity):
-    return entity.skills.alchemy.level.val
+    return entity.skills.mage.level.val
 
 
 class Ammunition(Equipment, Stack):
@@ -355,11 +367,10 @@ class Whetstone(Ammunition):
     self.melee_attack.update(self.attack)
 
   def _level(self, entity):
-    return max(entity.skills.melee.level.val,
-               entity.skills.prospecting.level.val)
+    return entity.skills.melee.level.val
 
   def _add_xp(self, entity, xp):
-    entity.skills.prospecting.add_xp(xp)
+    entity.skills.melee.add_xp(xp)
 
   @property
   def damage(self):
@@ -373,11 +384,10 @@ class Arrow(Ammunition):
     self.range_attack.update(self.attack)
 
   def _level(self, entity):
-    return max(entity.skills.range.level.val,
-               entity.skills.carving.level.val)
+    return entity.skills.range.level.val
 
   def _add_xp(self, entity, xp):
-    entity.skills.carving.add_xp(xp)
+    entity.skills.range.add_xp(xp)
 
   @property
   def damage(self):
@@ -391,11 +401,10 @@ class Runes(Ammunition):
     self.mage_attack.update(self.attack)
 
   def _level(self, entity):
-    return max(entity.skills.mage.level.val,
-               entity.skills.alchemy.level.val)
+    return entity.skills.mage.level.val
 
   def _add_xp(self, entity, xp):
-    entity.skills.alchemy.add_xp(xp)
+    entity.skills.mage.add_xp(xp)
 
   @property
   def damage(self):

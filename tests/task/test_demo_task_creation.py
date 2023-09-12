@@ -72,10 +72,7 @@ class TestDemoTask(unittest.TestCase):
 
     def ForageSkill(gs, subject, lvl):
       return max(bp.AttainSkill(gs, subject, skill.Fishing, lvl, 1),
-                 bp.AttainSkill(gs, subject, skill.Herbalism, lvl, 1),
-                 bp.AttainSkill(gs, subject, skill.Prospecting, lvl, 1),
-                 bp.AttainSkill(gs, subject, skill.Carving, lvl, 1),
-                 bp.AttainSkill(gs, subject, skill.Alchemy, lvl, 1))
+                 bp.AttainSkill(gs, subject, skill.Herbalism, lvl, 1))
 
     foraging = [ # (predicate, reward_multiplier)
       (ForageSkill, {'lvl': 2}, Tier.EASY),

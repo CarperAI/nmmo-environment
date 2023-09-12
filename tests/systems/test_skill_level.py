@@ -39,8 +39,7 @@ class TestSkillLevel(unittest.TestCase):
     self.env.reset()
     player = self.env.realm.players[1]
 
-    skill_list = ["melee", "range", "mage",
-                  "fishing", "herbalism", "prospecting", "carving", "alchemy"]
+    skill_list = ["melee", "range", "mage", "fishing", "herbalism"]
 
     # check the initial levels and exp
     for skill in skill_list:
