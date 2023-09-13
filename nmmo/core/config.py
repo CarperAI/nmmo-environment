@@ -493,10 +493,10 @@ class NPC:
   NPC_SPAWN_ATTEMPTS                  = 128
   '''Number of NPC spawn attempts per tick'''
 
-  NPC_SPAWN_AGGRESSIVE                = 0.75
+  NPC_SPAWN_AGGRESSIVE                = 0.6
   '''Beta(percentage distance from spawn) threshold for aggressive NPCs'''
 
-  NPC_SPAWN_NEUTRAL                   = 0.3
+  NPC_SPAWN_NEUTRAL                   = 0.2
   '''Beta(percentage distance from spawn) threshold for neutral NPCs'''
 
   NPC_LEVEL_MIN                       = 1
