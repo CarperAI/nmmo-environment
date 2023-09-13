@@ -107,7 +107,8 @@ class NPCManager(EntityGroup):
         break
 
       if self.spawn_dangers:
-        danger = self.spawn_dangers.pop(0)
+        # make it bit more dangerous each time we spawn
+        danger = min(self.spawn_dangers.pop(0) + config.NPC_SPAWN_DANGER_INCREASE, 1)
         r, c   = combat.spawn(config, danger, self._np_random)
       else:
         center = config.MAP_CENTER

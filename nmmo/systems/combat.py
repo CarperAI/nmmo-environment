@@ -158,7 +158,7 @@ def spawn(config, dnger, np_random):
     r = offset
 
   if __debug__:
-    assert dnger == danger(config, (r,c)), 'Agent spawned at incorrect radius'
+    assert abs(dnger - danger(config,(r,c))) < 1/center, 'Agent spawned at incorrect radius'
 
   r = int(r)
   c = int(c)

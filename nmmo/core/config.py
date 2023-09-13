@@ -499,6 +499,9 @@ class NPC:
   NPC_SPAWN_NEUTRAL                   = 0.2
   '''Beta(percentage distance from spawn) threshold for neutral NPCs'''
 
+  NPC_SPAWN_DANGER_INCREASE           = 0.05
+  '''Danger increase per revival spawn'''
+
   NPC_LEVEL_MIN                       = 1
   '''Minimum NPC level'''
 
@@ -740,6 +743,7 @@ class Tutorial(Default):
   PROGRESSION_EXP_THRESHOLD = default_exp_threshold(30, Default.PROGRESSION_LEVEL_MAX)
 
   # Make items easier to get
+  NPC_TOOL_DROP_PROB = 0.6
   HARVEST_WITHOUT_TOOL_PROB = 0.35
   PROFESSION_TREE_RESPAWN = 0.5
   PROFESSION_ORE_RESPAWN = 0.5
