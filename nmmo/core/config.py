@@ -756,11 +756,14 @@ class Tutorial(Default):
   PROFESSION_HERB_RESPAWN = 0
   PROFESSION_FISH_RESPAWN = 0
 
+  # Make NPC weaker because agents don't have weapon
+  NPC_LEVEL_DEFENSE = 6
+
   # Make some things simpler
   COMBAT_STATUS_DURATION = 1
   EXCHANGE_ACTION_TARGET_DISABLE_LISTING = True  # prevent agents from listing
 
   # Push agents toward the center
   PLAYER_DEATH_FOG = 256
-  PLAYER_DEATH_FOG_SPEED = 1/16
-  PLAYER_DEATH_FOG_FINAL_SIZE = 16
+  PLAYER_DEATH_FOG_SPEED = 1/6
+  PLAYER_DEATH_FOG_FINAL_SIZE = 32
