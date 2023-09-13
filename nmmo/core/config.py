@@ -456,22 +456,22 @@ class Progression:
   PROGRESSION_CONSUMABLE_XP_SCALE   = 10
   '''Multiplier XP for each harvest for Fishing and Herbalism'''
 
-  PROGRESSION_MELEE_BASE_DAMAGE     = 0
+  PROGRESSION_MELEE_BASE_DAMAGE     = 10
   '''Base Melee attack damage'''
 
-  PROGRESSION_MELEE_LEVEL_DAMAGE    = 4
+  PROGRESSION_MELEE_LEVEL_DAMAGE    = 3
   '''Bonus Melee attack damage per level'''
 
-  PROGRESSION_RANGE_BASE_DAMAGE     = 0
+  PROGRESSION_RANGE_BASE_DAMAGE     = 10
   '''Base Range attack damage'''
 
-  PROGRESSION_RANGE_LEVEL_DAMAGE    = 4
+  PROGRESSION_RANGE_LEVEL_DAMAGE    = 3
   '''Bonus Range attack damage per level'''
 
-  PROGRESSION_MAGE_BASE_DAMAGE      = 0
+  PROGRESSION_MAGE_BASE_DAMAGE      = 10
   '''Base Mage attack damage '''
 
-  PROGRESSION_MAGE_LEVEL_DAMAGE     = 4
+  PROGRESSION_MAGE_LEVEL_DAMAGE     = 3
   '''Bonus Mage attack damage per level'''
 
   PROGRESSION_BASE_DEFENSE          = 0
