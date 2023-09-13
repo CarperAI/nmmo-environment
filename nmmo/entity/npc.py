@@ -98,16 +98,15 @@ class NPC(entity.Entity):
     if realm.map.tiles[pos].impassible:
       return None
 
-    # Select AI Policy
+    # Select AI Policy, mix them with beta distribution
     danger = combat.danger(config, pos)
-    if danger >= config.NPC_SPAWN_AGGRESSIVE:
+    beta = np_random.beta(10*danger + 0.01, 10.01 - 10*danger)  # beta cannot take 0
+    if beta > config.NPC_SPAWN_AGGRESSIVE:
       ent = Aggressive(realm, pos, iden)
-    elif danger >= config.NPC_SPAWN_NEUTRAL:
+    elif beta > config.NPC_SPAWN_NEUTRAL:
       ent = PassiveAggressive(realm, pos, iden)
-    elif danger >= config.NPC_SPAWN_PASSIVE:
-      ent = Passive(realm, pos, iden)
     else:
-      return None
+      ent = Passive(realm, pos, iden)
 
     ent.spawn_danger = danger
 

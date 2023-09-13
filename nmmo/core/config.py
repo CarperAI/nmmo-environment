@@ -456,22 +456,22 @@ class Progression:
   PROGRESSION_CONSUMABLE_XP_SCALE   = 10
   '''Multiplier XP for each harvest for Fishing and Herbalism'''
 
-  PROGRESSION_MELEE_BASE_DAMAGE     = 10
+  PROGRESSION_MELEE_BASE_DAMAGE     = 0
   '''Base Melee attack damage'''
 
-  PROGRESSION_MELEE_LEVEL_DAMAGE    = 3
+  PROGRESSION_MELEE_LEVEL_DAMAGE    = 4
   '''Bonus Melee attack damage per level'''
 
-  PROGRESSION_RANGE_BASE_DAMAGE     = 10
+  PROGRESSION_RANGE_BASE_DAMAGE     = 0
   '''Base Range attack damage'''
 
-  PROGRESSION_RANGE_LEVEL_DAMAGE    = 3
+  PROGRESSION_RANGE_LEVEL_DAMAGE    = 4
   '''Bonus Range attack damage per level'''
 
-  PROGRESSION_MAGE_BASE_DAMAGE      = 10
+  PROGRESSION_MAGE_BASE_DAMAGE      = 0
   '''Base Mage attack damage '''
 
-  PROGRESSION_MAGE_LEVEL_DAMAGE     = 3
+  PROGRESSION_MAGE_LEVEL_DAMAGE     = 4
   '''Bonus Mage attack damage per level'''
 
   PROGRESSION_BASE_DEFENSE          = 0
@@ -494,13 +494,10 @@ class NPC:
   '''Number of NPC spawn attempts per tick'''
 
   NPC_SPAWN_AGGRESSIVE                = 0.75
-  '''Percentage distance threshold from spawn for aggressive NPCs'''
+  '''Beta(percentage distance from spawn) threshold for aggressive NPCs'''
 
-  NPC_SPAWN_NEUTRAL                   = 0.25
-  '''Percentage distance threshold from spawn for neutral NPCs'''
-
-  NPC_SPAWN_PASSIVE                   = 0.00
-  '''Percentage distance threshold from spawn for passive NPCs'''
+  NPC_SPAWN_NEUTRAL                   = 0.3
+  '''Beta(percentage distance from spawn) threshold for neutral NPCs'''
 
   NPC_LEVEL_MIN                       = 1
   '''Minimum NPC level'''
@@ -508,19 +505,19 @@ class NPC:
   NPC_LEVEL_MAX                       = 10
   '''Maximum NPC level'''
 
-  NPC_LEVEL_POWER_BASE                = 1
+  NPC_LEVEL_POWER_BASE                = 1.41
   '''NPC level offense and defense are multiplied by (level + level_power_base^level)'''
 
   NPC_BASE_DEFENSE                    = 0
   '''Base NPC defense'''
 
-  NPC_LEVEL_DEFENSE                   = 10
+  NPC_LEVEL_DEFENSE                   = 5
   '''Bonus NPC defense per level'''
 
   NPC_BASE_DAMAGE                     = 0
   '''Base NPC damage'''
 
-  NPC_LEVEL_DAMAGE                    = 8
+  NPC_LEVEL_DAMAGE                    = 4
   '''Bonus NPC damage per level'''
 
   NPC_MINIMUM_DAMAGE_PROPORTION       = 0.3
@@ -572,10 +569,10 @@ class Equipment:
   EQUIPMENT_WEAPON_LEVEL_DAMAGE        = 6
   '''Added weapon damage per level'''
 
-  EQUIPMENT_AMMUNITION_BASE_DAMAGE     = 1
+  EQUIPMENT_AMMUNITION_BASE_DAMAGE     = 10
   '''Base ammunition damage'''
 
-  EQUIPMENT_AMMUNITION_LEVEL_DAMAGE    = 6
+  EQUIPMENT_AMMUNITION_LEVEL_DAMAGE    = 5
   '''Added ammunition damage per level'''
 
   EQUIPMENT_AMMUNITION_HARVEST_BUNCH   = 3
@@ -743,7 +740,6 @@ class Tutorial(Default):
   PROGRESSION_EXP_THRESHOLD = default_exp_threshold(30, Default.PROGRESSION_LEVEL_MAX)
 
   # Make items easier to get
-  NPC_TOOL_DROP_PROB = 0.5
   HARVEST_WITHOUT_TOOL_PROB = 0.35
   PROFESSION_TREE_RESPAWN = 0.5
   PROFESSION_ORE_RESPAWN = 0.5
@@ -756,14 +752,11 @@ class Tutorial(Default):
   PROFESSION_HERB_RESPAWN = 0
   PROFESSION_FISH_RESPAWN = 0
 
-  # Make NPC weaker because agents don't have weapon
-  NPC_LEVEL_DEFENSE = 6
-
   # Make some things simpler
   COMBAT_STATUS_DURATION = 1
   EXCHANGE_ACTION_TARGET_DISABLE_LISTING = True  # prevent agents from listing
 
   # Push agents toward the center
-  PLAYER_DEATH_FOG = 256
+  PLAYER_DEATH_FOG = 128
   PLAYER_DEATH_FOG_SPEED = 1/6
   PLAYER_DEATH_FOG_FINAL_SIZE = 32
