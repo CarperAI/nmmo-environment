@@ -123,8 +123,7 @@ class NPC(entity.Entity):
     # Compute level
     level_min = config.NPC_LEVEL_MIN
     level_max = config.NPC_LEVEL_MAX
-    level_offset = 0.25  # spawn higher-level NPCs more closer to the spawn pos
-    level = round(danger * (level_max - level_min) + level_min + level_offset)
+    level = round(danger * (level_max - level_min) + level_min)
     ent.set_level(level)
 
     if config.PROGRESSION_SYSTEM_ENABLED:

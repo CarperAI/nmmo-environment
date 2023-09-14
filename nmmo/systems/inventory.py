@@ -17,7 +17,10 @@ class EquipmentSlot:
     self.item = None
 
 class Equipment:
-  def __init__(self):
+  def __init__(self, config, entity):
+    self.config = config
+    self.entity = entity
+
     self.hat = EquipmentSlot()
     self.top = EquipmentSlot()
     self.bottom = EquipmentSlot()
@@ -39,15 +42,21 @@ class Equipment:
     if slot.item:
       packet[slot_name] = slot.item.packet
 
-  def auto_upgrade(self, entity, item: Item):
+  def auto_upgrade(self, item: Item):
+    if self.config.EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM is None or self.item_level == 0:
+      return
+
+    if item.ITEM_TYPE_ID not in self.config.EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM or \
+       item.level.val == 1 or item.equipped.val == 1 or item.level_gt(self.entity):
+      return
+
     for slot in [self.hat, self.top, self.bottom, self.held, self.ammunition]:
-      if slot.item is None or\
-         slot.item.ITEM_TYPE_ID != item.ITEM_TYPE_ID or\
+      if slot.item is None or \
+         slot.item.ITEM_TYPE_ID != item.ITEM_TYPE_ID or \
          slot.item.level.val >= item.level.val:
         continue
-      if item.level_gt(entity) is False:
-        item.use(entity)  # this also leaves the event log
-        item.realm.event_log.record(EventCode.AUTO_EQUIP, entity, item=item)
+      item.use(self.entity)  # this also leaves the event log
+      item.realm.event_log.record(EventCode.AUTO_EQUIP, self.entity, item=item)
       break
 
   @property
@@ -81,7 +90,6 @@ class Equipment:
   @property
   def packet(self):
     packet = {}
-
     self.conditional_packet(packet, 'hat',        self.hat)
     self.conditional_packet(packet, 'top',        self.top)
     self.conditional_packet(packet, 'bottom',     self.bottom)
@@ -97,7 +105,6 @@ class Equipment:
     packet['melee_defense'] = self.melee_defense
     packet['range_defense'] = self.range_defense
     packet['mage_defense']  = self.mage_defense
-
     return packet
 
 
@@ -108,11 +115,11 @@ class Inventory:
     self.entity      = entity
     self.config      = config
 
-    self.equipment   = Equipment()
+    self.equipment   = Equipment(config, entity)
     self.capacity = 0
 
     if config.ITEM_SYSTEM_ENABLED and entity.is_player:
-      self.capacity         = config.ITEM_INVENTORY_CAPACITY
+      self.capacity = config.ITEM_INVENTORY_CAPACITY
 
     self._item_stacks: Dict[Tuple, Item.Stack] = {}
     self.items: OrderedSet[Item.Item] = OrderedSet([]) # critical for correct functioning
@@ -128,10 +135,8 @@ class Inventory:
     item_packet = []
     if self.config.ITEM_SYSTEM_ENABLED:
       item_packet = [e.packet for e in self.items]
-
-    return {
-          'items':     item_packet,
-          'equipment': self.equipment.packet}
+    return {'items': item_packet,
+            'equipment': self.equipment.packet}
 
   def __iter__(self):
     for item in self.items:
@@ -175,11 +180,19 @@ class Inventory:
     self.items.add(item)
 
     if self.config.EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM and \
-       item.ITEM_TYPE_ID in self.config.EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM and \
-       self.equipment.item_level > 0 and item.level.val > 1:
-      self.equipment.auto_upgrade(self.entity, item)
+       item.ITEM_TYPE_ID in self.config.EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM:
+      self.equipment.auto_upgrade(item)
 
     return True
+
+  def perform_auto_upgrade(self):
+    # this should be triggerd by level up
+    if not self.config.EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM or self.equipment.item_level == 0:
+      return
+    # run through all items in the inventory
+    for item in self.items:
+      if item.ITEM_TYPE_ID in self.config.EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM:
+        self.equipment.auto_upgrade(item)
 
   # pylint: disable=protected-access
   def remove(self, item, quantity=None):

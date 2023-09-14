@@ -69,6 +69,7 @@ class Skill(abc.ABC):
 
     if new_level > self.level.val:
       self.level.update(new_level)
+      self.entity.inventory.perform_auto_upgrade()  # auto upgrade equipment if possible
       self.realm.event_log.record(EventCode.LEVEL_UP, self.entity,
                                   skill=self, level=new_level)
 
