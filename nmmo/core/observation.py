@@ -401,14 +401,18 @@ class Observation:
 
     # empty inventory -- nothing to sell
     if not (self.config.EXCHANGE_SYSTEM_ENABLED and self.inventory.len > 0) \
-      or self.dummy_obs or self.agent_in_combat \
-      or self.config.EXCHANGE_ACTION_TARGET_DISABLE_LISTING:
+      or self.dummy_obs or self.agent_in_combat:
       return sell_mask
 
     not_equipped = self.inventory.values[:,ItemState.State.attr_name_to_col["equipped"]] == 0
     not_listed = self.inventory.values[:,ItemState.State.attr_name_to_col["listed_price"]] == 0
-
     sell_mask[:self.inventory.len] = not_equipped & not_listed
+
+    if self.config.EXCHANGE_ACTION_TARGET_DISABLE_LISTING:
+      config_disable = np.in1d(self.inventory.values[:,ItemState.State.attr_name_to_col["type_id"]],
+                               self.config.EXCHANGE_ACTION_TARGET_DISABLE_LISTING)
+      sell_mask[:self.inventory.len] &= ~config_disable
+
     return sell_mask
 
   def _make_buy_mask(self):

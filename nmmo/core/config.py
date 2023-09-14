@@ -596,6 +596,9 @@ class Equipment:
   EQUIPMENT_ARMOR_LEVEL_DEFENSE        = 4
   '''Base equipment defense'''
 
+  EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM = None
+  '''Training helper: Auto-upgrade equipped item types if exist in the inventory'''
+
 
 class Profession:
   '''Profession Game System'''
@@ -629,8 +632,8 @@ class Exchange:
   EXCHANGE_SYSTEM_ENABLED             = True
   '''Game system flag'''
 
-  EXCHANGE_ACTION_TARGET_DISABLE_LISTING = False
-  '''Debug parameter: Disable listing items for sale'''
+  EXCHANGE_ACTION_TARGET_DISABLE_LISTING = None
+  '''Training helper: Disable listing for specified item types'''
 
   EXCHANGE_BASE_GOLD                  = 1
   '''Initial gold amount'''
@@ -756,9 +759,13 @@ class Tutorial(Default):
   PROFESSION_HERB_RESPAWN = 0
   PROFESSION_FISH_RESPAWN = 0
 
-  # Make some things simpler
+  # Make equip new/better items easier
   COMBAT_STATUS_DURATION = 1
-  EXCHANGE_ACTION_TARGET_DISABLE_LISTING = True  # prevent agents from listing
+  EXCHANGE_ACTION_TARGET_DISABLE_LISTING = list(range(1,18))  # all item types
+  EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM = [2, 3, 4,  # hat, top, bottom
+                                          5, 6, 7,  # spear, bow, wand
+                                          8, 9, 10, 11, 12,  # rod, gloves, pickaxe, axe, chisel
+                                          13, 14, 15]  # whetstone, arrow, runes
 
   # Push agents toward the center
   PLAYER_DEATH_FOG = 128

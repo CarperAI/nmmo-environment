@@ -1,8 +1,9 @@
 from typing import Dict, Tuple
-
 from ordered_set import OrderedSet
 
 from nmmo.systems import item as Item
+from nmmo.lib.log import EventCode
+
 class EquipmentSlot:
   def __init__(self) -> None:
     self.item = None
@@ -37,6 +38,17 @@ class Equipment:
   def conditional_packet(self, packet, slot_name: str, slot: EquipmentSlot):
     if slot.item:
       packet[slot_name] = slot.item.packet
+
+  def auto_upgrade(self, entity, item: Item):
+    for slot in [self.hat, self.top, self.bottom, self.held, self.ammunition]:
+      if slot.item is None or\
+         slot.item.ITEM_TYPE_ID != item.ITEM_TYPE_ID or\
+         slot.item.level.val >= item.level.val:
+        continue
+      if item.level_gt(entity) is False:
+        item.use(entity)  # this also leaves the event log
+        item.realm.event_log.record(EventCode.AUTO_EQUIP, entity, item=self)
+      break
 
   @property
   def item_level(self):
@@ -161,6 +173,12 @@ class Inventory:
 
     item.owner_id.update(self.entity.id.val)
     self.items.add(item)
+
+    if self.config.EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM and \
+       item.ITEM_TYPE_ID in self.config.EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM and \
+       self.equipment.item_level > 0 and item.level.val > 1:
+      self.equipment.auto_upgrade(self.entity, item)
+
     return True
 
   # pylint: disable=protected-access

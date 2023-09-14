@@ -63,3 +63,6 @@ class EventCode:
 
   # Level up
   LEVEL_UP = 41
+
+  # Training helper
+  AUTO_EQUIP = 91

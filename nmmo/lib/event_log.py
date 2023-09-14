@@ -133,7 +133,7 @@ class EventLogger(EventCode):
         return
 
     if event_code in [EventCode.CONSUME_ITEM, EventCode.HARVEST_ITEM, EventCode.EQUIP_ITEM,
-                      EventCode.FIRE_AMMO]:
+                      EventCode.FIRE_AMMO, EventCode.AUTO_EQUIP]:
       # CHECK ME: item types should be checked. For example,
       #   Only Ration and Potion can be consumed
       #   Only Ration, Potion, Whetstone, Arrow, Runes can be produced
