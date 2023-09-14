@@ -767,6 +767,10 @@ class Tutorial(Default):
                                           8, 9, 10, 11, 12,  # rod, gloves, pickaxe, axe, chisel
                                           13, 14, 15]  # whetstone, arrow, runes
 
+  # Make NPCs weaker
+  NPC_LEVEL_DEFENSE                   = 3
+  NPC_LEVEL_DAMAGE                    = 3
+
   # Push agents toward the center
   PLAYER_DEATH_FOG = 128
   PLAYER_DEATH_FOG_SPEED = 1/6
