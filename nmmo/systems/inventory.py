@@ -47,7 +47,7 @@ class Equipment:
         continue
       if item.level_gt(entity) is False:
         item.use(entity)  # this also leaves the event log
-        item.realm.event_log.record(EventCode.AUTO_EQUIP, entity, item=self)
+        item.realm.event_log.record(EventCode.AUTO_EQUIP, entity, item=item)
       break
 
   @property
