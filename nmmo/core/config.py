@@ -773,5 +773,8 @@ class Tutorial(Default):
 
   # Push agents toward the center
   PLAYER_DEATH_FOG = 128
-  PLAYER_DEATH_FOG_SPEED = 1/6
+  PLAYER_DEATH_FOG_SPEED = 1/2
   PLAYER_DEATH_FOG_FINAL_SIZE = 32
+
+  # Make agents do other things than "dancing" with the other agents
+  COMBAT_SPAWN_IMMUNITY = 512

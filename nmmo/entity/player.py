@@ -109,7 +109,7 @@ class Player(entity.Entity):
     '''Post-action update. Do not include history'''
     super().update(realm, actions)
 
-    # Spawsn battle royale style death fog
+    # Spawn battle royale style death fog
     # Starts at 0 damage on the specified config tick
     # Moves in from the edges by 1 damage per tile per tick
     # So after 10 ticks, you take 10 damage at the edge and 1 damage
