@@ -118,19 +118,9 @@ class Player(entity.Entity):
     # MAP_CENTER / 2 + 100 ticks after spawning
     fog = self.config.PLAYER_DEATH_FOG
     if fog is not None and self.realm.tick >= fog:
-      row, col = self.pos
-      cent = self.config.MAP_BORDER + self.config.MAP_CENTER // 2
-
-      # Distance from center of the map
-      dist = max(abs(row - cent), abs(col - cent))
-
-      # Safe final area
-      if dist > self.config.PLAYER_DEATH_FOG_FINAL_SIZE:
-        # Damage based on time and distance from center
-        time_dmg = self.config.PLAYER_DEATH_FOG_SPEED * (self.realm.tick - fog + 1)
-        dist_dmg = dist - self.config.MAP_CENTER // 2
-        dmg = max(0, dist_dmg + time_dmg)
-        self.receive_damage(None, dmg)
+      dmg = round(self.realm.fog_map[self.pos])
+      if dmg > 0:
+        self.receive_damage(None, round(dmg))
 
     if not self.alive:
       return

@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 from typing import Dict
+import numpy as np
 
 import nmmo
 from nmmo.core.log_helper import LogHelper
@@ -51,6 +52,7 @@ class Realm:
 
     # Load the world file
     self.map = Map(config, self, self._np_random)
+    self.fog_map = np.zeros((config.MAP_SIZE, config.MAP_SIZE))
 
     self.log_helper = LogHelper.create(self)
     self.event_log = EventLogger(self)
@@ -104,6 +106,9 @@ class Realm:
     # Global item registry
     Item.INSTANCE_ID = 0
     self.items = {}
+
+    # Reset the poison fog map
+    self.update_fog_map(reset=True)
 
     if self._replay_helper is not None:
       self._replay_helper.reset()
@@ -186,15 +191,43 @@ class Realm:
 
     # Update map
     self.map.step()
-    self.exchange.step(self.tick)
+
+    self.tick += 1
+
+    # Rest of updates with the updated tick
+    self.update_fog_map()
+    self.exchange.step()
     self.log_helper.update(dead)
     self.event_log.update()
     if self._replay_helper is not None:
       self._replay_helper.update()
 
-    self.tick += 1
-
     return dead
+
+  def update_fog_map(self, reset=False):
+    fog_start_tick = self.config.PLAYER_DEATH_FOG
+    if fog_start_tick is None:
+      return
+
+    fog_speed = self.config.PLAYER_DEATH_FOG_SPEED
+
+    if reset:
+      center = self.config.MAP_SIZE // 2
+      dist = 0
+      for i in range(self.config.MAP_BORDER, center):
+        l, r = i, self.config.MAP_SIZE - i
+        # positive value represents the poison strength
+        # negative value represents the shortest distance to poison area
+        self.fog_map[l:r, l:r] = -dist
+        dist += 1
+      # mark the safe area
+      safe = self.config.PLAYER_DEATH_FOG_FINAL_SIZE
+      self.fog_map[center-safe:center+safe, center-safe:center+safe] = np.finfo(np.float16).min
+      return
+
+    # consider the map border so that the fog can hit the border at fog_start_tick
+    if self.tick >= fog_start_tick:
+      self.fog_map += fog_speed
 
   def log_milestone(self, category: str, value: float, message: str = None, tags: Dict = None):
     self.log_helper.log_milestone(category, value)
