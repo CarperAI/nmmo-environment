@@ -493,10 +493,10 @@ class NPC:
   NPC_SPAWN_ATTEMPTS                  = 128
   '''Number of NPC spawn attempts per tick'''
 
-  NPC_SPAWN_AGGRESSIVE                = 0.6
+  NPC_SPAWN_AGGRESSIVE                = 0.7
   '''Beta(percentage distance from spawn) threshold for aggressive NPCs'''
 
-  NPC_SPAWN_NEUTRAL                   = 0.2
+  NPC_SPAWN_NEUTRAL                   = 0.3
   '''Beta(percentage distance from spawn) threshold for neutral NPCs'''
 
   NPC_SPAWN_DANGER_INCREASE           = 0.05
@@ -768,8 +768,10 @@ class Tutorial(Default):
                                           13, 14, 15]  # whetstone, arrow, runes
 
   # Make NPCs weaker
-  NPC_LEVEL_DEFENSE                   = 3
-  NPC_LEVEL_DAMAGE                    = 3
+  NPC_LEVEL_DEFENSE = 3
+  NPC_LEVEL_DAMAGE = 2
+  NPC_SPAWN_NEUTRAL = 0.4
+  NPC_SPAWN_AGGRESSIVE = 0.8
 
   # Push agents toward the center: hold fog until the fog obs is provided
   # PLAYER_DEATH_FOG = 128
