@@ -68,12 +68,15 @@ class Env(ParallelEnv):
     def mask_box(length):
       return gym.spaces.Box(low=0, high=1, shape=(length,), dtype=np.int8)
 
+    num_tile_attributes = len(Tile.State.attr_name_to_col)
+    num_tile_attributes += 1 if self.config.PROVIDE_DEATH_FOG_OBS else 0
+
     obs_space = {
       "CurrentTick": gym.spaces.Discrete(self.config.HORIZON+1),
       "AgentId": gym.spaces.Discrete(self.config.PLAYER_N+1),
       # offense, defense for melee, range, mage
       "CombatAttr": gym.spaces.Box(low=-2**15, high=2**15-1, shape=(6,), dtype=np.int16),
-      "Tile": box(self.config.MAP_N_OBS, Tile.State.num_attributes),
+      "Tile": box(self.config.MAP_N_OBS, num_tile_attributes),
       "Entity": box(self.config.PLAYER_N_OBS, Entity.State.num_attributes),
       "Task": gym.spaces.Box(low=-2**15, high=2**15-1,
                              shape=(self.config.TASK_EMBED_DIM,),
@@ -446,6 +449,11 @@ class Env(ParallelEnv):
     tile_map = Tile.Query.get_map(self.realm.datastore, self.config.MAP_SIZE)
     radius = self.config.PLAYER_VISION_RADIUS
     tile_obs_size = ((2*radius+1)**2, len(Tile.State.attr_name_to_col))
+
+    if self.config.PROVIDE_DEATH_FOG_OBS:
+      fog_map = np.round(self.realm.fog_map[:,:,np.newaxis]).astype(np.int16)
+      tile_map = np.concatenate((tile_map, fog_map), axis=2)
+      tile_obs_size = ((2*radius+1)**2, len(Tile.State.attr_name_to_col)+1)
 
     for agent_id in self.agents:
       if agent_id not in self.realm.players:

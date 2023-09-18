@@ -272,7 +272,8 @@ class Observation:
     not_me = self.entities.ids != agent.id
 
     attack_mask[:self.entities.len] = within_range & not_me & no_spawn_immunity
-    if sum(attack_mask[:self.entities.len]) > 0:
+    if self.config.DISALLOW_ATTACK_NOOP_WHEN_TARGET_PRESENT and \
+       sum(attack_mask[:self.entities.len]) > 0:
       # Mask the no-op option, since there should be at least one allowed move
       # NOTE: this will make agents always attack if there is a valid target
       attack_mask[-1] = 0

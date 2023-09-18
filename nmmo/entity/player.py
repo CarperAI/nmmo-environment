@@ -118,8 +118,8 @@ class Player(entity.Entity):
     # MAP_CENTER / 2 + 100 ticks after spawning
     fog = self.config.PLAYER_DEATH_FOG
     if fog is not None and self.realm.tick >= fog:
-      dmg = round(self.realm.fog_map[self.pos])
-      if dmg > 0:
+      dmg = self.realm.fog_map[self.pos]
+      if dmg > 0.5:  # fog_map has float values
         self.receive_damage(None, round(dmg))
 
     if not self.alive:

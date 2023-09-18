@@ -1,6 +1,5 @@
 # pylint: disable=protected-access, no-member
 import unittest
-import numpy as np
 import nmmo
 
 
@@ -11,6 +10,7 @@ class TestDeathFog(unittest.TestCase):
     config.PLAYER_DEATH_FOG = 3
     config.PLAYER_DEATH_FOG_SPEED = 1/2
     config.PLAYER_DEATH_FOG_FINAL_SIZE = 16
+    config.PROVIDE_DEATH_FOG_OBS = True
 
     env = nmmo.Env(config)
     env.reset()
@@ -22,10 +22,9 @@ class TestDeathFog(unittest.TestCase):
     self.assertEqual(env.realm.fog_map[border,border], 0)
     self.assertEqual(env.realm.fog_map[border+1,border+1], -1)
 
-    # Safe area should be marked with float16_min
-    float16_min = np.finfo(np.float16).min
-    self.assertEqual(env.realm.fog_map[center-safe,center-safe], float16_min)
-    self.assertEqual(env.realm.fog_map[center+safe-1,center+safe-1], float16_min)
+    # Safe area should be marked with the negative map size
+    self.assertEqual(env.realm.fog_map[center-safe,center-safe], -config.MAP_SIZE)
+    self.assertEqual(env.realm.fog_map[center+safe-1,center+safe-1], -config.MAP_SIZE)
 
     for _ in range(config.PLAYER_DEATH_FOG):
       env.step({})

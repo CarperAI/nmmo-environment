@@ -147,12 +147,6 @@ class Config(Template):
   def game_system_enabled(self, name) -> bool:
     return hasattr(self, name)
 
-  PROVIDE_ACTION_TARGETS       = True
-  '''Provide action targets mask'''
-
-  PROVIDE_NOOP_ACTION_TARGET   = True
-  '''Provide a no-op option for each action'''
-
   PLAYERS                      = [Agent]
   '''Player classes from which to spawn'''
 
@@ -167,6 +161,22 @@ class Config(Template):
 
   ALLOW_MULTI_TASKS_PER_AGENT = False
   '''Whether to allow multiple tasks per agent'''
+
+  # Action target related parameters
+  PROVIDE_ACTION_TARGETS = True
+  '''Provide action targets mask'''
+
+  # TODO: CHECK if this is necessary
+  PROVIDE_NOOP_ACTION_TARGET = True
+  '''Provide a no-op option for each action'''
+
+  DISALLOW_ATTACK_NOOP_WHEN_TARGET_PRESENT = True
+  '''Disallow attack noop when there is a target present
+     This will make agents always attack if there is a valid target'''
+
+  # NOTE: For backward compatibility. Should be removed in the future.
+  PROVIDE_DEATH_FOG_OBS = False
+  '''Provide death fog observation'''
 
   ############################################################################
   ### Population Parameters
@@ -768,15 +778,15 @@ class Tutorial(Default):
                                           13, 14, 15]  # whetstone, arrow, runes
 
   # Make NPCs weaker
-  NPC_LEVEL_DEFENSE = 3
-  NPC_LEVEL_DAMAGE = 2
+  NPC_LEVEL_DEFENSE = 2
+  NPC_LEVEL_DAMAGE = 1
   NPC_SPAWN_NEUTRAL = 0.4
   NPC_SPAWN_AGGRESSIVE = 0.8
 
   # Push agents toward the center: hold fog until the fog obs is provided
-  # PLAYER_DEATH_FOG = 128
-  # PLAYER_DEATH_FOG_SPEED = 1/2
-  # PLAYER_DEATH_FOG_FINAL_SIZE = 32
+  PLAYER_DEATH_FOG = 128
+  PLAYER_DEATH_FOG_SPEED = 1/8
+  PLAYER_DEATH_FOG_FINAL_SIZE = 16
 
   # Make agents do other things than "dancing" with the other agents
   COMBAT_SPAWN_IMMUNITY = 512

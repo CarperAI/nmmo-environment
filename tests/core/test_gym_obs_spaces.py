@@ -44,5 +44,15 @@ class TestGymObsSpaces(unittest.TestCase):
 
     self._test_gym_obs_space(env)
 
+  def test_env_with_fogmap(self):
+    config = nmmo.config.Default()
+    config.PROVIDE_DEATH_FOG_OBS = True
+    env = nmmo.Env(config)
+    env.reset(seed=1)
+    for _ in range(3):
+      env.step({})
+
+    self._test_gym_obs_space(env)
+
 if __name__ == '__main__':
   unittest.main()
