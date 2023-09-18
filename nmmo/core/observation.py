@@ -137,7 +137,7 @@ class Observation:
     gym_obs = {
       "CurrentTick": self.current_tick,
       "AgentId": self.agent_id,
-      "CombatAttr": np.zeros((1, 6), dtype=np.int16),
+      "CombatAttr": np.zeros(6, dtype=np.int16),
       "Task": self.task_embedding,
       "Tile": None, # np.zeros((self.config.MAP_N_OBS, self.tiles.shape[1])),
       "Entity": np.zeros((self.config.PLAYER_N_OBS,

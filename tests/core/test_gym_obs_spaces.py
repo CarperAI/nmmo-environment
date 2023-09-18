@@ -5,6 +5,11 @@ import nmmo
 class TestGymObsSpaces(unittest.TestCase):
   def _test_gym_obs_space(self, env):
     obs_spec = env.observation_space(1)
+
+    # kill some agents to test dummy obs
+    for agent_id in range(1, 10):
+      env.realm.players[agent_id].resources.health.update(0)
+
     obs, _, _, _ = env.step({})
 
     for agent_obs in obs.values():

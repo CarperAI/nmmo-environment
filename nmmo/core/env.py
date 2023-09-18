@@ -424,9 +424,11 @@ class Env(ParallelEnv):
     return actions
 
   def _make_dummy_obs(self):
-    dummy_tiles = np.zeros((0, len(Tile.State.attr_name_to_col)), dtype=np.int16)
+    num_tile_attributes = len(Tile.State.attr_name_to_col)
+    num_tile_attributes += 1 if self.config.PROVIDE_DEATH_FOG_OBS else 0
+    dummy_tiles = np.zeros((0, num_tile_attributes), dtype=np.int16)
     dummy_entities = np.zeros((0, len(Entity.State.attr_name_to_col)), dtype=np.int16)
-    dummy_combat = np.zeros((0, 6), dtype=np.int16)
+    dummy_combat = np.zeros(6, dtype=np.int16)
     dummy_inventory = np.zeros((0, len(Item.State.attr_name_to_col)), dtype=np.int16)
     dummy_market = np.zeros((0, len(Item.State.attr_name_to_col)), dtype=np.int16)
     return Observation(self.config, self.realm.tick, 0, self._dummy_task_embedding,
