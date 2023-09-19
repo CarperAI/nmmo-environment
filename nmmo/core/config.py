@@ -777,11 +777,11 @@ class Tutorial(Default):
                                           8, 9, 10, 11, 12,  # rod, gloves, pickaxe, axe, chisel
                                           13, 14, 15]  # whetstone, arrow, runes
 
-  # Make NPCs weaker
-  NPC_LEVEL_DEFENSE = 2
-  NPC_LEVEL_DAMAGE = 1
-  NPC_SPAWN_NEUTRAL = 0.4
-  NPC_SPAWN_AGGRESSIVE = 0.8
+  # Make NPCs weaker, and no level upgrade
+  NPC_BASE_DEFENSE = 10
+  NPC_LEVEL_DEFENSE = 0
+  NPC_BASE_DAMAGE = 10
+  NPC_LEVEL_DAMAGE = 0
 
   # Push agents toward the center: hold fog until the fog obs is provided
   PLAYER_DEATH_FOG = 128
