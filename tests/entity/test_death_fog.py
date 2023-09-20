@@ -17,9 +17,11 @@ class TestDeathFog(unittest.TestCase):
 
     # check the initial fog map
     border = config.MAP_BORDER
+    other_border = config.MAP_SIZE - config.MAP_BORDER - 1
     center = config.MAP_SIZE // 2
     safe = config.PLAYER_DEATH_FOG_FINAL_SIZE
     self.assertEqual(env.realm.fog_map[border,border], 0)
+    self.assertEqual(env.realm.fog_map[other_border,other_border], 0)
     self.assertEqual(env.realm.fog_map[border+1,border+1], -1)
 
     # Safe area should be marked with the negative map size

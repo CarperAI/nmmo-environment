@@ -219,8 +219,8 @@ class Realm:
         l, r = i, self.config.MAP_SIZE - i
         # positive value represents the poison strength
         # negative value represents the shortest distance to poison area
-        dist += 1
         self.fog_map[l:r, l:r] = -dist
+        dist += 1
       # mark the safe area
       self.fog_map[center-safe:center+safe, center-safe:center+safe] = -self.config.MAP_SIZE
       return
