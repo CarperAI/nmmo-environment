@@ -784,8 +784,8 @@ class Tutorial(Default):
   NPC_LEVEL_DAMAGE = 0
 
   # Push agents toward the center: hold fog until the fog obs is provided
-  PLAYER_DEATH_FOG = 64
-  PLAYER_DEATH_FOG_SPEED = 1/4
+  PLAYER_DEATH_FOG = 96
+  PLAYER_DEATH_FOG_SPEED = 1/8
   PLAYER_DEATH_FOG_FINAL_SIZE = 16
 
   # Make agents do other things than "dancing" with the other agents
