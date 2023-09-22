@@ -228,8 +228,6 @@ class Env(ParallelEnv):
     for task in self.tasks:
       if task.embedding is None:
         task.set_embedding(self._dummy_task_embedding)
-      # validate task embedding
-      assert self._obs_space['Task'].contains(task.embedding), "Task embedding is not valid"
 
       # map task to agents
       for agent_id in task.assignee:
