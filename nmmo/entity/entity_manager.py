@@ -113,9 +113,9 @@ class NPCManager(EntityGroup):
         danger = min(self.spawn_dangers.pop(0) + config.NPC_SPAWN_DANGER_INCREASE, 1)
         r, c   = combat.spawn(config, danger, self._np_random)
       else:
-        #r, c   = self._np_random.integers(border, center+border, 2).tolist()  # uniform spawn pos
+        r, c   = self._np_random.integers(border, center+border, 2).tolist()  # uniform spawn pos
         # spawn more npcs on the edges of the map using the beta dist
-        r, c = [round(x) for x in (self._np_random.beta(.7, .7, 2) * (center-1) + border)]
+        #r, c = [round(x) for x in (self._np_random.beta(.7, .7, 2) * (center-1) + border)]
 
       npc = NPC.spawn(self.realm, (r, c), self.next_id, self._np_random)
       if npc:
