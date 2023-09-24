@@ -455,8 +455,9 @@ class Potion(Consumable):
     super().__init__(realm, level, health_restore=restore, **kwargs)
 
   def _apply_effects(self, entity):
+    org_health = entity.resources.health.val
     entity.resources.health.increment(self.health_restore.val)
-    entity.resources.health_restore = self.health_restore.val  # log hp increase
+    entity.resources.health_restore = entity.resources.health.val - org_health
     entity.poultice_consumed += 1
     entity.poultice_level_consumed = max(
       entity.poultice_level_consumed, self.level.val)
