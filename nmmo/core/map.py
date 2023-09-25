@@ -70,6 +70,12 @@ class Map:
         tile.reset(mat, config, np_random)
         self.habitable_tiles[r, c] = tile.habitable
 
+        if mat in [material.Herb, material.Fish]:
+          # make ration and potion NOT available to harvest initially
+          # but these will be available eventually (agents may have to remember the location)
+          tile.set_depleted()
+          self.update_list.add(tile)
+
     assert c == config.MAP_SIZE - 1
     assert r == config.MAP_SIZE - 1
 
