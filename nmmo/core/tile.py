@@ -40,7 +40,6 @@ class Tile(TileState):
     self.state = None
     self.material = None
     self.depleted = False
-    self.tex = None
 
     self.entities = {}
 
@@ -64,16 +63,30 @@ class Tile(TileState):
   def void(self):
     return self.material == material.Void
 
+  @property
+  def tex(self):
+    return self.state.tex
+
   def reset(self, mat, config, np_random):
     self._np_random = np_random # reset the RNG
-    self.state = mat(config)
+    self.entities = {}
     self.material = mat(config)
+    if mat in [material.Herb, material.Fish]:
+      # make ration and potion NOT available to harvest initially
+      # but these will be available eventually (agents may have to remember the location)
+      self._set_depleted()
+    else:
+      self._respawn()
+
+  def _set_depleted(self):
+    self.depleted = True
+    self.state = self.material.deplete
     self.material_id.update(self.state.index)
 
+  def _respawn(self):
     self.depleted = False
-    self.tex = self.material.tex
-
-    self.entities = {}
+    self.state = self.material
+    self.material_id.update(self.state.index)
 
   def add_entity(self, ent):
     assert ent.ent_id not in self.entities
@@ -86,18 +99,11 @@ class Tile(TileState):
   def step(self):
     if not self.depleted or self._np_random.random() > self.material.respawn:
       return
-
-    self.depleted = False
-    self.state = self.material
-    self.material_id.update(self.state.index)
+    self._respawn()
 
   def harvest(self, deplete):
     assert not self.depleted, f'{self.state} is depleted'
     assert self.state in material.Harvestable, f'{self.state} not harvestable'
-
     if deplete:
-      self.depleted = True
-      self.state = self.material.deplete(self.config)
-      self.material_id.update(self.state.index)
-
+      self._set_depleted()
     return self.material.harvest()

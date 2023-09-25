@@ -766,8 +766,6 @@ class Tutorial(Default):
   # Disable weapon, ration, potion -- focus on the main loop
   NPC_GOLD_DROP_PROB = 0
   WEAPON_DROP_PROB = 0
-  PROFESSION_HERB_RESPAWN = 0
-  PROFESSION_FISH_RESPAWN = 0
 
   # Make equip new/better items easier
   COMBAT_STATUS_DURATION = 1

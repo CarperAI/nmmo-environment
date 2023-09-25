@@ -134,7 +134,7 @@ class Herb(Material):
   tex   = 'herb'
   index = 13
 
-  deplete = Weeds
+  deplete = Grass  # Weeds
   tool    = item.Gloves
 
   table   = droptable.Standard()
