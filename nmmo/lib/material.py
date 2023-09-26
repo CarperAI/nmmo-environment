@@ -141,7 +141,7 @@ class Herb(Material):
   table.add(item.Potion)
 
   def __init__(self, config):
-    if config.PROFESSION_SYSTEM_ENABLED:
+    if config.PROFESSION_SYSTEM_ENABLED and not config.PROFESSION_DISABLE_CONSUMABLES:
       self.respawn  = config.PROFESSION_HERB_RESPAWN
 
 class Ocean(Material):
@@ -159,7 +159,7 @@ class Fish(Material):
   table.add(item.Ration)
 
   def __init__(self, config):
-    if config.PROFESSION_SYSTEM_ENABLED:
+    if config.PROFESSION_SYSTEM_ENABLED and not config.PROFESSION_DISABLE_CONSUMABLES:
       self.respawn  = config.PROFESSION_FISH_RESPAWN
 
 # TODO: Fix lint errors

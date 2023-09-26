@@ -92,9 +92,10 @@ class Tile(TileState):
     del self.entities[ent_id]
 
   def step(self):
-    if not self.depleted or self._np_random.random() > self.material.respawn:
+    if not self.depleted or self.material.respawn == 0:
       return
-    self._respawn()
+    if self._np_random.random() < self.material.respawn:
+      self._respawn()
 
   def harvest(self, deplete):
     assert not self.depleted, f'{self.state} is depleted'

@@ -74,7 +74,8 @@ class Map:
           # make ration and potion NOT available to harvest initially
           # but these will be available eventually (agents may have to remember the location)
           tile.set_depleted()
-          self.update_list.add(tile)
+          if tile.material.respawn > 0:
+            self.update_list.add(tile)
 
     assert c == config.MAP_SIZE - 1
     assert r == config.MAP_SIZE - 1
@@ -94,7 +95,7 @@ class Map:
   def harvest(self, r, c, deplete=True):
     '''Called by actions that harvest a resource tile'''
 
-    if deplete:
+    if deplete and self.tiles[r, c].material.respawn > 0:
       self.update_list.add(self.tiles[r, c])
 
     return self.tiles[r, c].harvest(deplete)

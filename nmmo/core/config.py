@@ -631,6 +631,9 @@ class Profession:
   PROFESSION_FISH_RESPAWN             = 0.02
   '''Probability that a harvested fish tile will regenerate each tick'''
 
+  PROFESSION_DISABLE_CONSUMABLES      = False
+  '''Debug helper: Disable consumable items'''
+
   @staticmethod
   def PROFESSION_CONSUMABLE_RESTORE(level):
     return 50 + 5*level
@@ -766,6 +769,7 @@ class Tutorial(Default):
   # Disable weapon, ration, potion -- focus on the main loop
   NPC_GOLD_DROP_PROB = 0
   WEAPON_DROP_PROB = 0
+  PROFESSION_DISABLE_CONSUMABLES = True
 
   # Make equip new/better items easier
   COMBAT_STATUS_DURATION = 1
