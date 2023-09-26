@@ -43,7 +43,7 @@ class Map:
   def repr(self):
     '''Flat matrix of tile material indices'''
     if not self._repr:
-      self._repr = [[t.material.index for t in row] for row in self.tiles]
+      self._repr = [[t.state.index for t in row] for row in self.tiles]
 
     return self._repr
 

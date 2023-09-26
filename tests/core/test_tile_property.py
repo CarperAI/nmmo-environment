@@ -4,6 +4,8 @@ import copy
 import nmmo
 from scripted.baselines import Sleeper
 
+HORIZON = 32
+
 
 class TestTileProperty(unittest.TestCase):
 
@@ -17,7 +19,7 @@ class TestTileProperty(unittest.TestCase):
     env = nmmo.Env(cls.config)
     env.reset()
     cls.start = copy.deepcopy(env.realm)
-    for _ in range(32):
+    for _ in range(HORIZON):
       env.step({})
     cls.end = copy.deepcopy(env.realm)
 
@@ -49,7 +51,7 @@ class TestTileProperty(unittest.TestCase):
     self.config.PROFESSION_DISABLE_CONSUMABLES = True
     env = nmmo.Env(self.config)
     env.reset()
-    for _ in range(32):
+    for _ in range(HORIZON):
       env.step({})
 
     for r in range(map_size):
@@ -59,7 +61,7 @@ class TestTileProperty(unittest.TestCase):
         if tile.material.tex in ["herb", "fish"]:
           self.assertTrue(tile.depleted)
           self.assertEqual(tile.material.respawn, 0)
-
+          self.assertNotEqual(tile.state.index, tile.material.index)
 
 if __name__ == '__main__':
   unittest.main()
