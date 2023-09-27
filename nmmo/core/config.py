@@ -518,6 +518,12 @@ class NPC:
   NPC_LEVEL_MAX                       = 10
   '''Maximum NPC level'''
 
+  NPC_BASE_HEALTH                     = 20
+  '''Base NPC health (max health is 100)'''
+
+  NPC_LEVEL_HEALTH                    = 10
+  '''Bonus NPC health per level'''
+
   NPC_LEVEL_POWER_BASE                = 1.5
   '''NPC level offense and defense are multiplied by (level + level_power_base^level)'''
 
@@ -784,9 +790,9 @@ class Tutorial(Default):
   NPC_LEVEL_DAMAGE = 1
 
   # Push agents toward the center: hold fog until the fog obs is provided
-  PLAYER_DEATH_FOG = 96
-  PLAYER_DEATH_FOG_SPEED = 1/8
+  PLAYER_DEATH_FOG = 128
+  PLAYER_DEATH_FOG_SPEED = 1/14
   PLAYER_DEATH_FOG_FINAL_SIZE = 16
 
   # Make agents do other things than "dancing" with the other agents
-  COMBAT_SPAWN_IMMUNITY = 512
+  COMBAT_SPAWN_IMMUNITY = 800

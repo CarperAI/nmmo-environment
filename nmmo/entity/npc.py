@@ -54,6 +54,7 @@ class NPC(entity.Entity):
     self.spawn_danger = None
     self.equipment = None
     self.npc_type.update(npc_type)
+    self._max_health = None
 
   def update(self, realm, actions):
     super().update(realm, actions)
@@ -61,7 +62,9 @@ class NPC(entity.Entity):
     if not self.alive:
       return
 
-    self.resources.health.increment(1)
+    # npcs get 1 health increase per tick
+    health = max(self.resources.health.val + 1, self._max_health)
+    self.resources.health.update(health)
     self.last_action = actions
 
   # Returns True if the entity is alive
@@ -126,6 +129,11 @@ class NPC(entity.Entity):
     level = round(danger * (level_max - level_min) + level_min)
     ent.set_level(level)
 
+    # Set the max and initial health depending on the level
+    max_health = config.NPC_BASE_HEALTH + level * config.NPC_LEVEL_HEALTH
+    ent.set_max_health(max_health)
+    ent.resources.health.update(max_health)
+
     if config.PROGRESSION_SYSTEM_ENABLED:
       # Set skill levels
       if style == Action.Melee:
@@ -177,6 +185,9 @@ class NPC(entity.Entity):
 
   def set_level(self, level):
     self._level = level
+
+  def set_max_health(self, health):
+    self._max_health = round(health)
 
   @property
   def attack_level(self):
