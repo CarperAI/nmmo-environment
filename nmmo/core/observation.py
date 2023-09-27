@@ -78,6 +78,8 @@ class Observation:
     if config.ITEM_SYSTEM_ENABLED:
       self.inventory = InventoryObs(inventory[0:config.INVENTORY_N_OBS],
                                     ItemState.State.attr_name_to_col["id"])
+      self.cannot_use_during_combat = [item.ITEM_TYPE_ID for item in
+                                       item_system.ARMOR + item_system.CONSUMABLE]
     else:
       assert inventory.size == 0
 
@@ -286,17 +288,20 @@ class Observation:
     if self.config.PROVIDE_NOOP_ACTION_TARGET:
       use_mask[-1] = 1
 
-    if not (self.config.ITEM_SYSTEM_ENABLED and self.inventory.len > 0)\
-        or self.dummy_obs or self.agent_in_combat:
+    if not (self.config.ITEM_SYSTEM_ENABLED and self.inventory.len > 0) or self.dummy_obs:
       return use_mask
 
-    item_skill = self._item_skill()
+    # Mask use of armors and consumables during combat
+    item_type = self.inventory.values[:,ItemState.State.attr_name_to_col["type_id"]]
+    if self.agent_in_combat:
+      cannot_use_during_combat = np.in1d(item_type, self.cannot_use_during_combat)
+      item_type[cannot_use_during_combat] = 0
 
     not_listed = self.inventory.values[:,ItemState.State.attr_name_to_col["listed_price"]] == 0
-    item_type = self.inventory.values[:,ItemState.State.attr_name_to_col["type_id"]]
     item_level = self.inventory.values[:,ItemState.State.attr_name_to_col["level"]]
 
     # level limits are differently applied depending on item types
+    item_skill = self._item_skill()
     type_flt = np.tile(np.array(list(item_skill.keys())), (self.inventory.len,1))
     level_flt = np.tile(np.array(list(item_skill.values())), (self.inventory.len,1))
     item_type = np.tile(np.transpose(np.atleast_2d(item_type)), (1,len(item_skill)))

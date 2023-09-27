@@ -295,6 +295,8 @@ class Gloves(ConsumableTool):
 class AmmunitionTool(Equipment):
   def __init__(self, realm, level, **kwargs):
     super().__init__(realm, level, **kwargs)
+    # Ammunition tools add a little attack bonus to the associated combat skill
+    self.attack = realm.config.EQUIPMENT_TOOL_BASE_DAMAGE
     # Ammunition tools add defense to the weaker skill,
     #  so that other's critical attack can be reduced
     self.defense = realm.config.EQUIPMENT_TOOL_BASE_DEFENSE +\
@@ -308,6 +310,7 @@ class Pickaxe(AmmunitionTool):
 
   def __init__(self, realm, level, **kwargs):
     super().__init__(realm, level, **kwargs)
+    self.melee_attack.update(self.attack)
     self.mage_defense.update(self.defense)  # mage is strong against melee
 
   def _level(self, entity):
@@ -318,6 +321,7 @@ class Axe(AmmunitionTool):
 
   def __init__(self, realm, level, **kwargs):
     super().__init__(realm, level, **kwargs)
+    self.range_attack.update(self.attack)
     self.melee_defense.update(self.defense)  # melee is strong against range
 
   def _level(self, entity):
@@ -328,6 +332,7 @@ class Chisel(AmmunitionTool):
 
   def __init__(self, realm, level, **kwargs):
     super().__init__(realm, level, **kwargs)
+    self.mage_attack.update(self.attack)
     self.range_defense.update(self.defense)  # range is strong against mage
 
   def _level(self, entity):

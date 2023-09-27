@@ -518,12 +518,6 @@ class NPC:
   NPC_LEVEL_MAX                       = 10
   '''Maximum NPC level'''
 
-  NPC_BASE_HEALTH                     = 20
-  '''Base NPC health (max health is 100)'''
-
-  NPC_LEVEL_HEALTH                    = 10
-  '''Bonus NPC health per level'''
-
   NPC_LEVEL_POWER_BASE                = 1.5
   '''NPC level offense and defense are multiplied by (level + level_power_base^level)'''
 
@@ -582,13 +576,13 @@ class Equipment:
   WEAPON_DROP_PROB = 0.025
   '''Chance of getting a weapon while harvesting ammunition'''
 
-  EQUIPMENT_WEAPON_BASE_DAMAGE         = 0
+  EQUIPMENT_WEAPON_BASE_DAMAGE         = 5
   '''Base weapon damage'''
 
   EQUIPMENT_WEAPON_LEVEL_DAMAGE        = 6
   '''Added weapon damage per level'''
 
-  EQUIPMENT_AMMUNITION_BASE_DAMAGE     = 10
+  EQUIPMENT_AMMUNITION_BASE_DAMAGE     = 5
   '''Base ammunition damage'''
 
   EQUIPMENT_AMMUNITION_LEVEL_DAMAGE    = 5
@@ -596,6 +590,9 @@ class Equipment:
 
   EQUIPMENT_AMMUNITION_HARVEST_BUNCH   = 3
   '''Number of ammunition harvested per harvest'''
+
+  EQUIPMENT_TOOL_BASE_DAMAGE           = 5
+  '''Base tool damage'''
 
   EQUIPMENT_TOOL_BASE_DEFENSE          = 0
   '''Base tool defense'''
@@ -765,7 +762,7 @@ class Tutorial(Default):
   PROGRESSION_EXP_THRESHOLD = default_exp_threshold(30, Default.PROGRESSION_LEVEL_MAX)
 
   # Make items easier to get
-  NPC_TOOL_DROP_PROB = 0.6
+  NPC_TOOL_DROP_PROB = 0.5
   HARVEST_WITHOUT_TOOL_PROB = 0.35
   PROFESSION_TREE_RESPAWN = 0.5
   PROFESSION_ORE_RESPAWN = 0.5
@@ -777,17 +774,12 @@ class Tutorial(Default):
   WEAPON_DROP_PROB = 0
   PROFESSION_DISABLE_CONSUMABLES = True
 
-  # Make equip new/better items easier
-  COMBAT_STATUS_DURATION = 1
+  # Disalbe selling items, make equip new/better items easier (auto equip)
   EXCHANGE_ACTION_TARGET_DISABLE_LISTING = list(range(1,18))  # all item types
   EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM = [2, 3, 4,  # hat, top, bottom
                                           5, 6, 7,  # spear, bow, wand
                                           8, 9, 10, 11, 12,  # rod, gloves, pickaxe, axe, chisel
                                           13, 14, 15]  # whetstone, arrow, runes
-
-  # Make NPCs weaker
-  NPC_LEVEL_DEFENSE = 1
-  NPC_LEVEL_DAMAGE = 1
 
   # Push agents toward the center: hold fog until the fog obs is provided
   PLAYER_DEATH_FOG = 128

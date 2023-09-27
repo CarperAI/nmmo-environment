@@ -2,7 +2,7 @@ import unittest
 import logging
 import numpy as np
 
-from tests.testhelpers import ScriptedTestTemplate, provide_item
+from tests.testhelpers import ScriptedTestTemplate, provide_item  # pylint: disable=import-error
 
 from nmmo.core import action
 from nmmo.systems import item as Item
@@ -13,7 +13,7 @@ RANDOM_SEED = 284
 LOGFILE = 'tests/action/test_ammo_use.log'
 
 class TestAmmoUse(ScriptedTestTemplate):
-  # pylint: disable=protected-access,multiple-statements,no-member
+  # pylint: disable=protected-access,multiple-statements,no-member,invalid-name
 
   @classmethod
   def setUpClass(cls):
@@ -27,11 +27,10 @@ class TestAmmoUse(ScriptedTestTemplate):
   def _assert_action_targets_zero(self, gym_obs):
     mask = np.sum(gym_obs["ActionTargets"]["GiveGold"]["Price"]) \
           + np.sum(gym_obs["ActionTargets"]["Buy"]["MarketItem"])
-    for atn in [action.Use, action.Give, action.Destroy, action.Sell]:
+    for atn in [action.Give, action.Destroy, action.Sell]:
       mask += np.sum(gym_obs["ActionTargets"][atn.__name__]["InventoryItem"])
-    # If MarketItem and InventoryTarget have no-action flags, these sum up to 5
-    # To prevent entropy collapse, GiveGold/Price and Buy/MarketItem masks are tweaked
-    self.assertEqual(mask, 1 + 5*int(self.config.PROVIDE_NOOP_ACTION_TARGET))
+    # If MarketItem and InventoryTarget have no-action flags, these sum up to 4
+    self.assertEqual(mask, 1 + 4*int(self.config.PROVIDE_NOOP_ACTION_TARGET))
 
   def test_spawn_immunity(self):
     env = self._setup_env(random_seed=RANDOM_SEED)
