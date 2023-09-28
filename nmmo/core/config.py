@@ -506,7 +506,7 @@ class NPC:
   NPC_SPAWN_AGGRESSIVE                = 0.7
   '''Beta(percentage distance from spawn) threshold for aggressive NPCs'''
 
-  NPC_SPAWN_NEUTRAL                   = 0.3
+  NPC_SPAWN_NEUTRAL                   = 0.25
   '''Beta(percentage distance from spawn) threshold for neutral NPCs'''
 
   NPC_SPAWN_DANGER_INCREASE           = 0.05
@@ -793,9 +793,9 @@ class Tutorial(Default):
                                           13, 14, 15]  # whetstone, arrow, runes
 
   # Push agents toward the center: hold fog until the fog obs is provided
-  PLAYER_DEATH_FOG = 128
-  PLAYER_DEATH_FOG_SPEED = 1/14
+  PLAYER_DEATH_FOG = 192
+  PLAYER_DEATH_FOG_SPEED = 1/12
   PLAYER_DEATH_FOG_FINAL_SIZE = 16
 
-  # Make agents do other things than "dancing" with the other agents
-  COMBAT_SPAWN_IMMUNITY = 800
+  # Start the battle royale after the agent reached the safe center
+  COMBAT_SPAWN_IMMUNITY = 768

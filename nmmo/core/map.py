@@ -43,8 +43,11 @@ class Map:
   def repr(self):
     '''Flat matrix of tile material indices'''
     if not self._repr:
-      self._repr = [[t.state.index for t in row] for row in self.tiles]
-
+      def tile_idx(mat):
+        if mat in [material.Slag, material.Stump, material.Fragment]:
+          return material.Grass.index
+        return mat.index
+      self._repr = [[tile_idx(t.state) for t in row] for row in self.tiles]
     return self._repr
 
   def reset(self, map_id, np_random):
