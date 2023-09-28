@@ -76,7 +76,7 @@ class Ore(Material):
       if config.EQUIPMENT_SYSTEM_ENABLED:
         cls.table.add(item.Wand, prob=config.WEAPON_DROP_PROB)
 
-    if config.PROFESSION_SYSTEM_ENABLED:
+    if config.PROFESSION_SYSTEM_ENABLED and not config.PROFESSION_DISABLE_AMMUNITION:
       self.respawn  = config.PROFESSION_ORE_RESPAWN
 
   tool    = item.Pickaxe
@@ -101,7 +101,7 @@ class Tree(Material):
       if config.EQUIPMENT_SYSTEM_ENABLED:
         cls.table.add(item.Spear, prob=config.WEAPON_DROP_PROB)
 
-    if config.PROFESSION_SYSTEM_ENABLED:
+    if config.PROFESSION_SYSTEM_ENABLED and not config.PROFESSION_DISABLE_AMMUNITION:
       self.respawn  = config.PROFESSION_TREE_RESPAWN
 
 class Fragment(Material):
@@ -123,7 +123,7 @@ class Crystal(Material):
       if config.EQUIPMENT_SYSTEM_ENABLED:
         cls.table.add(item.Bow, prob=config.WEAPON_DROP_PROB)
 
-    if config.PROFESSION_SYSTEM_ENABLED:
+    if config.PROFESSION_SYSTEM_ENABLED and not config.PROFESSION_DISABLE_AMMUNITION:
       self.respawn  = config.PROFESSION_CRYSTAL_RESPAWN
 
 class Weeds(Material):

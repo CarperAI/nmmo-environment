@@ -70,9 +70,11 @@ class Map:
         tile.reset(mat, config, np_random)
         self.habitable_tiles[r, c] = tile.habitable
 
-        if mat in [material.Herb, material.Fish]:
-          # make ration and potion NOT available to harvest initially
-          # but these will be available eventually (agents may have to remember the location)
+        # make ration and potion NOT available to harvest initially
+        # but these will be available eventually (agents may have to remember the location)
+        if mat in [material.Herb, material.Fish] or \
+           (config.PROFESSION_SYSTEM_ENABLED and config.PROFESSION_DISABLE_AMMUNITION and \
+            mat in [material.Ore, material.Tree, material.Crystal]):
           tile.set_depleted()
           if tile.material.respawn > 0:
             self.update_list.add(tile)

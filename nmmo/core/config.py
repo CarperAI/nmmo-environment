@@ -612,6 +612,9 @@ class Equipment:
   EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM = None
   '''Training helper: Auto-upgrade equipped item types if exist in the inventory'''
 
+  ENFORCE_EQUIP_LEVEL_REQUIREMENT      = True
+  '''Debug helper: Enforce level requirement for equipping items'''
+
 
 class Profession:
   '''Profession Game System'''
@@ -636,6 +639,9 @@ class Profession:
 
   PROFESSION_DISABLE_CONSUMABLES      = False
   '''Debug helper: Disable consumable items'''
+
+  PROFESSION_DISABLE_AMMUNITION       = False
+  '''Debug helper: Disable ammunition items'''
 
   @staticmethod
   def PROFESSION_CONSUMABLE_RESTORE(level):
@@ -761,20 +767,25 @@ class Tutorial(Default):
   # Increase levels faster
   PROGRESSION_EXP_THRESHOLD = default_exp_threshold(30, Default.PROGRESSION_LEVEL_MAX)
 
+  # DEBUG MODE: no armor, tools, ammos
+  NPC_ARMOR_DROP_PROB = 0
+  NPC_TOOL_DROP_PROB = 0
+  PROFESSION_DISABLE_AMMUNITION = True
+
   # Make items easier to get
-  NPC_TOOL_DROP_PROB = 0.5
-  HARVEST_WITHOUT_TOOL_PROB = 0.35
-  PROFESSION_TREE_RESPAWN = 0.5
-  PROFESSION_ORE_RESPAWN = 0.5
-  PROFESSION_CRYSTAL_RESPAWN = 0.5
-  EQUIPMENT_AMMUNITION_HARVEST_BUNCH = 5
+  # NPC_TOOL_DROP_PROB = 0.5
+  # HARVEST_WITHOUT_TOOL_PROB = 0.35
+  # PROFESSION_TREE_RESPAWN = 0.5
+  # PROFESSION_ORE_RESPAWN = 0.5
+  # PROFESSION_CRYSTAL_RESPAWN = 0.5
+  # EQUIPMENT_AMMUNITION_HARVEST_BUNCH = 5
 
   # Disable weapon, ration, potion -- focus on the main loop
   NPC_GOLD_DROP_PROB = 0
   WEAPON_DROP_PROB = 0
   PROFESSION_DISABLE_CONSUMABLES = True
 
-  # Disalbe selling items, make equip new/better items easier (auto equip)
+  # Disable selling items, make equip new/better items easier (auto equip)
   EXCHANGE_ACTION_TARGET_DISABLE_LISTING = list(range(1,18))  # all item types
   EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM = [2, 3, 4,  # hat, top, bottom
                                           5, 6, 7,  # spear, bow, wand

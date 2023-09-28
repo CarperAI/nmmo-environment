@@ -136,7 +136,10 @@ class Item(ItemState):
     # weapons and tools must override this with specific skills
     return entity.level
 
+  # NOTE: This should be the only place to check if the entity's level is sufficient to equip
   def level_gt(self, entity):
+    if self.config.ENFORCE_EQUIP_LEVEL_REQUIREMENT is False:
+      return False  # so that entity can equip the item regardless of level
     return self.level.val > self._level(entity)
 
   def use(self, entity) -> bool:
