@@ -768,7 +768,7 @@ class Tutorial(Default):
   PROGRESSION_EXP_THRESHOLD = default_exp_threshold(30, Default.PROGRESSION_LEVEL_MAX)
 
   # DEBUG MODE: no armor, tools, ammos
-  NPC_ARMOR_DROP_PROB = 0
+  # NPC_ARMOR_DROP_PROB = 0
   NPC_TOOL_DROP_PROB = 0
   PROFESSION_DISABLE_AMMUNITION = True
 
