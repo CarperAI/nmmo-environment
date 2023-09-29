@@ -69,6 +69,10 @@ class Map:
     for r, row in enumerate(map_file):
       for c, idx in enumerate(row):
         mat  = materials[idx]
+        if config.TERRAIN_SYSTEM_ENABLED and config.TERRAIN_DISABLE_STONE and \
+           mat == material.Stone:
+          mat = material.Grass
+
         tile = self.tiles[r, c]
         tile.reset(mat, config, np_random)
         self.habitable_tiles[r, c] = tile.habitable

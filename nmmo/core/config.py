@@ -348,6 +348,8 @@ class Terrain:
   TERRAIN_FOILAGE              = 0.85
   '''Noise threshold for foilage (food tile)'''
 
+  TERRAIN_DISABLE_STONE        = False
+  '''Debug helper: Disable stone (obstacle) tiles'''
 
 class Resource:
   '''Resource Game System'''
@@ -518,19 +520,19 @@ class NPC:
   NPC_LEVEL_MAX                       = 10
   '''Maximum NPC level'''
 
-  NPC_LEVEL_POWER_BASE                = 1.5
+  NPC_LEVEL_POWER_BASE                = 1.35
   '''NPC level offense and defense are multiplied by (level + level_power_base^level)'''
 
   NPC_BASE_DEFENSE                    = 0
   '''Base NPC defense'''
 
-  NPC_LEVEL_DEFENSE                   = 3.0
+  NPC_LEVEL_DEFENSE                   = 6.7
   '''Bonus NPC defense per level'''
 
   NPC_BASE_DAMAGE                     = 0
   '''Base NPC damage'''
 
-  NPC_LEVEL_DAMAGE                    = 2.4
+  NPC_LEVEL_DAMAGE                    = 5.3
   '''Bonus NPC damage per level'''
 
   NPC_MINIMUM_DAMAGE_PROPORTION       = 0.3
@@ -759,6 +761,9 @@ class Default(Medium, AllGameSystems):
 # Make configs for Tutorial, Easy, (Normal: Default), Hard, Insane
 
 class Tutorial(Default):
+  # Remove obstacles so that agents can go to the center easily
+  TERRAIN_DISABLE_STONE = True
+
   # Make agents live longer
   RESOURCE_FOILAGE_RESPAWN = 0.5
   RESOURCE_STARVATION_RATE = 6
