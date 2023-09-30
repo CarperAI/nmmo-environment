@@ -118,6 +118,8 @@ EntityState.Query = SimpleNamespace(
 class Resources:
   def __init__(self, ent, config):
     self.config = config
+    self.equipment = ent.equipment if ent.is_player else None
+
     self.health = ent.health
     self.water = ent.water
     self.food = ent.food
@@ -130,28 +132,25 @@ class Resources:
       self.food.update(config.RESOURCE_BASE)
 
   def update(self):
-    if not self.config.RESOURCE_SYSTEM_ENABLED:
+    if not self.config.RESOURCE_SYSTEM_ENABLED or self.equipment is None:
       return
 
     regen = self.config.RESOURCE_HEALTH_RESTORE_FRACTION
-    thresh = self.config.RESOURCE_HEALTH_REGEN_THRESHOLD
-
-    food_thresh = self.food > thresh * self.config.RESOURCE_BASE
-    water_thresh = self.water > thresh * self.config.RESOURCE_BASE
+    threshold = self.equipment.health_regen_threshold * self.config.RESOURCE_BASE
 
     org_health = self.health.val
-    if food_thresh and water_thresh:
-      restore = np.floor(self.health.max * regen)
+    if self.food.val > threshold and self.water.val > threshold:
+      restore = int(self.config.RESOURCE_BASE * regen)
       self.health.increment(restore)
 
     if self.food.empty:
-      starvation_damage = self.config.RESOURCE_STARVATION_RATE
+      starvation_damage = self.equipment.starvation_damage
       if self.resilient:
         starvation_damage *= self.config.RESOURCE_DAMAGE_REDUCTION
       self.health.decrement(int(starvation_damage))
 
     if self.water.empty:
-      dehydration_damage = self.config.RESOURCE_DEHYDRATION_RATE
+      dehydration_damage = self.equipment.dehydration_damage
       if self.resilient:
         dehydration_damage *= self.config.RESOURCE_DAMAGE_REDUCTION
       self.health.decrement(int(dehydration_damage))
@@ -271,8 +270,8 @@ class Entity(EntityState):
     # Submodules
     self.status = Status(self)
     self.history = History(self)
-    self.resources = Resources(self, self.config)
     self.inventory = inventory.Inventory(realm, self)
+    self.resources = Resources(self, self.config)
 
   @property
   def ent_id(self):

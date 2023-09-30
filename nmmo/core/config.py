@@ -80,6 +80,10 @@ def validate(config):
     err = 'Invalid Config: {} requires Progression'
     assert not config.EQUIPMENT_SYSTEM_ENABLED, err.format('Equipment')
 
+  if not config.RESOURCE_SYSTEM_ENABLED:
+    err = 'Invalid Config: {} requires Resource'
+    assert not config.EQUIPMENT_SYSTEM_ENABLED, err.format('Equipment')
+
 class Config(Template):
   '''An environment configuration object
 
@@ -764,10 +768,8 @@ class Tutorial(Default):
   # Remove obstacles so that agents can go to the center easily
   TERRAIN_DISABLE_STONE = True
 
-  # Make agents live longer
+  # Make food much more available, making it easier to survive
   RESOURCE_FOILAGE_RESPAWN = 0.5
-  RESOURCE_STARVATION_RATE = 6
-  RESOURCE_DEHYDRATION_RATE = 6
 
   # Increase levels faster
   PROGRESSION_EXP_THRESHOLD = default_exp_threshold(30, Default.PROGRESSION_LEVEL_MAX)
