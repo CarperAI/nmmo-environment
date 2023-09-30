@@ -135,13 +135,15 @@ def danger(config, pos):
 
   return norm
 
+MIN_OFFSET = 6  # tiles
+
 def spawn(config, dnger, np_random):
   border = config.MAP_BORDER
   center = config.MAP_CENTER
   mid    = center // 2
 
   dist       = dnger * center / 2
-  max_offset = mid - dist
+  max_offset = max(mid - dist, MIN_OFFSET)  # to handle the case where danger >= 1
   offset     = mid + border + np_random.integers(-max_offset, max_offset)
 
   rng = np_random.random()
@@ -158,7 +160,7 @@ def spawn(config, dnger, np_random):
     c = border + center - dist - 1
     r = offset
 
-  if __debug__:
+  if __debug__ and max_offset > MIN_OFFSET:
     assert abs(dnger - danger(config,(r,c))) < 1/center, 'Agent spawned at incorrect radius'
 
   r = int(r)
