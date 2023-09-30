@@ -615,6 +615,9 @@ class Equipment:
   EQUIPMENT_ARMOR_LEVEL_DEFENSE        = 4
   '''Base equipment defense'''
 
+  EQUIPMENT_ARMOR_EXPERIMENTAL         = False
+  '''Debug parameter: Whether to enable experimental armor feature'''
+
   EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM = None
   '''Training helper: Auto-upgrade equipped item types if exist in the inventory'''
 

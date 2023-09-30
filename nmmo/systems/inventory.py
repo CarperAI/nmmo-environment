@@ -111,34 +111,11 @@ class Equipment:
 
   ######################################################################
   # Experimental features to link armors to the resource system
-  def resource_rate_adjustment(self, item):
+  def reduce_damage_rate(self, slot):
     # Equipment system requires Progression system
-    if item is None:
+    if slot.item is None:
       return 1.
-    return max(1. - float(item.level.val)/self.config.PROGRESSION_LEVEL_MAX, 0.)
-
-  @property
-  def health_regen_threshold(self):  # Hat
-    assert self.config.RESOURCE_SYSTEM_ENABLED, 'Resource system not enabled'
-    # Higher the hat level, lower the health regen threshold
-    # Without a hat, the threshold is 0.5., and health regens when the both food and water > 50
-    # With a level-10 hat, it's 0., and health regens when the both food and water > 0
-    thresh = self.config.RESOURCE_HEALTH_REGEN_THRESHOLD
-    return thresh * self.resource_rate_adjustment(self.hat.item)
-
-  @property
-  def starvation_damage(self):  # Top
-    assert self.config.RESOURCE_SYSTEM_ENABLED, 'Resource system not enabled'
-    # Higher the top level, lower the starvation damage
-    damage = self.config.RESOURCE_STARVATION_RATE
-    return damage * self.resource_rate_adjustment(self.top.item)
-
-  @property
-  def dehydration_damage(self):  # Bottom
-    assert self.config.RESOURCE_SYSTEM_ENABLED, 'Resource system not enabled'
-    # Higher the bottom level, lower the dehydration damage
-    damage = self.config.RESOURCE_DEHYDRATION_RATE
-    return damage * self.resource_rate_adjustment(self.bottom.item)
+    return max(1. - float(slot.item.level.val)/self.config.PROGRESSION_LEVEL_MAX, 0.)
 
 class Inventory:
   def __init__(self, realm, entity):

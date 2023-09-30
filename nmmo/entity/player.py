@@ -108,6 +108,9 @@ class Player(entity.Entity):
   def update(self, realm, actions):
     '''Post-action update. Do not include history'''
     super().update(realm, actions)
+    experimental_armor = False
+    if self.config.EQUIPMENT_SYSTEM_ENABLED:
+      experimental_armor = self.config.EQUIPMENT_ARMOR_EXPERIMENTAL
 
     # Spawn battle royale style death fog
     # Starts at 0 damage on the specified config tick
@@ -119,6 +122,8 @@ class Player(entity.Entity):
     fog = self.config.PLAYER_DEATH_FOG
     if fog is not None and self.realm.tick >= fog:
       dmg = self.realm.fog_map[self.pos]
+      if experimental_armor:
+        dmg *= self.equipment.reduce_damage_rate(self.equipment.hat)  # hat reduces fog damage
       if dmg > 0.5:  # fog_map has float values
         self.receive_damage(None, round(dmg))
 

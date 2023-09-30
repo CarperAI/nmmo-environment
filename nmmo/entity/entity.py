@@ -134,23 +134,28 @@ class Resources:
   def update(self):
     if not self.config.RESOURCE_SYSTEM_ENABLED or self.equipment is None:
       return
-
-    regen = self.config.RESOURCE_HEALTH_RESTORE_FRACTION
-    threshold = self.equipment.health_regen_threshold * self.config.RESOURCE_BASE
-
+    experimental_armor = False
+    if self.config.EQUIPMENT_SYSTEM_ENABLED:
+      experimental_armor = self.config.EQUIPMENT_ARMOR_EXPERIMENTAL
     org_health = self.health.val
+
+    regen = self.config.RESOURCE_HEALTH_RESTORE_FRACTION * self.config.RESOURCE_BASE
+    threshold = self.config.RESOURCE_HEALTH_REGEN_THRESHOLD * self.config.RESOURCE_BASE
     if self.food.val > threshold and self.water.val > threshold:
-      restore = int(self.config.RESOURCE_BASE * regen)
-      self.health.increment(restore)
+      self.health.increment(int(regen))
 
     if self.food.empty:
-      starvation_damage = self.equipment.starvation_damage
+      starvation_damage = self.config.RESOURCE_STARVATION_RATE
+      if experimental_armor:
+        starvation_damage *= self.equipment.reduce_damage_rate(self.equipment.top)
       if self.resilient:
         starvation_damage *= self.config.RESOURCE_DAMAGE_REDUCTION
       self.health.decrement(int(starvation_damage))
 
     if self.water.empty:
-      dehydration_damage = self.equipment.dehydration_damage
+      dehydration_damage = self.config.RESOURCE_DEHYDRATION_RATE
+      if experimental_armor:
+        dehydration_damage *= self.equipment.reduce_damage_rate(self.equipment.bottom)
       if self.resilient:
         dehydration_damage *= self.config.RESOURCE_DAMAGE_REDUCTION
       self.health.decrement(int(dehydration_damage))
