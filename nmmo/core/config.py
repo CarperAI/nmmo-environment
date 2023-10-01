@@ -564,8 +564,13 @@ class Item:
   ITEM_INVENTORY_CAPACITY             = 12
   '''Number of inventory spaces'''
 
-  ITEM_ALLOW_GIFT               = True
+  ITEM_ALLOW_GIFT                     = True
   '''Whether agents can give gold/item to each other'''
+
+  ITEM_CANNOT_USE_DURING_COMBAT       = set([2, 3, 4,  # hat, top, bottom
+                                             8, 9,     # rod, gloves
+                                             16, 17])   # ration, potion
+  '''Disable using specified items during combat'''
 
   @property
   def INVENTORY_N_OBS(self):
@@ -797,10 +802,11 @@ class Tutorial(Default):
 
   # Disable selling items, make equip new/better items easier (auto equip)
   EXCHANGE_ACTION_TARGET_DISABLE_LISTING = list(range(1,18))  # all item types
-  EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM = [2, 3, 4,  # hat, top, bottom
-                                          5, 6, 7,  # spear, bow, wand
-                                          8, 9, 10, 11, 12,  # rod, gloves, pickaxe, axe, chisel
-                                          13, 14, 15]  # whetstone, arrow, runes
+  EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM = set(
+    [2, 3, 4,  # hat, top, bottom
+     5, 6, 7,  # spear, bow, wand
+     8, 9, 10, 11, 12,  # rod, gloves, pickaxe, axe, chisel
+     13, 14, 15])  # whetstone, arrow, runes
 
   # Push agents toward the center: hold fog until the fog obs is provided
   PLAYER_DEATH_FOG = 192

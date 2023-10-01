@@ -78,8 +78,7 @@ class Observation:
     if config.ITEM_SYSTEM_ENABLED:
       self.inventory = InventoryObs(inventory[0:config.INVENTORY_N_OBS],
                                     ItemState.State.attr_name_to_col["id"])
-      self.cannot_use_during_combat = [item.ITEM_TYPE_ID for item in
-                                       item_system.ARMOR + item_system.CONSUMABLE]
+      self.cannot_use_during_combat = config.ITEM_CANNOT_USE_DURING_COMBAT
     else:
       assert inventory.size == 0
 

@@ -358,7 +358,9 @@ class Use(Node):
     if item not in entity.inventory:
       return
 
-    if entity.in_combat: # player cannot use item during combat
+    if entity.in_combat and \
+       item.ITEM_TYPE_ID in realm.config.ITEM_CANNOT_USE_DURING_COMBAT:
+      # player cannot use armors or consumables during combat
       return
 
     # cannot use listed items or items that have higher level
