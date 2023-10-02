@@ -28,7 +28,7 @@ class TestMapGeneration(unittest.TestCase):
 
   def test_map_preview(self):
     class MapConfig(
-      nmmo.config.Small, # no fractal, grass only
+      nmmo.config.Medium, # no fractal, grass only
       nmmo.config.Terrain, # water, grass, foilage, stone
       nmmo.config.Item, # no additional effect on the map
       nmmo.config.Profession, # add ore, tree, crystal, herb, fish
