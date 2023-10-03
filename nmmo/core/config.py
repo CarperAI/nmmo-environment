@@ -343,13 +343,13 @@ class Terrain:
   TERRAIN_VOID                 = 0.0
   '''Noise threshold for void generation'''
 
-  TERRAIN_WATER                = 0.30
+  TERRAIN_WATER                = 0.15  # old: 0.30
   '''Noise threshold for water generation'''
 
-  TERRAIN_GRASS                = 0.70
+  TERRAIN_GRASS                = 0.75  # old: 0.70
   '''Noise threshold for grass'''
 
-  TERRAIN_FOILAGE              = 0.85
+  TERRAIN_FOILAGE              = 0.90  # old: 0.85
   '''Noise threshold for foilage (food tile)'''
 
   TERRAIN_DISABLE_STONE        = False

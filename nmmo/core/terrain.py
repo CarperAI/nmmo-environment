@@ -123,11 +123,12 @@ class Terrain:
     for y in range(size):
       for x in range(size):
         v = val[y, x]
-        if v <= config.TERRAIN_WATER:
+        # Trying to make some way toward the center
+        if v <= config.TERRAIN_WATER:  # 0.30
           mat = Terrain.WATER
-        elif v <= config.TERRAIN_GRASS:
+        elif v <= config.TERRAIN_GRASS:  # 0.70
           mat = Terrain.GRASS
-        elif v <= config.TERRAIN_FOILAGE:
+        elif v <= config.TERRAIN_FOILAGE:  # 0.85
           mat = Terrain.FOILAGE
         else:
           mat = Terrain.STONE
