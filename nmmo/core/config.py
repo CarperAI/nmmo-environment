@@ -343,7 +343,7 @@ class Terrain:
   TERRAIN_VOID                 = 0.0
   '''Noise threshold for void generation'''
 
-  TERRAIN_WATER                = 0.20
+  TERRAIN_WATER                = 0.30
   '''Noise threshold for water generation'''
 
   TERRAIN_GRASS                = 0.70
