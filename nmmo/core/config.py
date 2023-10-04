@@ -534,16 +534,19 @@ class NPC:
   '''Base NPC defense'''
 
   NPC_LEVEL_DEFENSE                   = 6.7
-  '''Bonus NPC defense per level'''
+  '''Bonus NPC defense per level: (10+1.35**10) * 6.7 = 201.7'''
 
   NPC_BASE_DAMAGE                     = 0
   '''Base NPC damage'''
 
   NPC_LEVEL_DAMAGE                    = 5.3
-  '''Bonus NPC damage per level'''
+  '''Bonus NPC damage per level: (10+1.35**10) * 5.3 = 159.6'''
 
   NPC_MINIMUM_DAMAGE_PROPORTION       = 0.3
   '''Minimum proportion of damage to inflict on a target'''
+
+  NPC_POWER_MULTIPLIER                = 1.0
+  '''Adjust NPC offense and defense by this factor'''
 
   NPC_ARMOR_DROP_PROB                 = 0.3
   '''Probability of dropping armor upon death'''
@@ -776,14 +779,32 @@ class Default(Medium, AllGameSystems):
 # Make configs for Tutorial, Easy, (Normal: Default), Hard, Insane
 
 class Tutorial(Default):
-  # Make food more available, making it easier to survive
-  RESOURCE_FOILAGE_RESPAWN = 0.10
+  # Push agents toward the center: hold fog until the fog obs is provided
+  PLAYER_DEATH_FOG = 128
+  PLAYER_DEATH_FOG_SPEED = 1/12
+  PLAYER_DEATH_FOG_FINAL_SIZE = 16
 
-  # Increase levels faster
-  PROGRESSION_EXP_THRESHOLD = default_exp_threshold(30, Default.PROGRESSION_LEVEL_MAX)
+  # Start the battle royale after the agent reached the safe center
+  # Can be overriden in the trainer
+  COMBAT_SPAWN_IMMUNITY = Default.HORIZON  # "cooperative" mode for the agents
 
-  # DEBUG MODE: no armor, tools, ammos
-  # NPC_ARMOR_DROP_PROB = 0
+  # NOTE: This might be an "easier" setting. The changes of 0.01 may make a big difference
+  RESOURCE_FOILAGE_RESPAWN = 0.10  # ~10 ticks to respawn
+
+  # TODO: Test auto-equip. How effective is this?
+  # EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM = set(
+  #   [2, 3, 4,  # hat, top, bottom
+  #    5, 6, 7,  # spear, bow, wand
+  #    8, 9, 10, 11, 12,  # rod, gloves, pickaxe, axe, chisel
+  #    13, 14, 15])  # whetstone, arrow, runes
+
+  # TODO: This (50) needs to be tested
+  PROGRESSION_EXP_THRESHOLD = default_exp_threshold(50, Default.PROGRESSION_LEVEL_MAX)
+
+  # TODO: Test the armor and market
+  EXCHANGE_ACTION_TARGET_DISABLE_LISTING = list(range(1,18))  # disable selling for now
+
+  # DEBUG MODE: no tools, ammos
   NPC_TOOL_DROP_PROB = 0
   PROFESSION_DISABLE_AMMUNITION = True
 
@@ -796,22 +817,5 @@ class Tutorial(Default):
   # EQUIPMENT_AMMUNITION_HARVEST_BUNCH = 5
 
   # Disable weapon, ration, potion -- focus on the main loop
-  NPC_GOLD_DROP_PROB = 0
   WEAPON_DROP_PROB = 0
   PROFESSION_DISABLE_CONSUMABLES = True
-
-  # Disable selling items, make equip new/better items easier (auto equip)
-  EXCHANGE_ACTION_TARGET_DISABLE_LISTING = list(range(1,18))  # all item types
-  EQUIPMENT_AUTO_UPGRADE_EQUIPPED_ITEM = set(
-    [2, 3, 4,  # hat, top, bottom
-     5, 6, 7,  # spear, bow, wand
-     8, 9, 10, 11, 12,  # rod, gloves, pickaxe, axe, chisel
-     13, 14, 15])  # whetstone, arrow, runes
-
-  # Push agents toward the center: hold fog until the fog obs is provided
-  PLAYER_DEATH_FOG = 192
-  PLAYER_DEATH_FOG_SPEED = 1/12
-  PLAYER_DEATH_FOG_FINAL_SIZE = 16
-
-  # Start the battle royale after the agent reached the safe center
-  COMBAT_SPAWN_IMMUNITY = 768

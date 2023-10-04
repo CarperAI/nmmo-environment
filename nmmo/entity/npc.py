@@ -148,8 +148,10 @@ class NPC(entity.Entity):
       power_level = lvl + config.NPC_LEVEL_POWER_BASE**lvl
       ilvl    = int(5 * lvl)
 
-      offense = int(config.NPC_BASE_DAMAGE + power_level*config.NPC_LEVEL_DAMAGE)
-      defense = int(config.NPC_BASE_DEFENSE + power_level*config.NPC_LEVEL_DEFENSE)
+      offense = config.NPC_BASE_DAMAGE + power_level*config.NPC_LEVEL_DAMAGE
+      offense *= int(offense * config.NPC_POWER_MULTIPLIER)
+      defense = config.NPC_BASE_DEFENSE + power_level*config.NPC_LEVEL_DEFENSE
+      defense *= int(defense * config.NPC_POWER_MULTIPLIER)
 
       ent.equipment = Equipment(ilvl, offense, offense, offense, defense, defense, defense)
 
