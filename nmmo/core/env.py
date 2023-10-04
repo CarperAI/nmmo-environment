@@ -42,6 +42,7 @@ class Env(ParallelEnv):
     self._dead_agents = set()
     self._dead_this_tick = None
     self.scripted_agents = set()
+    self.agent_stats = None
 
     self._gamestate_generator = GameStateGenerator(self.realm, self.config)
     self.game_state = None
@@ -185,6 +186,7 @@ class Env(ParallelEnv):
     self._agents = list(self.realm.players.keys())
     self._dead_agents = set()
     self._dead_this_tick = {}
+    self.agent_stats = {}
 
     # check if there are scripted agents
     for eid, ent in self.realm.players.items():
@@ -355,6 +357,11 @@ class Env(ParallelEnv):
         (self.config.RESET_ON_DEATH and len(self._dead_agents) > 0):
         self._dead_agents.add(agent_id)
         dones[agent_id] = True
+        # To easily gather the episode agent stats for the trainer
+        agent = self._dead_this_tick[agent_id] if agent_id in self._dead_this_tick\
+                                                 else self.realm.players[agent_id]
+        self.agent_stats[agent_id] = {'time_alive': self.realm.tick,
+                                      'progress_to_center': agent.history.exploration}
       else:
         dones[agent_id] = False
 
@@ -532,6 +539,19 @@ class Env(ParallelEnv):
       rewards[agent_id] = -1
 
     return rewards, infos
+
+  def get_episode_stats(self):
+    # NOTE: this is a helper function for the trainer
+    total_agent_steps = 0
+    progress_to_center = 0
+    max_progress = self.config.PLAYER_N * self.config.MAP_SIZE // 2
+    for stat in self.agent_stats.values():
+      total_agent_steps += stat['time_alive']
+      progress_to_center += stat['progress_to_center']
+    return {
+      'total_agent_steps': total_agent_steps,
+      'norm_progress_to_center': float(progress_to_center) / max_progress
+    }
 
   ############################################################################
   # PettingZoo API
