@@ -343,14 +343,17 @@ class Terrain:
   TERRAIN_VOID                 = 0.0
   '''Noise threshold for void generation'''
 
-  TERRAIN_WATER                = 0.15  # old: 0.30
+  TERRAIN_WATER                = 0.10  # old: 0.30
   '''Noise threshold for water generation'''
 
-  TERRAIN_GRASS                = 0.75  # old: 0.70
+  TERRAIN_GRASS                = 0.85  # old: 0.70
   '''Noise threshold for grass'''
 
-  TERRAIN_FOILAGE              = 0.90  # old: 0.85
+  TERRAIN_FOILAGE              = 0.97  # old: 0.85
   '''Noise threshold for foilage (food tile)'''
+
+  TERRAIN_SCATTER_EXTRA_RESOURCES = True
+  '''Whether to scatter extra (map size//6)^2 water and foilage tiles'''
 
   TERRAIN_DISABLE_STONE        = False
   '''Debug helper: Disable stone (obstacle) tiles'''
@@ -773,11 +776,8 @@ class Default(Medium, AllGameSystems):
 # Make configs for Tutorial, Easy, (Normal: Default), Hard, Insane
 
 class Tutorial(Default):
-  # Remove obstacles so that agents can go to the center easily
-  TERRAIN_DISABLE_STONE = True
-
-  # Make food much more available, making it easier to survive
-  RESOURCE_FOILAGE_RESPAWN = 0.5
+  # Make food more available, making it easier to survive
+  RESOURCE_FOILAGE_RESPAWN = 0.10
 
   # Increase levels faster
   PROGRESSION_EXP_THRESHOLD = default_exp_threshold(30, Default.PROGRESSION_LEVEL_MAX)

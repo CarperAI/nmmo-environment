@@ -39,7 +39,10 @@ class Save:
 class Terrain:
   '''Terrain material class; populated at runtime'''
   @staticmethod
-  def generate_terrain(config, map_id, interpolaters):
+  def generate_terrain(config, map_id, interpolaters, np_random=None):
+    if np_random is None:
+      np_random = np.random
+
     center      = config.MAP_CENTER
     border      = config.MAP_BORDER
     size        = config.MAP_SIZE
@@ -137,6 +140,28 @@ class Terrain:
     # Void and grass border
     matl[l1 > size/2 - border]   = Terrain.VOID
     matl[l1 == size//2 - border] = Terrain.GRASS
+
+    # Add extra water and foilage tiles
+    if config.TERRAIN_SCATTER_EXTRA_RESOURCES:
+      def try_add_tile(matl, tile_to_add, within):
+        r = np_random.integers(within, size-within)
+        c = np_random.integers(within, size-within)
+        if matl[r, c] == Terrain.GRASS:
+          matl[r, c] = tile_to_add
+          return True
+        return False
+
+      water_to_add, water_added = (center//6)**2, 0
+      food_to_add, food_added  = (center//3)**2, 0
+      while True:
+        if water_added >= water_to_add and food_added >= food_to_add:
+          break
+        if water_added < water_to_add:
+          water_added += 1 if try_add_tile(matl, Terrain.WATER, within=border+1) else 0
+          water_added += 1 if try_add_tile(matl, Terrain.WATER, within=center//6) else 0
+        if food_added < food_to_add:
+          food_added += 1 if try_add_tile(matl, Terrain.FOILAGE, within=border+1) else 0
+          food_added += 1 if try_add_tile(matl, Terrain.FOILAGE, within=center//4) else 0
 
     edge  = l1 == size//2 - border - 1
     stone = (matl == Terrain.STONE) | (matl == Terrain.WATER)
@@ -282,7 +307,7 @@ class MapGenerator:
     if config.TERRAIN_SYSTEM_ENABLED:
       if not hasattr(self, 'interpolaters'):
         self.interpolaters = None
-      terrain, tiles, _ = Terrain.generate_terrain(config, idx, self.interpolaters)
+      terrain, tiles, _ = Terrain.generate_terrain(config, idx, self.interpolaters, np_random)
     else:
       size    = config.MAP_SIZE
       terrain = np.zeros((size, size))
