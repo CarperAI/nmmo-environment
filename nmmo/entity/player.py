@@ -98,10 +98,17 @@ class Player(entity.Entity):
 
   def packet(self):
     data = super().packet()
-    data['entID']     = self.ent_id
-    data['resource']  = self.resources.packet()
-    data['skills']    = self.skills.packet()
-    data['inventory'] = self.inventory.packet()
+    data["entID"]     = self.ent_id
+    data["resource"]  = self.resources.packet()
+    data["skills"]    = self.skills.packet()
+    data["inventory"] = self.inventory.packet()
+    # added for the 2.0 web client
+    data["metrics"] = {
+      "PlayerDefeats": self.history.player_kills,
+      "TimeAlive": self.time_alive.val,
+      "Gold": self.gold.val,
+      "DamageTaken": self.history.damage_received,
+    }
 
     return data
 
