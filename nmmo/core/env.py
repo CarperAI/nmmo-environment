@@ -183,18 +183,8 @@ class Env(ParallelEnv):
         5000+ timesteps for large maps
     '''
     self.seed(seed)
-    self.realm.reset(self._np_random, map_id)
-    self._agents = list(self.realm.players.keys())
-    self._dead_agents = set()
-    self._dead_this_tick = {}
-    self.agent_stats = {}
 
-    # check if there are scripted agents
-    for eid, ent in self.realm.players.items():
-      if isinstance(ent.agent, nmmo.Scripted):
-        self.scripted_agents.add(eid)
-        ent.agent.set_rng(self._np_random)
-
+    # Assign tasks to agents
     if make_task_fn is not None:
       self.tasks = make_task_fn()
     elif self.curriculum_file_path is not None:
@@ -204,6 +194,21 @@ class Env(ParallelEnv):
         task.reset()
     self.agent_task_map = self._map_task_to_agent()
 
+    # Reset the realm (spawn agents, etc.)
+    self.realm.reset(self._np_random, map_id)
+    self._agents = list(self.realm.players.keys())
+    self._dead_agents.clear()
+    self._dead_this_tick = {}
+    self.scripted_agents.clear()
+    self.agent_stats = {}
+
+    # Check scripted agents
+    for eid, ent in self.realm.players.items():
+      if isinstance(ent.agent, nmmo.Scripted):
+        self.scripted_agents.add(eid)
+        ent.agent.set_rng(self._np_random)
+
+    # Reset the obs, game state generator
     self._dummy_obs = self._make_dummy_obs()
     self.obs = self._compute_observations()
     self._gamestate_generator = GameStateGenerator(self.realm, self.config)
@@ -243,6 +248,11 @@ class Env(ParallelEnv):
     reward_to = set(task.reward_to for task in self.tasks)
     # assert len(reward_to) == 1, "All tasks should be either team or agent tasks"
     self._provide_team_obs = "team" in reward_to
+
+    # set the agent loader class
+    self.realm.players.loader_class = self.config.PLAYER_LOADER
+    if len(reward_to) == 1 and self._provide_team_obs:
+      self.realm.players.loader_class = self.config.TEAM_LOADER
 
     for task in self.tasks:
       if task.embedding is None:

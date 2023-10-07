@@ -220,6 +220,7 @@ class TestTaskAPI(unittest.TestCase):
     config = ScriptedAgentTestConfig()
     config.PLAYERS =[Sleeper]
     config.IMMORTAL = True
+    config.TEAM_LOADER = config.PLAYER_LOADER  # to bypass team loader's assertion
 
     env = Env(config)
     env.reset(make_task_fn=lambda: make_task_from_spec(teams, [task_spec]))

@@ -17,10 +17,10 @@ class TestTeamTask(unittest.TestCase):
       "Team" + str(i+1): [i*team_size+j+1 for j in range(team_size)]
       for i in range(num_teams)
     }
-    cls.config.PLAYER_LOADER = TeamLoader
     cls.config.CURRICULUM_FILE_PATH = 'tests/task/sample_curriculum.pkl'
 
   def test_team_spawn(self):
+    self.config.PLAYER_LOADER = TeamLoader
     env = nmmo.Env(self.config)
     # To correctly spawn agents, config.TEAMS should contain all possible agents
     team_helper = TeamHelper(self.config.TEAMS)

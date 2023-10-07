@@ -8,7 +8,7 @@ import logging
 import nmmo
 from nmmo.core.agent import Agent
 from nmmo.core.terrain import MapGenerator
-from nmmo.lib import utils, material, spawn
+from nmmo.lib import utils, material, spawn, team_helper
 
 class Template(metaclass=utils.StaticIterable):
   def __init__(self):
@@ -244,6 +244,9 @@ class Config(Template):
 
   TEAM_TASK_EPISODE_PROB       = 0
   '''Probability of having a episode that samples only team tasks'''
+
+  TEAM_LOADER                  = team_helper.TeamLoader
+  '''Team loader class specifying team spawn sampling'''
 
   ############################################################################
   ### Debug Parameters
