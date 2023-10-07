@@ -19,6 +19,17 @@ class TestTeamTask(unittest.TestCase):
     }
     cls.config.CURRICULUM_FILE_PATH = 'tests/task/sample_curriculum.pkl'
 
+  def test_team_size(self):
+    # raise error if PLAYER_N is not divisible by the number of teams
+    self.config.PLAYER_N = 127
+    self.assertRaises(AssertionError, lambda: self.config.TEAM_SIZE)
+
+    self.config.PLAYER_N = 128
+    self.assertEqual(self.config.PLAYER_N, self.config.TEAM_SIZE * len(self.config.TEAMS))
+    # each team should have the same number of agents
+    for team in self.config.TEAMS:
+      self.assertEqual(self.config.TEAM_SIZE, len(self.config.TEAMS[team]))
+
   def test_team_spawn(self):
     self.config.PLAYER_LOADER = TeamLoader
     env = nmmo.Env(self.config)

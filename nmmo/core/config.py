@@ -248,6 +248,15 @@ class Config(Template):
   TEAM_LOADER                  = team_helper.TeamLoader
   '''Team loader class specifying team spawn sampling'''
 
+  @property
+  def TEAM_SIZE(self):
+    if self.TEAMS is None:
+      return None
+    team_size = self.PLAYER_N // len(self.TEAMS)
+    assert team_size * len(self.TEAMS) == self.PLAYER_N,\
+      "Number of players must be divisible by number of teams"
+    return team_size
+
   ############################################################################
   ### Debug Parameters
   IMMORTAL = False
