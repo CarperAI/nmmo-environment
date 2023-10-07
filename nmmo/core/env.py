@@ -36,6 +36,7 @@ class Env(ParallelEnv):
     self.realm = realm.Realm(config, self._np_random)
     self.obs = None
     self._dummy_obs = None
+    self._provide_team_obs = None
 
     self.possible_agents = list(range(1, config.PLAYER_N + 1))
     self._agents = None
@@ -56,7 +57,7 @@ class Env(ParallelEnv):
     if self.curriculum_file_path is not None:
       # try to open the file to check if it exists
       with open(self.curriculum_file_path, 'rb') as f:
-        curriculum = dill.load(f) # pylint: disable=unused-variable
+        dill.load(f)
       f.close()
 
   @functools.cached_property
@@ -194,10 +195,10 @@ class Env(ParallelEnv):
         self.scripted_agents.add(eid)
         ent.agent.set_rng(self._np_random)
 
-    if self.curriculum_file_path is not None:
-      self.tasks = self._sample_training_tasks()
-    elif make_task_fn is not None:
+    if make_task_fn is not None:
       self.tasks = make_task_fn()
+    elif self.curriculum_file_path is not None:
+      self.tasks = self._sample_training_tasks()
     else:
       for task in self.tasks:
         task.reset()
@@ -219,14 +220,30 @@ class Env(ParallelEnv):
       # curriculum file may have been changed, so read the file when sampling
       curriculum = dill.load(f) # a list of TaskSpec
 
-    sampling_weights = [spec.sampling_weight for spec in curriculum]
-    sampled_spec = self._np_random.choice(curriculum, size=len(self.possible_agents),
-                                          p=sampling_weights/np.sum(sampling_weights))
+    if self.config.TEAM_TASK_EPISODE_PROB > self._np_random.random():
+      # sample team tasks
+      cand_specs = [spec for spec in curriculum if spec.reward_to == "team"]
+      if self.config.TEAMS is not None and len(cand_specs) > 0:
+        sampling_weights = [spec.sampling_weight for spec in cand_specs]
+        sampled_spec = self._np_random.choice(cand_specs, size=len(self.config.TEAMS),
+                                              p=sampling_weights/np.sum(sampling_weights))
+        return task_spec.make_task_from_spec(self.config.TEAMS, sampled_spec)
 
+    # sample agent tasks
+    cand_specs = [spec for spec in curriculum if spec.reward_to == "agent"]
+    sampling_weights = [spec.sampling_weight for spec in cand_specs]
+    sampled_spec = self._np_random.choice(cand_specs, size=len(self.possible_agents),
+                                          p=sampling_weights/np.sum(sampling_weights))
     return task_spec.make_task_from_spec(self.possible_agents, sampled_spec)
 
   def _map_task_to_agent(self):
     agent_task_map: Dict[int, List[task_api.Task]] = {}
+
+    # NOTE: if there are team tasks, team obs should be provided
+    reward_to = set(task.reward_to for task in self.tasks)
+    # assert len(reward_to) == 1, "All tasks should be either team or agent tasks"
+    self._provide_team_obs = "team" in reward_to
+
     for task in self.tasks:
       if task.embedding is None:
         task.set_embedding(self._dummy_task_embedding)

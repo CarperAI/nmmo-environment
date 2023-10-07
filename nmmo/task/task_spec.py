@@ -100,6 +100,7 @@ def make_task_from_spec(assign_to: Union[Iterable[int], Dict],
     task_kwargs = deepcopy(task_spec[idx].task_kwargs)
     task_kwargs["embedding"] = task_spec[idx].embedding # to pass to task_cls
     task_kwargs["spec_name"] = task_spec[idx].name
+    task_kwargs["reward_to"] = task_spec[idx].reward_to
     predicate = task_spec[idx].predicate
 
     # reserve "target" for relative agent mapping

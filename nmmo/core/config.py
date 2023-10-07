@@ -237,14 +237,13 @@ class Config(Template):
   PLAYER_LOADER                = spawn.SequentialLoader
   '''Agent loader class specifying spawn sampling'''
 
-  PLAYER_SPAWN_TEAMMATE_DISTANCE = 1
-  '''Buffer tiles between teammates at spawn'''
+  ############################################################################
+  ### Team Parameters
+  TEAMS                        = None  # Dict[Any, List[int]]
+  '''A dictionary of team assignments: key is team_id, value is a list of agent_ids'''
 
-  @property
-  def PLAYER_TEAM_SIZE(self):
-    if __debug__:
-      assert not self.PLAYER_N % len(self.PLAYERS)
-    return self.PLAYER_N // len(self.PLAYERS)
+  TEAM_TASK_EPISODE_PROB       = 0
+  '''Probability of having a episode that samples only team tasks'''
 
   ############################################################################
   ### Debug Parameters

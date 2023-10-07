@@ -67,6 +67,13 @@ class FileReplayHelper(ReplayHelper):
     if "config" in packet:
       del packet["config"]
 
+    # The web client needs only below from config
+    packet["config"] = {
+      "PLAYER_DEATH_FOG": self._realm.config.PLAYER_DEATH_FOG,
+      "PLAYER_DEATH_FOG_FINAL_SIZE": self._realm.config.PLAYER_DEATH_FOG_FINAL_SIZE,
+      "PLAYER_DEATH_FOG_SPEED": self._realm.config.PLAYER_DEATH_FOG_SPEED,
+    }
+
     return packet
 
   def _metadata(self) -> Dict:
