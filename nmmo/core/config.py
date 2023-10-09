@@ -830,3 +830,16 @@ class Tutorial(Default):
   # Disable weapon, ration, potion -- focus on the main loop
   WEAPON_DROP_PROB = 0
   PROFESSION_DISABLE_CONSUMABLES = True
+
+
+class MiniGame(Config, Combat):
+  '''For testing minimal team-based combats'''
+  # 3 teams of 8 agents each, with no npcs
+  TEAMS = {i: [i*+j+1 for j in range(8)] for i in range(3)}
+  PLAYER_N = 24
+  NPC_N = 0
+
+  MAP_PREVIEW_DOWNSCALE        = 4
+  MAP_CENTER                   = 32
+
+  HORIZON                      = 256

@@ -41,6 +41,19 @@ def AllDead(gs: GameState, subject: Group):
   """
   return norm(1.0 - count(subject.health) / len(subject))
 
+def CheckAgentStatus(gs: GameState, subject: Group, target: Iterable[int], status: str):
+  """Check if target agents are alive or dead using the game status"""
+  if isinstance(target, int):
+    target = [target]
+  num_agents = len(target)
+  num_alive = sum(1 for agent in target if agent in gs.alive_agents)
+  if status == 'alive':
+    return num_alive / num_agents
+  if status == 'dead':
+    return (num_agents - num_alive) / num_agents
+  # invalid status
+  return 0.0
+
 def OccupyTile(gs: GameState, subject: Group, row: int, col: int):
   """True if any subject agent is on the desginated tile.
   """

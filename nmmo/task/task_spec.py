@@ -104,12 +104,13 @@ def make_task_from_spec(assign_to: Union[Iterable[int], Dict],
     predicate = task_spec[idx].predicate
 
     # reserve "target" for relative agent mapping
-    if "target" in pred_fn_kwargs:
-      target = pred_fn_kwargs.pop("target")
-      assert target in VALID_TARGET, "Invalid target"
+    target_keys = [key for key in pred_fn_kwargs.keys() if key.startswith("target")]
+    for key in target_keys:
+      target_keyword = pred_fn_kwargs.pop(key)
+      assert target_keyword in VALID_TARGET, "Invalid target"
       # translate target to specific agent ids using team_helper
-      target = team_helper.get_target_agent(team_id, target)
-      pred_fn_kwargs["target"] = target
+      target_ent = team_helper.get_target_agent(team_id, target_keyword)
+      pred_fn_kwargs[key] = target_ent
 
     # handle some special cases and instantiate the predicate first
     if pred_fn is not None and isinstance(pred_fn, FunctionType):
@@ -120,8 +121,8 @@ def make_task_from_spec(assign_to: Union[Iterable[int], Dict],
     if (pred_fn in [bp.AllDead]) or \
        (pred_fn in [bp.StayAlive] and "target" in pred_fn_kwargs):
       # use the target as the predicate subject
-      pred_fn_kwargs.pop("target") # remove target
-      predicate = pred_cls(Group(target), **pred_fn_kwargs)
+      target_ent = pred_fn_kwargs.pop("target") # remove target
+      predicate = pred_cls(Group(target_ent), **pred_fn_kwargs)
 
     # create the task
     if reward_to == "team":
@@ -150,6 +151,8 @@ def make_task_from_spec(assign_to: Union[Iterable[int], Dict],
 def check_task_spec(spec_list: List[TaskSpec]) -> List[Dict]:
   teams = {0: [1, 2, 3], 3: [4, 5], 7: [6, 7], 11: [8, 9], 14: [10, 11]}
   config = nmmo.config.Default()
+  config.PLAYER_N = 11
+  config.TEAMS = teams
   env = nmmo.Env(config)
   results = []
   for single_spec in spec_list:
