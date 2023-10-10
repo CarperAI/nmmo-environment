@@ -59,6 +59,10 @@ class Task(ABC):
     return self._completed_tick is not None
 
   @property
+  def progress(self) -> float:
+    return self._progress
+
+  @property
   def reward_multiplier(self) -> float:
     return self._reward_multiplier
 

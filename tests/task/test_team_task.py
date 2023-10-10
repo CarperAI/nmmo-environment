@@ -53,15 +53,6 @@ class TestTeamTask(unittest.TestCase):
         if team_a != team_b:
           self.assertNotEqual(team_locs[team_a], team_locs[team_b])
 
-  def test_sample_team_tasks(self):
-    self.config.TEAM_TASK_EPISODE_PROB = 1  # always team-task episode
-    env = nmmo.Env(self.config)
-    env.reset()
-
-    for task in env.tasks:
-      self.assertEqual(task.reward_to, "team")  # all tasks are for teams
-    self.assertEqual(env._provide_team_obs, True)
-
   def test_sample_agent_tasks(self):
     self.config.TEAM_TASK_EPISODE_PROB = 0  # always agent-task episode
     env = nmmo.Env(self.config)
@@ -77,6 +68,66 @@ class TestTeamTask(unittest.TestCase):
     for task in env.tasks:
       self.assertEqual(task.assignee, task.subject)
 
+  def test_sample_team_training_tasks(self):
+    self.config.TEAM_TASK_EPISODE_PROB = 1  # always team-task episode
+    self.config.TEAM_BATTLE_EPISODE_PROB = 0  # no team competition
+    env = nmmo.Env(self.config)
+    env.reset()
+
+    for task in env.tasks:
+      self.assertEqual(task.reward_to, "team")  # all tasks are for teams
+    self.assertEqual(env._provide_team_obs, True)
+
+    # no competition mode
+    self.assertEqual(env.team_battle_mode, False)
+    self.assertEqual(env.battle_winners, None)
+
+  def test_team_battle_mode(self):
+    self.config.TEAM_TASK_EPISODE_PROB = 1  # always team-task episode
+    self.config.TEAM_BATTLE_EPISODE_PROB = 1  # no team competition
+    env = nmmo.Env(self.config)
+    env.reset()
+
+    # competition mode
+    task_spec_name = env.tasks[0].spec_name
+    for task in env.tasks:
+      self.assertEqual(task.reward_to, "team")  # all tasks are for teams
+      self.assertEqual(task.spec_name, task_spec_name)  # all tasks are the same in competition
+    self.assertEqual(env._provide_team_obs, True)
+
+    self.assertEqual(env.team_battle_mode, True)
+    self.assertEqual(env.battle_winners, None)
+
+  def test_competition_winner_one_team(self):
+    self.config.TEAM_TASK_EPISODE_PROB = 1  # always team-task episode
+    self.config.TEAM_BATTLE_EPISODE_PROB = 1  # no team competition
+    env = nmmo.Env(self.config)
+    env.reset()
+
+    winner_team = "Team1"
+    for team_id, members in env.config.TEAMS.items():
+      if team_id != winner_team:
+        for agent_id in members:
+          env.realm.players[agent_id].resources.health.update(0)
+
+    env.step({})
+    self.assertEqual(env.battle_winners, env.config.TEAMS[winner_team])
+
+  def test_competition_winner_task_completed(self):
+    self.config.TEAM_TASK_EPISODE_PROB = 1  # always team-task episode
+    self.config.TEAM_BATTLE_EPISODE_PROB = 1  # no team competition
+    env = nmmo.Env(self.config)
+    env.reset()
+
+    # The first two tasks get completed
+    winners = []
+    for task in env.tasks[:2]:
+      task._completed_tick = 1
+      self.assertEqual(task.completed, True)
+      winners += task.assignee
+
+    env.step({})
+    self.assertEqual(env.battle_winners, winners)
 
 if __name__ == '__main__':
   unittest.main()

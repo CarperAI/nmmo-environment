@@ -67,6 +67,10 @@ class Tile(TileState):
   def tex(self):
     return self.state.tex
 
+  @property
+  def occupied(self):
+    return len(self.entities) > 0
+
   def reset(self, mat, config, np_random):
     self._np_random = np_random # reset the RNG
     self.entities = {}

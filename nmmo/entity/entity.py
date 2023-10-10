@@ -62,7 +62,7 @@ EntityState.Limits = lambda config: {
     "damage": (0, math.inf),
     "time_alive": (0, math.inf),
     "freeze": (0, 3),
-    "item_level": (0, 5*config.NPC_LEVEL_MAX),
+    "item_level": (0, math.inf),
     "attacker_id": (-np.inf, math.inf),
     "latest_combat_tick": (0, math.inf),
     "health": (0, config.PLAYER_BASE_HEALTH),
@@ -166,8 +166,10 @@ class Resources:
   def packet(self):
     data = {}
     data['health'] = { 'val': self.health.val, 'max': self.config.PLAYER_BASE_HEALTH }
-    data['food'] = { 'val': self.food.val, 'max': self.config.RESOURCE_BASE }
-    data['water'] = { 'val': self.water.val, 'max': self.config.RESOURCE_BASE }
+    data['food'] = data['water'] = { 'val': 0, 'max': 0 }
+    if self.config.RESOURCE_SYSTEM_ENABLED:
+      data['food'] = { 'val': self.food.val, 'max': self.config.RESOURCE_BASE }
+      data['water'] = { 'val': self.water.val, 'max': self.config.RESOURCE_BASE }
     return data
 
 class Status:

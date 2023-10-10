@@ -225,6 +225,10 @@ class Config(Template):
     '''Size of the square tile crop visible to an agent'''
     return 2*self.PLAYER_VISION_RADIUS + 1
 
+  ALLOW_MOVE_INTO_OCCUPIED_TILE = True
+  '''Whether agents can move into tiles occupied by other agents/npcs
+     However, this does not apply to spawning'''
+
   PLAYER_DEATH_FOG             = None
   '''How long before spawning death fog. None for no death fog'''
 
@@ -244,6 +248,9 @@ class Config(Template):
 
   TEAM_TASK_EPISODE_PROB       = 0
   '''Probability of having a episode that samples only team tasks'''
+
+  TEAM_BATTLE_EPISODE_PROB     = 0
+  '''Probability of having a team task episode that runs a team battle'''
 
   TEAM_LOADER                  = team_helper.TeamLoader
   '''Team loader class specifying team spawn sampling'''
@@ -431,19 +438,19 @@ class Combat:
     '''Damage formula'''
     return int(max(multiplier * offense - defense, offense * minimum_proportion))
 
-  COMBAT_MELEE_DAMAGE                = 30
+  COMBAT_MELEE_DAMAGE                = 10
   '''Melee attack damage'''
 
   COMBAT_MELEE_REACH                 = 3
   '''Reach of attacks using the Melee skill'''
 
-  COMBAT_RANGE_DAMAGE                = 30
+  COMBAT_RANGE_DAMAGE                = 10
   '''Range attack damage'''
 
   COMBAT_RANGE_REACH                 = 3
   '''Reach of attacks using the Range skill'''
 
-  COMBAT_MAGE_DAMAGE                 = 30
+  COMBAT_MAGE_DAMAGE                 = 10
   '''Mage attack damage'''
 
   COMBAT_MAGE_REACH                  = 3
@@ -834,12 +841,20 @@ class Tutorial(Default):
 
 class MiniGame(Config, Combat):
   '''For testing minimal team-based combats'''
-  # 3 teams of 8 agents each, with no npcs
-  TEAMS = {i: [i*+j+1 for j in range(8)] for i in range(3)}
+  # 3 teams of 8 agents each, with no npcs, NO FOG
+  TEAMS = {i: [i*8+j+1 for j in range(8)] for i in range(3)}
   PLAYER_N = 24
-  NPC_N = 0
+
+  #NPC_N = 0  # no NPC system
 
   MAP_PREVIEW_DOWNSCALE        = 4
   MAP_CENTER                   = 32
+  HORIZON                      = 512
 
-  HORIZON                      = 256
+  ALLOW_MOVE_INTO_OCCUPIED_TILE = False
+  COMBAT_WEAKNESS_MULTIPLIER   = 1.0  # all attacks are equal
+
+  # Push agents toward the center: hold fog until the fog obs is provided
+  PLAYER_DEATH_FOG = 64
+  PLAYER_DEATH_FOG_SPEED = 1/16
+  PLAYER_DEATH_FOG_FINAL_SIZE = 4

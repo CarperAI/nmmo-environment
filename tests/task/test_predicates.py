@@ -655,13 +655,11 @@ class TestBasePredicate(unittest.TestCase):
     players = env.realm.players
 
     env.realm.event_log.record(EventCode.SCORE_HIT,
-                               players[1],
-                               combat_style = Skill.Mage,
-                               damage=1)
+                               players[1], target=players[2],
+                               combat_style=Skill.Mage, damage=1)
     env.realm.event_log.record(EventCode.SCORE_HIT,
-                               players[1],
-                               combat_style = Skill.Melee,
-                               damage=1)
+                               players[1], target=players[2],
+                               combat_style=Skill.Melee, damage=1)
 
     env.obs = env._compute_observations()
     _, _, _, infos = env.step({})
@@ -671,13 +669,11 @@ class TestBasePredicate(unittest.TestCase):
     self._check_progress(env.tasks[0], infos, 0.5)
 
     env.realm.event_log.record(EventCode.SCORE_HIT,
-                               players[1],
-                               combat_style = Skill.Mage,
-                               damage=1)
+                               players[1], target=players[2],
+                               combat_style=Skill.Mage, damage=1)
     env.realm.event_log.record(EventCode.SCORE_HIT,
-                               players[1],
-                               combat_style = Skill.Melee,
-                               damage=1)
+                               players[1], target=players[2],
+                               combat_style=Skill.Melee, damage=1)
 
     env.obs = env._compute_observations()
     _, _, _, infos = env.step({})

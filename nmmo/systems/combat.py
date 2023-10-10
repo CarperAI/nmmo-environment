@@ -105,7 +105,7 @@ def attack(realm, player, target, skill_fn):
       equipment_level_offense = player.equipment.total(lambda e: e.level)
       equipment_level_defense = target.equipment.total(lambda e: e.level)
 
-    realm.event_log.record(EventCode.SCORE_HIT, player,
+    realm.event_log.record(EventCode.SCORE_HIT, player, target=target,
                            combat_style=skill_type, damage=damage)
 
     realm.log_milestone(f'Damage_{skill_name}', damage,
@@ -116,7 +116,7 @@ def attack(realm, player, target, skill_fn):
 
   player.apply_damage(damage, skill.__class__.__name__.lower())
   alive = target.receive_damage(player, damage)
-  if alive is False and player.is_player:
+  if alive is False and player.is_player and config.PROGRESSION_SYSTEM_ENABLED:
     skill.add_xp(config.PROGRESSION_KILL_XP_SCALE + target.attack_level)
 
   return damage

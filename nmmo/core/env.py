@@ -60,6 +60,10 @@ class Env(ParallelEnv):
         dill.load(f)
       f.close()
 
+    # for team competition mode
+    self.team_battle_mode = None
+    self.battle_winners = None
+
   @functools.cached_property
   def _obs_space(self):
     def box(rows, cols):
@@ -185,6 +189,8 @@ class Env(ParallelEnv):
     self.seed(seed)
 
     # Assign tasks to agents
+    self.team_battle_mode = False  # this can be set from outside
+    self.battle_winners = None
     if make_task_fn is not None:
       self.tasks = make_task_fn()
     elif self.curriculum_file_path is not None:
@@ -230,11 +236,22 @@ class Env(ParallelEnv):
       cand_specs = [spec for spec in curriculum if spec.reward_to == "team"]
       if self.config.TEAMS is not None and len(cand_specs) > 0:
         sampling_weights = [spec.sampling_weight for spec in cand_specs]
+
+        # training vs competition mode
+        num_teams = len(self.config.TEAMS)
+        if self.config.TEAM_BATTLE_EPISODE_PROB > self._np_random.random():
+          # competition mode
+          self.team_battle_mode = True
+          sampled_spec = self._np_random.choice(cand_specs, size=1,
+                                                p=sampling_weights/np.sum(sampling_weights))[0]
+          return task_spec.make_task_from_spec(self.config.TEAMS, [sampled_spec]*num_teams)
+
+        # team training mode
         sampled_spec = self._np_random.choice(cand_specs, size=len(self.config.TEAMS),
                                               p=sampling_weights/np.sum(sampling_weights))
         return task_spec.make_task_from_spec(self.config.TEAMS, sampled_spec)
 
-    # sample agent tasks
+    # sample agent tasks: agent training mode
     cand_specs = [spec for spec in curriculum if spec.reward_to == "agent"]
     sampling_weights = [spec.sampling_weight for spec in cand_specs]
     sampled_spec = self._np_random.choice(cand_specs, size=len(self.possible_agents),
@@ -397,6 +414,9 @@ class Env(ParallelEnv):
     gym_obs = {a: o.to_gym() for a,o in self.obs.items()}
 
     rewards, infos = self._compute_rewards()
+
+    if self.team_battle_mode:
+      self.battle_winners = self._check_battle_winners()
 
     # NOTE: all obs, rewards, dones, infos have data for each agent in self.agents
     return gym_obs, rewards, dones, infos
@@ -566,6 +586,30 @@ class Env(ParallelEnv):
       rewards[agent_id] = -1
 
     return rewards, infos
+
+  def _check_battle_winners(self):
+    if self.config.TEAMS is None or self.team_battle_mode is False:
+      return None
+
+    # A team is won, when their task is completed first or only one team remains
+    current_teams = {}
+    for team_id, team in self.config.TEAMS.items():
+      alive_members = [agent_id for agent_id in team if agent_id in self.realm.players]
+      if len(alive_members) > 0:
+        current_teams[team_id] = alive_members
+    if len(current_teams) == 1:
+      winner_team = list(current_teams.keys())[0]
+      return self.config.TEAMS[winner_team]
+
+    # Return all assignees who completed their tasks
+    # Assuming the episode gets ended externally
+    winners = []
+    for task in self.tasks:
+      if task.completed:
+        winners += task.assignee
+    if len(winners) == 0:
+      winners = None
+    return winners
 
   def get_episode_stats(self):
     # NOTE: this is a helper function for the trainer
