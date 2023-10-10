@@ -238,6 +238,9 @@ class Config(Template):
   PLAYER_DEATH_FOG_FINAL_SIZE  = 8
   '''Number of tiles from the center that the fog stops'''
 
+  PLAYER_HEALTH_INCREMENT      = False
+  '''Whether to increment health by 1 per tick for players, like npcs'''
+
   PLAYER_LOADER                = spawn.SequentialLoader
   '''Agent loader class specifying spawn sampling'''
 
@@ -839,7 +842,7 @@ class Tutorial(Default):
   PROFESSION_DISABLE_CONSUMABLES = True
 
 
-class MiniGame(Config, Combat):
+class MiniGame(Config, Terrain, Combat):
   '''For testing minimal team-based combats'''
   # 3 teams of 8 agents each, with no npcs, NO FOG
   TEAMS = {i: [i*8+j+1 for j in range(8)] for i in range(3)}
@@ -851,10 +854,19 @@ class MiniGame(Config, Combat):
   MAP_CENTER                   = 32
   HORIZON                      = 512
 
+  # Put very little obstacles and disallow moving into occupied tiles
+  TERRAIN_WATER = 0.001
+  TERRAIN_SCATTER_EXTRA_RESOURCES = False
+  TERRAIN_DISABLE_STONE = True
   ALLOW_MOVE_INTO_OCCUPIED_TILE = False
-  COMBAT_WEAKNESS_MULTIPLIER   = 1.0  # all attacks are equal
 
-  # Push agents toward the center: hold fog until the fog obs is provided
+  # Push agents toward the center
   PLAYER_DEATH_FOG = 64
   PLAYER_DEATH_FOG_SPEED = 1/16
   PLAYER_DEATH_FOG_FINAL_SIZE = 4
+
+  # Provide little heal
+  PLAYER_HEALTH_INCREMENT = True
+
+  # No combat weakness: all attacks are equal
+  COMBAT_WEAKNESS_MULTIPLIER = 1.0

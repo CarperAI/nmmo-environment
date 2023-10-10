@@ -137,6 +137,9 @@ class Player(entity.Entity):
     if not self.alive:
       return
 
+    if self.config.PLAYER_HEALTH_INCREMENT:
+      self.resources.health.increment()
+
     self.resources.update()
     self.skills.update()
 
