@@ -4,20 +4,26 @@ from __future__ import annotations
 import os
 import sys
 import logging
+import re
 
 import nmmo
 from nmmo.core.agent import Agent
 from nmmo.core.terrain import MapGenerator
 from nmmo.lib import utils, material, spawn, team_helper
 
+CONFIG_ATTR_PATTERN = r"^[A-Z_]+$"
+
+
 class Template(metaclass=utils.StaticIterable):
   def __init__(self):
     self.data = {}
+    self._attr_to_reset = []
     cls       = type(self)
 
     #Set defaults from static properties
-    for k, v in cls:
-      self.set(k, v)
+    for attr in dir(cls):
+      if re.match(CONFIG_ATTR_PATTERN, attr):
+        self.set(attr, getattr(cls, attr))
 
   def override(self, **kwargs):
     for k, v in kwargs.items():
@@ -33,6 +39,19 @@ class Template(metaclass=utils.StaticIterable):
         logging.error('Cannot set attribute: %s to %s', str(k), str(v))
         sys.exit()
     self.data[k] = v
+
+  def set_for_episode(self, k, v):
+    '''Set a config property for the current episode'''
+    assert hasattr(self, k), f'Invalid config property: {k}'
+    # Change only the attribute and keep the original value in the data dict
+    setattr(self, k, v)
+    self._attr_to_reset.append(k)
+
+  def reset(self):
+    '''Reset all attributes changed during the episode'''
+    for attr in self._attr_to_reset:
+      setattr(self, attr, self.data[attr])
+    self._attr_to_reset = []
 
   # pylint: disable=bad-builtin
   def print(self):
@@ -437,7 +456,8 @@ class Combat:
   COMBAT_MINIMUM_DAMAGE_PROPORTION   = 0.25
   '''Minimum proportion of damage to inflict on a target'''
 
-  def COMBAT_DAMAGE_FORMULA(self, offense, defense, multiplier, minimum_proportion):
+  @staticmethod
+  def COMBAT_DAMAGE_FORMULA(offense, defense, multiplier, minimum_proportion):
     '''Damage formula'''
     return int(max(multiplier * offense - defense, offense * minimum_proportion))
 
